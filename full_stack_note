@@ -1456,9 +1456,9 @@ if (x == 37 ) //方向左键
 
 
 
-html 转移字符: ISO Latin-1字符集: 
+html 转义字符: ISO Latin-1字符集: 
 &#09; — 制表符Horizontal tab 			&#10; — 换行Line feed 			&#13; — 回车Carriage Return 
-&#32; — Space 					! &#33; — 惊叹号Exclamation mark 	” &#34; &quot; 双引号Quotation mark 
+&#32; / &nbsp; — Space 				! &#33; — 惊叹号Exclamation mark 	” &#34; &quot; 双引号Quotation mark 
 # &#35; — 数字标志Number sign 			$ &#36; — 美元标志Dollar sign 		% &#37; — 百分号Percent sign 
 & &#38; &amp; Ampersand 			‘ &#39; — 单引号Apostrophe 		( &#40; — 小括号左边部分Left parenthesis 
 ) &#41; — 小括号右边部分Right parenthesis 	* &#42; — 星号Asterisk 			+ &#43; — 加号Plus sign 
@@ -1981,6 +1981,10 @@ markup-significant and internationalization characters:
 	网页获取 例如:wget -p -np -k -r https://www.52cmajor.com/tab/editor
 		wget https://static.52cmajor.com/static/vextab/ -r -c -np -nH --cut-dirs 2 --restrict-file-names=nocontrol
 wget -c -r -np -k -L -p -A '*.js*' https://static.52cmajor.com/static/vextab/
+	html显示空格:
+		连续的空格一般只显示一个
+		white-space:pre; 后才显示多个
+	现在是制表符号的显示!!!
 
 
 五线谱: https://www.52cmajor.com/tab/editor 
@@ -2185,21 +2189,1251 @@ div 居中与div内容居中: 更多扩展: https://www.thinkcss.com/jiqiao/1460
 
 
 
+20180903
+继续填坑:
+节点学习:
+	<div> XXXXX <span>cccc</span> llll <p>fff</p> kkk </div> oo <div>uu<div>
+	对于第一个div来说:
+	childNodes: 有 #test( XXXXX ), <span>, #text( llll ), <p>, #test( kkk ), 共 5 个子节点	(算上#text节点)
+	children: 有 <span>, <p> 共 2 个子节点		(不算#text节点)
+	firstChild 指向 #test( XXXXX ) 子节点		(算上#text节点)
+	firstElementChild 指向 <span> 子节点		(不算#text节点)
+	innertext 并不好分析,不可信
+	lastChild 指向 #test( kkk ) 子节点		(算上#text节点)
+	lastElementChild 指向 <p> 子节点		(不算#text节点)
+	nextElementSibling 指向 <div>uu<div> 同级节点	(不算#text节点)
+	nextSibling 指向 #test( oo ) 同级文本节点	(算上#text节点)
+	previousElementSibling,  previousSibling 指向之前的,同理分析可知道具体指向
+	parentNode 和 parentElement 一般都直接 指向相同的上级节点,没有据别
+插入 html段落内容: insertAdjacentHTML(位置,字符串)
+	段落内容写成字符窜 然后使用 insertAdjacentHTML 即可以插入解析
+	但是注意 转义字符 的使用
+	"&#09;&#09;&#09;<div class=\"spac\">&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;</div>&#10;&#09;&#09;&#09;<div class=\"igdd\">&#10;&#09;&#09;&#09;&#09;<img class=\"imgs\" src=\"" + src[f] + "\"&#32;alt=\"pic error\" ></img>&#10;&#09;&#09;&#09;&#09;<div class=\"imgi\">" + info[f] + "</div>&#10;&#09;&#09;&#09;</div>&#10;"
+	例如这样的 使用了 &#09; 一类转义字符串,但是 html解析时会认可并转成相关字符 会构成#text 文本节点
+还有注意常常用到的在节点里挖掘 class 子节点的做法:
+	var ff = curNode.getElementsByClassName('tabPreviewer'),
+	会得到 curNode 里 所有 class= "tabPreviewer" 的子节点
+结合现阶段工作小结:
+	接下来打算做的事:构思时间保存链,或者 写功能键内容.
+	选择构思时间保存链, 学习体验使用参考区块链
+另外建立了blockchain 实验:  lsgo技术团队
+	git clone https://github.com/bitcoin/bitcoin.git
+	cd bitcoin
+	git tag		//查看版本
+	git checkout v0.16.1	//选择没有 rc 的一个稳定版本
+	git status	//查看版本
+	//编译安装..... 后,有 bitcoind,bitcoin-cli两个主要命令, 还有自动建立~/..bitcoin 文件夹
+	运行Bitcoin Core 客户端, 注意容易与curl冲突导致意外关闭!!
+		bitcoind -printtoconsole	//前台执行 bitcoind初步会同步世界数据!!几乎有 130G!!! 草!!
+		bitcoind -daemon		//后台执行
+		bitcoin-cli stop		//关闭,切勿 ctrl+c  !! bitcoin-cli是辅助工具
+	配置bitcoind
+	gedit ~/.bitcoin/bitcoin.conf
+	//一个完整索引节点的配置
+		txindex=1
+		rpcuser=bitcoinrpc
+		rpcpassward=CHANGE_THIS
+	//或者 这样 当设备资源有限时的配置
+		maxconnections=15
+		prune=5000
+		minrelaytxfee=0.0001
+		maxmempool=200
+		maxreceivebuffer=2500
+		maxsendbuffer=500
+		rpcuser=bitcoinrpc
+		rpcpassword=CHANGE_THIS
+	重新运行 bitcoind 客户端 (Bitcoin Core 客户端), 并重建索引
+		bitcoind -printtoconsole -reindex
+	比特币核心客户端实现了 JSON-RPC 接口，这个接口可以通过命令行帮助程序 bitcoin-cli 访问，也可以通过编程的形式在程序中访问。
+btcoin:使用到的密码学:
+	hash:
+		ripemd160:
+		SHA-256: 几乎每个文件都有一个独一无二的 sha256编码,哪怕 文件之间只差几个字符!!都没有可能相同
+			 其实说的是,两个完全不同的文件有极低概率sha256相同,但是两个相近的文件的 sha256 绝对不同!!
+	密钥对包含了一个私钥和一个（由私钥导出的唯一）公钥。公钥被用来接收款项，私钥被用来签署一笔交易来花费比特币
+	btcoin 构成交易的 要素, 私钥,公钥,钱包地址,
+	生成一对公私钥的方法: 椭圆曲线乘法, RSA算法
+	比特币的公钥是由私钥通过 椭圆曲线乘法 导出的	
+	非对称加密: 公钥加密, 私钥解密 ； 私钥加密,公钥解密 ; 公钥无法推导出私钥
+		数字签名:应用:
+			1.Alice需要使用具体约定的算法（例如RSA）生成私钥和公钥，私钥自己保留，公钥对外公布。
+			2.Alice想要发送消息 "Alice已向Bob转账1BTC，请查收。| 我的公钥是：“gh3giPGFN2jgh3sF”。",
+			  Alice使用自己的私钥对消息进行加密，例如加密后的密文是 SHG356g3T4+dh4fh，这个密文就是Alice的数字签名。
+			3.Alice将消息明文和数字签名打包一起,并发送到网络中:
+			 " Alice已向Bob转账1BTC，请查收。| 我的公钥是：“gh3giPGFN2jgh3sF”。| 签名：“SHG356g3T4+dh4fh” "
+			4.网络中的所有人接收到消息后，都可以进行如下操作完成验证：
+			  收到消息 " Alice已向Bob转账1BTC，请查收。| 我的公钥是：“gh3giPGFN2jgh3sF”。| 签名：“SHG356g3T4+dh4fh” "
+			  使用提供的公钥 gh3giPGFN2jgh3sF 对数字签名 “SHG356g3T4+dh4fh” 进行解密
+			  将解密结果与消息明文 "Alice已向Bob转账1BTC，请查收。| 我的公钥是：“gh3giPGFN2jgh3sF”。" 进行对比
+			  如果一致，说明消息是Alice亲自发送的，因为只有Alice本人拥有Alice的密钥
+			  如果不一致，则说明消息不是Alice发送的，或者虽然消息是Alice发送的但已遭到他人篡改
+			问题: 如果黑客占线 发布同样的内容,但是发送黑客自己的公钥和自己生成的签名,
+			那么网络人是分不清消息的来源的,可以把黑客误以为 Alice
+		数字证书:
+			自己生成的公私钥, 公钥向相关权威机构登记并公开,客户可以公开查询的,公私钥不再是随便生成的
+python 的hash 计算:crypt hashlib
+时间保存链构思:
+	一张 conteid hsah表	一次保存过程, 获取所有变化的 行id数据 和 cnteid数据 再加上时间标签 再加上 10条最近 别人更新的记录(id + hash)刷一次hash值,
+	一个用户, 有 一个行表数据表, 一个cnteid数据表, 一个流媒体文件目录
+	一次保存过程, 获取所有变化的 行id数据 和 cnteid数据 再加上时间标签 再加上 10条最近 别人更新的记录(id + hash)刷一次hash值,
+	不合理,黑客可以自己随时得到其他人的hash 然后更改自己的时间,然后生成自己的保存块,来欺骗
+	构建这个算法要用演绎思维去想,从攻击者手段想如何修改得到合法的时间事件保存块!!!
+	算法的核心是保证,保存时间的权威性!
+
+骚操作: 
+	ls -lc -t	//查询当前目录下的文件及最后修改时间
+	df -hl命令查看磁盘占用情况
+	sudo du -sh * 命令查看当前目录下文件的大小
+	du -sh .[!.]* 命令查看所有隐藏文件的大小
+	频繁利以上两个命令，可追溯想要的文件
 
 
 
+
+
+
+
+
+20180906
+学习了相关 加密算法,发现现阶段构建时间保存链 实在太浪费时间, 还是先优先完成前端基本功能:
+	接下来 ,功能按键, 完成媒体文件的修改,提交!!
+	还有 批量行处理, 滑轮显示总行数!!
+关于 event 的深入
+	例如: onmousedown 事件
+	e.currentTarget 指的是 设置了 被设置响应事件的 节点 往往一个节点设置了事件, 事件发生时就会显示这个节点
+		例如, <span class="newl" onmousedown="cntebar(event)">事件响应时, e.currentTarget一定是 这个设置了事件的span
+	e.explicitOriginalTarget 得到的是 具体点击落在的的节点
+	e.originalTarget 得到的是 具体点击落在的节点 的 父节点!!
+		例如:
+<div Id="main" contenteditable="true" onmousedown="point(event)" >
+	<div class="vido" cnteid=600 cntety=5 ><span class="svdl" onmousedown="cntebar(event)">&nbsp;</span>15:
+		<div class="vidd">
+			<video width="320" height="240" controls>
+				<source src="/static/video/movie.mp4" type="video/mp4">
+			</video>
+			<div class="vidi">amimal</div>		
+		</div>
+	</div>
+</div>
+	设置事件的是 main, 但当鼠标点击落在 animal的 字符串里时, 	explicitOriginalTarget 指的是#text节点, originalTarget指的是 vidi节点
+	当鼠标落在 非视频,非animal的字符串时, 即 15 行的空白处时! explicitOriginalTarget 指的是vidd节点, originalTarget也指向 vidd节点
+	刚处理完所有按键问题,和 点击问题,发现 还缺一类行数据, 就是 标题行数据
+	所以需要规划添加这类行媒体数据格式!! 然后重新调整所有按键操作
+	然后就是 媒体行数据的生成页功能,然后ctrl+cv 然后是批量插入,删掉行数据, 
+	还有一个就是 方向键操作后的屏幕跟随, 和 滑动显示的 加载行数 !!
+	最后是保存上存!!然后就开始做服务器了!!保存到服务器,需要数据回滚操作, 以防保存失败!!!
+event 和 this 
+	onclick等事件,不仅仅传递event 还可以传递 this, this就是 设置 onlick 的节点!!
+	例如 onclick="kkk(this,event)"  function kkk(t,e){}, t和e是自己取的名字,位置对应this,event参数
+
+
+现在发现 css 关于位置关系的描述非常重要!!需要学习掌握!!
+
+
+
+
+
+
+
+
+
+
+20180913
+css位置学习:
+CSS 框模型
+	---------------------------------------------------------
+	|                  外边距 margin (空白透明)              |
+	|      ------ 边框 border (线,点,透明)--------------     |
+	|      |           内边距 padding (空白透明)       |     |
+	|      |      ----------宽 width -----------      |     |
+	|      |      |                            |      |     |
+	|      |      |                            高     |     |
+	|      |      |         element          height   |     |
+	|      |      |                            |      |     |
+	|      |      |                            |      |     |
+	|      |      |                            |      |     |
+	|      |      ------------------------------      |     |
+	|      |                                          |     |
+	|      |                                          |     |
+	|      --------------------------------------------     |
+	|                                                       |
+	|                                                       |
+        ---------------------------------------------------------
+padding 与 margin 的设置方式
+	margin: 10px 0.25em 2ex 20%;	// 上 右 下 左  尺度还可以cm
+	margin: 20px			// 统一 20px 的边距
+	margin-top: 10px;
+	margin-right: 0.25em;
+	margin-bottom: 2ex;
+	margin-left: 20%;
+	padding: 10px 0.25em 2ex 20%;	// 上 右 下 左  尺度还可以cm
+	padding: 20px			// 统一 20px 的边距
+	padding-top: 10px;
+	padding-right: 0.25em;
+	padding-bottom: 2ex;
+	padding-left: 20%;
+	
+border设置:
+  	border:5px solid red;		//边粗, 边样式, 边颜色
+	独立设置:
+	border 	简写属性，用于把针对四个边的属性设置在一个声明。
+	border-style 	用于设置元素所有边框的样式，或者单独地为各边设置边框样式。
+	border-width 	简写属性，用于为元素的所有边框设置宽度，或者单独地为各边边框设置宽度。
+	border-color 	简写属性，设置元素的所有边框中可见部分的颜色，或为 4 个边分别设置颜色。
+	border-bottom 	简写属性，用于把下边框的所有属性设置到一个声明中。
+	border-bottom-color 	设置元素的下边框的颜色。
+	border-bottom-style 	设置元素的下边框的样式。
+	border-bottom-width 	设置元素的下边框的宽度。
+	border-left 	简写属性，用于把左边框的所有属性设置到一个声明中。
+	border-left-color 	设置元素的左边框的颜色。
+	border-left-style 	设置元素的左边框的样式。
+	border-left-width 	设置元素的左边框的宽度。
+	border-right 	简写属性，用于把右边框的所有属性设置到一个声明中。
+	border-right-color 	设置元素的右边框的颜色。
+	border-right-style 	设置元素的右边框的样式。
+	border-right-width 	设置元素的右边框的宽度。
+	border-top 	简写属性，用于把上边框的所有属性设置到一个声明中。
+	border-top-color 	设置元素的上边框的颜色。
+	border-top-style 	设置元素的上边框的样式。
+	border-top-width 	设置元素的上边框的宽度。	
+margin 外边框合并!!!
+	位置相邻的两个元素,不管是 同阶级关系,还是父子关系, 只要他们都设置了margin 而且是两者的margin相贴合,那么就会发生合并
+	保留参数值大的margin,消灭调参数值小的margin 	
+块元素,行元素
+	div、h1 或 p 元素常常被称为块级元素。这意味着这些元素显示为一块内容，即“块框”。
+	与之相反，span 和 strong 等元素称为“行内元素”，这是因为它们的内容显示在行中，即“行内框”
+	display 设置为 block，可以让行内元素（比如 <a> 元素）表现得像块级元素一样
+	display 设置为 none，让生成的元素根本没有框,即该框及其所有内容就不再显示，不占用文档中的空间。
+CSS 有三种基本的定位机制：普通流、浮动和绝对定位	
+	除非专门指定，否则所有框都在普通流中定位。
+	块级框 从上到下一个接一个地排列，框之间的垂直距离是由框的垂直外边距计算出来。
+	行内框 在一行中水平布置。可以使用水平内边距、边框和外边距调整它们的间距。
+		垂直内边距、边框和外边距不影响行内框的高度。由一行形成的水平框称为行框（Line Box），
+		行框的高度总是足以容纳它包含的所有行内框。不过，设置行高可以增加这个框的高度。
+position : relative 元素框偏移某个距离。元素仍保持其未定位前的形状，它原本所占的空间仍保留。
+	relative 配合 top,left,right,bottom 方位属性 使用
+	position:relative;left:20px;	//表示 元素在原始位置的基础上,从元素的原始左侧位置加上 20px ,相当于向右移动 20px
+					//但是原始位置保留, 即下一个元素的原始位置,根据这个元素的原始位置决定
+	relative 是 普通流机制的一部分, 原始位置也是 普通流机制的内容`
+position : absolute 按绝对坐标定位 它原本所占的空间不保留。	
+	absolute 配合 top,left,right,bottom 方位属性 使用
+	position:absolute;left:100px;top:150px;		//以页面 左 上 角为原点,水平加100px,垂直加150px
+					//即以左上角为原点,向右移动100px,向下移动150px的位置
+					//元素的原始位置不占位保留, 即下一个元素的原始位置,不根据这个元素的原始位置决定
+	position:absolute;left:100px;	//以页面 左 上 角为原点,水平加100px,即以左上角为原点,向右移动100px
+					//这里只定义了 水平位置的绝对坐标, 垂直位置绝对坐标没有定义.
+					//所以垂直位置 按 原始位置的垂直位置排位, 把这个垂直位置作为绝对坐标
+					//元素的原始位置不占位保留, 即下一个元素的原始位置,不根据这个元素的原始位置决定
+position : fixed 固定定位,这是根据浏览器窗口来定位的, 同样, 与absolute 一样是固定定位,
+	不保留原始位置!!, 不对往后的元素的位置有影响. 永远保持显示在最前位置!!
+position : static（静态定位）：就是普通流的获得的 原始位置,而且忽略 top, bottom, left, right 或者 z-index 声明的参数!	
+
+overflow: 块元素内容 溢出的显示对策
+	visible 默认值。内容不会被修剪，会呈现在元素框之外。
+	hidden 	内容会被修剪，并且其余内容是不可见的。
+	scroll 	内容会被修剪，但是浏览器会显示滚动条以便查看其余的内容。
+	auto 	如果内容被修剪，则浏览器会显示滚动条以便查看其余的内容。
+	inherit 规定应该从父元素继承 overflow 属性的值。
+clip: 只有 position:absolute 绝对定位的元素, 才可以被clip 裁剪显示元素的展示空间即配合 absolute 使用
+	position:absolute;left:100px;clip:rect(0px 50px 200px 0px)	//显示局对定位的元素 50*200 空间 内容
+	值:
+	shape 	设置元素的形状。唯一合法的形状值是：rect (top, right, bottom, left)
+	auto 	默认值。不应用任何剪裁。
+	inherit 	规定应该从父元素继承 clip 属性的值。	
+vertical-align 属性设置 同阶级 元素间 的垂直对齐方式 ,不是设置在父元素上,而是设置在有需要的子元素上
+	baseline 默认。元素放置在父元素的基线上。
+	sub 	垂直对齐文本的下标。
+	super 	垂直对齐文本的上标
+	top 	把元素的顶端与行中最高元素的顶端对齐
+	text-top 把元素的顶端与父元素的 #text 的顶端对齐
+	middle 	把此元素放置在父元素的中部。
+	bottom 	把元素的顶端与行中最低的元素的顶端对齐。
+	text-bottom 	把元素的底端与父元素的 #text的底端对齐。
+	length 	 例如 20px -10px
+	% 	使用 "line-height" 属性的百分比值来排列此元素。允许使用负值。
+	inherit 规定应该从父元素继承 vertical-align 属性的值。
+text-align: center;对子元素的对齐要求,设置在父元素上
+z-index 元素所在的 显示层数, 层数越高元素遮挡层数低的元素
+	如果元素不是绝对定位! 层数不管怎样变化,元素的原始位置依然没有改变!!
+	所以 z-index 一般是配合 position:absolute 使用的!!
+
+css 浮动:
+	html 排布 有 3个次元 普通流 浮动 绝对定位
+	普通流
+		默认的元素是按照 html 文本流 一个一个相互影响地排列着 ,这是这时普通流的 元素排列
+		普通流的方式下, 每个元素都有自己一个对应的原始位置!!
+		即使使用了 relative 每个元素的实际所在位置有了偏移, 但是其原始位置是保留下来,对其他元素的位置有影响的!! 
+		默认下普通流的 所有元素都 位于 z-index:0 这一层, 但是文本流 往后元素 可以遮盖 往前元素
+		除非 往前元素主动设置z-index > 0 或者 > 往后元素的z-index , 往前元素 才有机会遮盖 往后元素 !
+	绝对定位	
+		如果只是 absolute 但没有水平/垂直坐标, 会先从文本流得到原来应该的原始坐标作为绝对坐标,
+		但是并不保留自己的原始坐标,所以下个元素的原始坐标 与这个定义了absolute的元素没有关系!
+		拓展例子: 
+			<div>普通1</div>
+			<div>绝对2</div>
+			<div>普通3</div>
+			<div>绝对4</div>
+			绝对定位的例子只是position:absolute; 并没有设置水平垂直位置. 这时:
+			绝对2 的 原始位置 根据 普通1, 普通3 原始位置 也是根据 普通1 而不是绝对2,所以
+			<div>绝对2</div>,<div>普通3</div> 的原始位置都是同一个位置上,普通3 遮盖 绝对2,因为普通3元素比绝对2靠后
+			绝对4 的位置是 根据 普通3,普通1,的原始位置得到的,与 绝对2 没有任何关系 
+		虽然只是坐标关系变化了, 但是显示的先后顺序还是按着文本流 元素出现的先后顺序来,
+		默认下绝对定位 的元素 也都 位于 z-index:0 这一层 文本流 往后元素 可以遮盖 往前元素,也是改z-index改变遮盖关系 
+	浮动:
+		经过实验,发现浮动,是普通流的升级板,例子说明:
+		不使用float,普通流: div元素的排布:
+			------------
+			|          |
+			|     1    |
+			|          |
+			|          |
+			------------
+			----------
+ 			|        |
+			|    2   |
+			|        |	
+			----------
+			--------
+ 			|   3  |
+			|      |
+			--------
+			----------
+ 			|        |
+			|    4   |
+			|        |	
+			----------
+		元素1使用 float:left 时:
+			------------  ----------
+			|          |  |        |
+			|     1    |  |    2   |
+			|          |  |        |
+			|          |  ----------
+			------------  --------
+			              |   3  |
+			              |      |
+			              --------
+			----------
+ 			|        |
+			|    4   |
+			|        |	
+			----------
+		元素2使用 float:left 时:
+			------------
+			|          |
+			|     1    |
+			|          |
+			|          |
+			------------
+			----------   --------
+ 			|        |   |   3  |
+			|    2   |   |      |
+			|        |   --------
+			----------   ----------
+ 			             |        |
+			             |    4   |
+			             |        |	
+			             ----------
+		元素1,2使用 float:left 时:
+		元素1,2,3使用 float:left 时: (假设页面宽差一点而不能容纳元素4)
+ 		元素 1,2,3,4使用left时: (假设页面宽差一点而不能容纳元素4)
+			------------  ----------  --------
+			|          |  |        |  |   3  |
+			|     1    |  |    2   |  |      |
+			|          |  |        |  --------
+			|          |  ----------  ----------
+			------------              |        |
+			                          |    4   |
+			                          |        |				
+			                          ----------
+		元素1,2,3使用 float:left 时: (假设页面宽差一点而不能容纳元素4, 元素3高度变得与元素2一样高 )
+		元素1,2,3,4使用left时: (假设页面宽差一点而不能容纳元素4,元素3高度变得与元素2一样高 )
+			------------  ----------  --------
+			|          |  |        |  |      |
+			|     1    |  |    2   |  |   3  |
+			|          |  |        |  |      |
+			|          |  ----------  --------
+			------------  ----------
+			              |        |
+			              |    4   |
+			              |        |				
+			              ----------
+		元素1,2,3使用 float:left 时, (假设页面无限宽)
+		元素1,2,3,4使用left时: (假设页面无限宽)
+			------------  ----------  --------  ----------
+			|          |  |        |  |   3  |  |        |
+			|     1    |  |    2   |  |      |  |    4   |
+			|          |  |        |  --------  |        |
+			|          |  ----------            ----------
+			------------          
+		元素1 使用 float:right 时,	
+			----------             ------------
+ 			|        |             |          |
+			|    2   |             |     1    |
+			|        |             |          |
+			----------             |          |
+			--------               ------------
+ 			|   3  |
+			|      |
+			--------
+			----------
+ 			|        |
+			|    4   |
+			|        |	
+			----------
+		元素1,2 使用 float:right 时,
+			--------     ----------  ------------
+ 			|   3  |     |        |  |          |
+			|      |     |    2   |  |     1    |
+			--------     |        |  |          |
+			----------   ----------  |          |
+			|        |               ------------
+			|    4   |
+			|        |	
+			----------	
+		元素2 使用 float:right 时,
+			------------
+			|          |
+			|     1    |
+			|          |
+			|          |
+			------------
+			--------                   ----------
+ 			|   3  |                   |        |
+			|      |                   |   2    |
+			--------                   |        |
+			----------                 ----------
+ 			|        |
+			|    4   |
+			|        |	
+			----------
+		元素1,2,3 使用 float:right 时, (假设页面宽差一点而不能容纳元素4,)
+			   --------  ----------  ------------
+ 			   |   3  |  |        |  |          |
+			   |      |  |    2   |  |     1    |
+			   --------  |        |  |          |
+			----------   ----------  |          |
+			|        |               ------------
+			|    4   |
+			|        |	
+			----------
+		也就是说 float 也是 普通流的一种扩展形式, 设置了float的元素, 原始位置也是根据float发生了变化
+		影响到 普通流 的其他元素的 原始位置!!
+		float还可以配合 clear使用:
+		元素1,2,3,4使用left时, 元素3使用了clear:left: (假设页面无限宽)
+			------------  ----------
+			|          |  |        |
+			|     1    |  |    2   |	//其实就是说 3 左边不能紧接着 float:left 的元素  
+			|          |  |        |
+			|          |  ----------
+			------------ 		
+			--------  ----------
+			|   3  |  |        |
+			|      |  |    4   |
+			--------  |        |
+			          ---------- 		
+		同理,  clear:right;  其实就是说 元素 右边不能紧接着 float:right 的元素
+		clear:both; 就是 左边不能紧接着 float:left 的元素, 右边不能紧接着 float:right 的元素!!
+		clear:both; 就是 左边可以紧接着 float:left 的元素, 右边可以紧接着 float:right 的元素!!
+		文字段 #text 与 float元素的的位置关系也是值得 讨论 例如:
+			<div id=1>...</div>
+			<div id=2>~~~~~~~~~~~~~~~~~~~~..... <img>3</img><div>
+			其中 div1 float:right,
+			其中 div2 text-align:center; 假装---是文本,最后还有一张图片3,
+			就会出现 :	
+				~~~~~~~~~~~~~~~  ------------
+				 ~~~~~~~~~~~~~   |          |
+				~~~~~~~~~~~~~~~  |     1    |
+				  ~~~~~~~~~~~    |          |
+				~~~~~~~~~~~~~~~  |          |
+				~~~~~~~~~~~~~~~  ------------
+				 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				                  ------
+				                  |    |
+				     ~~~~~~~~~~~~~|  3 |
+				                  ------
+		这样子的话也一样`:
+			<div id=2>
+			<div id=1>...</div>
+			~~~~~~~~~~~~~~~~~~~~..... <img>3</img>
+			</div>
+			其中 div1 float:right,
+			其中 div2 text-align:center;
+			div1, 文字段 ~~~~~, 图片3 都是 div1 的子元素
+			也会出现 :	
+				~~~~~~~~~~~~~~~  ------------
+				 ~~~~~~~~~~~~~   |          |
+				~~~~~~~~~~~~~~~  |     1    |
+				  ~~~~~~~~~~~    |          |
+				~~~~~~~~~~~~~~~  |          |
+				~~~~~~~~~~~~~~~  ------------
+				 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				                  ------
+				                  |    |
+				     ~~~~~~~~~~~~~|  3 |
+				                  ------
+			注意	text-align:center; 都是对于一行内容来说的,
+				对于有 float占据空间的 的 行 文字居中不算 float占据空间 例如 第2,4行明显
+				如果文字与某些非float元素 同阶级, 元素排版时算作文字中的一员,共同实现居中
+				图片3 与 文字共存的一行, 图片决定行高,文字和图片一起居中	
+				图片3 是内联元素，如果是<div>,就不会出现最后的居中显示 ！！！而是div另外一行！！
+display:
+	inline: 相当于 <p>AA</p> <p>BBB</p> 能以 <p>AABBB</p> 显示
+		------
+		| AA |              ---------
+		------       --->   | AABBB |
+		-------             ---------
+		| BBB |
+		-------
+		一般 <span> <a> 称为内联元素, 因为他们 即使默认情况下,不用设置 dispaly:inline时,
+		 <span>AA</span> <span>BBB</span> 也会以 <span>AABBB</span> 显示 !!
+	block: 对于 内联元素<span> <a> 等设置 dispaly:block时,内联元素的排版如 <div> <p> 这些快元素一样 一个元素占一行,
+		                      ------
+		                      | AA |
+		---------             ------
+		| AABBB |    --->     -------
+		---------             | BBB |
+		                      -------
+	inline-block: 对于 每一个元素都看作 块元素, 然后把块元素放在 同一行上 !!
+		即 <p>AA</p> <p>BBB</p> 不以 <p>AABBB</p> 显示, 而是 <p>AA</p> <p>BBB</p>
+		   <span>AA</span> <span>BBB</span> 不以 <span>AABBB</span> 显示, 而是 <p>AA</p> <p>BBB</p>
+		------
+		| AA |              ------ -------
+		------       --->   | AA | | BBB |
+		-------             ------ -------
+		| BBB |
+		-------
+
+		---------           ------ -------
+		| AABBB |    --->   | AA | | BBB |
+		---------           ------ -------
+		注意使用了 display:inline-block；就是 块被当作了内联元素内容显示,
+			如果相邻的两个块元素设置成内联显示, 他们就相当于文本,他们之间隔着的空白字符会成为他们两的间距
+			所以要相邻的两个内联块元素没有间隔,要么之间没有空格转行tab字符,要么他们共同的父元素设置 font-size:0;
+
+	none:	元素不会计入页面排版,不占用位置,所以也不就不能显示, 
+		对应类似属性: visibility:hidden, 但是这个属性会把元素计入排版,即会占用位置只是不显示
+dispay:flex  display新属性!!,弹性布局,是容器属性, 即设置在父元素上的.
+	子元素的float、clear和vertical-align属性将失效。
+	display:flex 需要配合以下属性,一起使用
+		flex-direction　　容器内项目的排列方向(默认横向排列)　　
+		flex-wrap　　容器内项目换行方式
+		flex-flow　　以上两个属性的简写方式
+		justify-content　　项目在主轴上的对齐方式
+		align-items　　项目在交叉轴上如何对齐
+		align-content　　定义了多根轴线的对齐方式。如果项目只有一根轴线，该属性不起作用。
+	详细: https://www.cnblogs.com/xuyuntao/articles/6391728.html
+对子内联元素/(文本内容),强制不转行,父元素添加:
+		style  white-space:nowrap;
+		(默认一般自动转行)自动换行:word-wrap:break-word;  
+
+
+		
+综合使用: margin: auto;
+	  width: 50%;
+	  text-align: center;
+	    display: block;
+	    position: absolute;
+	    right: 0px;
+	    width: 300px;
+	    padding: 10px;
+	    float: right; 	
+	    overflow: auto; 	
+	    line-height: 200px;
+	    height: 200px;
+	    display: inline-block;
+	    vertical-align: middle;
+	    top: 50%;
+	    left: 50%;
+	可以实现各种对齐居中,,
+
+
+
+
+
+
+
+
+
+20180914
+前提
+	额外js 保存全局变量
+	以下框都允许点击并输入数据 称为合法文本框
+		spac edtx hdda hdti imgi mati adoi vidi
+	合法文本 imgi mati adoi vidi 复杂 \n\r处理,
+		一般加\n 如果文本末加\n必须紧接加上\r
+		一般退格 删 连续个\r与最前\r前的一个字符
+		具体按键具体分析:
+修正点击和按键操作 !!!
+	base:mousu(event) , base:mousd(event) , base:mousm(event)配合使用,
+	   √	mousd 先行任务: 合法文本 hdda hdti imgi mati adoi vidi 是否空,空则补上 <nothing>
+	   √	实现基本鼠标点击动作,
+	   √	能避免光标落入禁区,
+	   √	点击标记色指定打开 contentbar
+	   √	可做简单文本拖选, 
+	  hold	一些地方的点击效果未理想{暂时不处理}
+	keyboard.js : keypress(event) : 预处理
+	   √	弹窗删除媒体行相关预处理
+	   √	sel非空,才接下一步工作
+	   √	sel是光标,才接下一步工作	
+	keyboard.js : keypress(event) : spec优先处理:
+	   √	spec只接受 空格和\b, 并优先处理, 方向键不在 keypress 处理, 
+	   √	退格处理,永远不能让spac没有内容!!
+	keyboard.js : keypress(event) : 简单的 fixl判断处理: 
+	   √	keypress 前方讨论 提高输入速度  不谈论 \r \b 等 keypress部分按键, 后面会详细讨论
+	   √	spac不处理,spac以外的合法文本框处理
+	   √	不是undefine的按键都算字符输入, 需要改 fixl
+	   √	onkeypress 似乎不识别 ctrl shift capslock, 而基本功能键为undefined,例如方向键
+	keyboard.js : keypress(event) : \r(回车):
+	   √	spac hdda hdti不处理
+	   √	合法文本 imgi mati adoi vidi 生效:
+	   √		复杂 \n\r处理: 文末加\n\r,不是文末加\r 	统一变fixl,或保持newl 不改变 cnteid 和 oid
+	   √	edtx 生效: 插入newl, 都不改变 cnteid 和 oid
+	   √		\r作用行有机会变 fixl,插入行是newl,
+	   √		其他行对齐:svdl,orgl变wrpl,wrpl有机会变回svdl,而newl,fixl不变
+	 hold	屏幕跟随光标显示
+	keyboard.js : keypress(event) : \b(退格):
+	   √	spac不处理,多此一举
+	   √	合法文本  hdda hdti imgi mati adoi vidi 同样的处理,
+	   √		复杂\n\r处理,循环检查光标前有多少个连续\r,一次过删掉多个连续\r和\r前的一个字符
+	   √			\r前是文本起点,则只退到文本起点文本起点
+	   √			统一变fixl,或保持newl 不改变 cnteid 和 oid
+	   √			由于 hdda hdti 没有 \n 或 \r， 所以会自动绕过 \n\r处理
+	   √		当回到尽头不操作,当空标记为空文本 
+	   √	最后 edtx...
+	   √		尽头时,删除当前行,把余下的文本接入上一行
+	   √		遇到媒体行, 光标依然处在文本行,弹窗询问是否删除遇到的媒体行,抬起,再按一次\b实现删除,
+	   √			实现这个功能现在不能笼统写成一个模快,各种边沿代码遍布各处,其他地方标明 弹窗删除媒体行相关
+	   √			分布:keypress开头预处理, \b段贯穿全部, closeWin部分
+	 hold	屏幕跟随光标显示
+	keyboard.js : keydowm(event) : tab键
+	   √	实现 tab 缩进
+	keyboard.js : keydowm(event) : 方向左
+	   √	合法文本 spac hdda imgi mati adoi vidi: 左到尽头不作为 
+	   √	hdti : 左到尽头到 hdda
+	   √	edtx : 左到尽头, 跳到再上一个文本行的文本末位置, 最初文本行文本初位置不作为
+	   √	合法文本 imgi mati adoi vidi  复杂\n\r处理,
+	   √		循环检查光标前有多少个连续\r,一次跨过多个连续\r和\r前的一个字符组成的字符串,
+	   √		\r前是文本起点,则只跨到文本起点
+	keyboard.js : keydowm(event) : 方向右
+	   √	合法文本 spac hdti imgi mati adoi vidi: 右到尽头不作为 				
+	   √	hdda: 右到头到 hdti
+	   √	edtx : 左到尽头, 跳到再下一个文本行的文本初位置, 最后文本行文本末位置不作为
+	   √	所有都有 复杂\n\r处理,循环检查光标前有多少个连续\r,一次跨过多个连续\r和\r前的一个字符组成的字符串,
+	   √		\r前是文本起点,则只跨到文本起点		
+	keyboard.js : keydowm(event) : 方向上
+	   √	合法文本 spac hdda hdti imgi mati adoi vidi: 不作为 				
+	   √	edtx : 跳到再上一个文本行同样的文本偏移位置, 溢出跳到文本末, 最初文本行不作为
+	 hold	屏幕跟随光标显示
+	keyboard.js : keydowm(event) : 方向下
+	   √	合法文本 spac hdda hdti imgi mati adoi vidi: 不作为 				
+	   √	edtx : 跳到再下一个文本行同样的文本偏移位置, 溢出跳到文本末, 最后文本行不作为
+	 hold	屏幕跟随光标显示
+修组合键操作操作 !!!	（hold）
+	ctrl + cv
+特殊操作:	（hold）
+	媒体元素上滑鼠,放大显示尺寸
+	页面上滑鼠, 显示已加载的起始行~结束行
+
+
+
+
+
+
+
+20180918
+完整修正媒体生成
+前提：
+	base:mousu(event) 已经讨论，
+	   √	点击标记色指定打开 contentbar
+	base.js : closeWin(e)	弹窗关闭 处理
+	   √	检查并关闭 媒体删除弹窗 
+	   √	检查并关闭 各类媒体生成弹窗
+	base.js : upmed(e) 
+	   √	打开指定媒体生成弹窗
+	base.js : mmedial(event) :
+	 doing	媒体生成弹窗 加载好的内容插入行
+	...
+继续学习css h3 
+	注意 width height 关于% 的层次关系, %是相对父元素的!!
+	默认margin-top/bottom > 0 ！
+	font-size:6vh;  //vh vw 是字体大小等于浏览器screen的 width height 的%比例例如 6%height
+	text-align: center; 只对父元素内的 内联元素和#text起作用，对于块元素不起作用
+		例如 文本 + <audio> <img> 会显示在一行并居中
+		     文本 + <div> + <p>  <div> 和 <p> 都会另一行显示
+		     所以 对于子块元素的居中使用 margin: 0 auto; //上下没有间距，左右间距一样
+	关于 form 和 input 的关系:
+		input是内联元素,是放入line上的内容. 而 font-size:6vh; line-height:6vh; 是描述 line 和文字的高度的
+		内联元素都可以被看成特殊的行文本文字,内联元素的位置 与 父元素的 font-size line-height 设置有紧密关系!!
+	就是说 font-size, line-height 可以控制内联元素的位置
+	注意使用了 display:inline-block；就是 块被当作了内联元素内容显示,
+		如果相邻的两个块元素设置成内联显示, 他们就相当于文本,他们之间隔着的空白字符会成为他们两的间距
+		所以要相邻的两个内联块元素没有间隔,要么之间没有空格转行tab字符,要么他们共同的父元素设置 font-size:0;
+
+继续学习js
+	iframe relaod:
+		window.location.reload(true); 
+			//如需刷新iframe，则只需把window替换为响应的iframe的name属性值或ID属性值
+			//  https://www.jb51.net/article/65013.htm  
+继续学习python:
+	python中是没有NULL的，取而代之的是None
+	python是把0，空字符串‘’和None都看作False，把其他数值和非空字符串都看作True
+		给一个文字串变量里不停加东西!!可以这样子:
+		str1 = ""
+		for f in files
+			str1 += ("helloworld" + str2 + f.name)
+这里修正的内容要一个个流程来记录：
+	上传插入音频
+	 writed	upmed 打开媒体生成行弹窗
+	 writed	修正了弹窗样式显示,
+	 writed	文件选择后, 触发onchange事件 choosed(e),把本地文件路径加载到弹窗 !!
+	 writed	upload 把数据上传服务器!!
+	 writed		服务端接收媒体文件 upload_media
+	 writed		form 通过 onsubmit 设置监测函数, afterupload
+	  hold			监视整个传输过程, 
+	 writed			直到传输完毕,返回 iframe数据, 并提取数据(远程文本路径)
+	 writed			覆盖本地文件路径,把远程文件路径加载到弹窗!!
+	 writed	ok : mmedial 把 音频数据插入行!!
+	 writed		关闭页面前,恢复素材添加页面!!
+	上传插入视频:
+	 writed	upmed 打开媒体生成行弹窗	
+	 writed	修正了弹窗样式显示,
+	 writed	文件选择后, 触发onchange事件 choosed(e),把本地文件路径加载到弹窗 !!
+	 writed	upload 把数据上传服务器!!
+	 writed		服务端接收媒体文件 upload_media
+	 writed		form 通过 onsubmit 设置监测函数, afterupload
+	  hold			监视整个传输过程, 
+	 writed			直到传输完毕,返回 iframe数据, 并提取数据(远程文本路径)
+	 writed			覆盖本地文件路径,把远程文件路径加载到弹窗!!	
+	 writed	ok : mmedial 把 音频数据插入行!!
+	 writed		关闭页面前,恢复素材添加页面!!
+	上传插入图片:
+	 writed	upmed 打开媒体生成行弹窗	
+	 writed	修正了弹窗样式显示,
+	 writed	文件选择后, 触发onchange事件 choosed(e),把本地文件路径加载到弹窗 !!
+	 writed		form 通过 onsubmit 设置监测函数, afterupload
+	  hold			监视整个传输过程, 
+	 writed			直到传输完毕,返回 iframe数据, 并提取数据(远程文本路径)
+	 writed			覆盖本地文件路径,把远程文件路径加载到弹窗!!
+	 writed	ok : mmedial 把 pic数据插入行!!
+	 writed		关闭页面前,恢复素材添加页面!!
+	上传公式:
+	   (jmeditor要点:jme.js onok 告诉如何获得和处理公式,不过是通过jqurey 方式!!)
+	 writed	upmed 打开媒体生成行弹窗	
+	 writed	修正了弹窗样式显示,
+	 writed		funcedit 写公式
+	 writed		funcview 预览公式
+	 writed		- + 添加/减少写好的公式, 可以点击高亮要加删的位置
+	 writed		ok 添加到行数据 !!  恢复默认页面(iframe使用reload)
+	上传主题:
+	 writed	修正主题行:
+	 writed		主题行 标题过长隐藏, 使用的 overflow:hidden; 还有 margin-bottom:-0.4em 微调位置
+	 writed	upmed 打开媒体生成行弹窗
+	 writed	修正了弹窗样式显示,
+	 writed		ok 添加到行数据 !!  恢复默认页面 (iframe可以使用reload)
+	 writed		主题优先处理 空白内容 按 ok 的 问题!! nullmed 处理
+	上传五线谱:
+	 writed	upmed 打开媒体生成行弹窗
+	 writed	修正了弹窗样式显示, 并排显示效果不理想,还是竖排比较好
+	 writed		有教程链接,
+	 writed		textarea 按键触发,自动更新乐谱
+	 writed		ok 添加到行数据 !!  恢复默认页面  textarea 的 value 值放文本
+	添加/缩减行:(当紧邻的行是媒体行时特别有用)
+	 writed	+ 后插入一行
+	 writed	- 删除当前一行,
+	 writed		删除文本行
+	 writed		删除媒体行 (借助 \b按键)
+			发现了一个大坑:
+`				//   sel一直存在的, 但sel的内容可以是null 
+				//   当js函数 中 sel.removeAllRanges() 只是把sel的内容设置null
+				//   当js函数完毕后 不会默认处理 sel
+				//   但是 js 不管是否执行了 e.preventDefault(), js完毕后, sel的内容都不会被另外处理
+				//   event 与 sel 是有区别的
+				//   特别注意 js 执行了 e.preventDefault(), js完毕后, 之前的获得的 event 没有释放
+				//   所以 可以简单重新 触发 同样的 js !!
+				//   比如 div id=klj 设置了一个keydown2,当在点击这个div时,sel指向当前div 并生成 event 
+				//   按键时会触发keydowm2,例如打开了一个窗口, 而且例如 keydown2 会 把sel指向其他div
+				//   如果 keydown2 执行了 e.preventDefault(), 则keydown2结束后, event斌没有自动消除,
+				//   下一刻,按键时,即使 sel不指向当前div, 由于event还在,所以会继续触发这个div 的 keydown2
+				//   再下一刻, 鼠标点击其他div 这时,keydown2 没有清除的event 会被 鼠标点击默认事件清除
+				//   并获得新的 sel 和 event!!!
+				//   页面上的逻辑解释 (糊涂做出来的逻辑,狗屎运)
+				//	注意 页面上 按键是 main 元素设置的 , 而其他弹窗独立于 main 元素,
+				//	点击 标记色时, 传递js 的是 main 的 event, 标记色打开了独立于 main 的 contentbar
+				//	标记色js 执行e.preventDefault(), 标记色js结束后 没有清 event
+				//	打开了 contentbar 后, 点击+ - 会传递  contentbar 的 event 到 lineadd-js
+				//	这时 lineadd-js 也 执行e.preventDefault() 没有清 event
+				//	lineadd-js结束后,     现在 event 存在 main-event 和 contentbar-event
+				//	这时,我们可以任意继续 触发 注册在 main 的js ,或则	注册在 contentbar 的js	
+				//	而不需要关注 sel 是否也指向同样的位置!!	
+	closewin 时恢复素材添加页面
+	 writed	所有媒体行窗口关闭时都处理
+	ok按键 nullmed 处理!!  (主要在 mmedial 添加处理)
+	 writed	pic aud pic 未选择,没有名字,未上传 nullmed	(与服务器设计相关,移植别的服务器请修改mmedial)
+	 writed	func 没有函数,函数没有名字,nullmed	//已解决 有bug  第二次无法upfuc 其实是 fucitem 问题, mmedial结束前 fucitem = null
+ 	 writed	tit  有空白框没填 nullmed		//已解决 有bug <nothing> 问题, 
+							//已解决 所有非edtx合法文本都有<nothing>问题, 修改 legalTEmpty 赋值解决
+							//已解决 tit独有的 bug ,date title 与 方向左右 与 <nothing>
+							//已解决 tit 去 \n\r
+	 writed	stv 文本没有内容 nullmed
+	媒体行 打开 同样的添加页面, 加载已有内容 修改 upmed
+	 writed	tit	
+	 writed	fuc
+	 writed	stv
+	skipped 做着做着才发现, 加载已有的 pic aud vid 没有意义!!因为,使用input type=file type=submit 的关系
+至此,实现所有基本编辑功能!!! (仅 firefox)
+后续发现bug
+	非edtx的合法文本去掉所有字符后再加上新字符也会变nothing,只有不清除所有字符的情况下才不会变
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20180929
+检修,并开始写 后端
+	已解决 tab bug: <div><br></div> 无法添加tab  已解决
+安装 pycharm
+	https://blog.csdn.net/qq_38683692/article/details/79868391
+由于是社区板,没有django套件,不过没关系,我就要它的编辑界面,其他都终端编译,
+在所在目录新建一个pycharm工程就可以链接整个文件夹,使用 pc 的文本编辑器方便编译,至于其他功能还是 终端实现
+取消自动保存,加星号标记 修改未保存
+
+设计一个`独立的页面使用
+	loadlast.html
+	base1.js	//拷贝复制base的内容,抽出window.onload
+	ready.js 	//专门处理 window.onload()
+		使用 $.get( "loadfile", fuction(data.status,xhr){readyloadfile(data.status,xhr)} )
+		成功回调函数需要 完全定义在 get 里, 然后调用外部函数 readyloadfile() 执行其他操作
+	urls.py  views.py 	//添加	loadlast.html , loadfile 请求处理!
+
+每个用户都有自己的数据表,所以,需要动态建表的能力!!
+https://blog.csdn.net/siete/article/details/6170755
+https://www.cnblogs.com/kimyeee/p/7241754.html
+https://blog.csdn.net/weixin_42134789/article/details/80194488
+
+django 添加 .py 文件,跟普通python添加文件一样不需要另外特别注册
+	for 文件夹 import py文件
+		py文件.函数()
+	for 文件夹.py文件 import 函数
+		函数()
+	for . import XXX    //从 当前文件位置 加入 XXX
+	
+	sql命令笔记:
+		删除table sql语句:
+			drop table web_kate_line;
+		查看表内容:
+			select * from web_kate_line
+
+关于django 动态建立数据表的 问题,非 通过manager migrate 这样静态指令初始化
+	经过痛苦的分析过程,高度怀疑是 BaseDatabaseSchemaEditor.create_model(model) 实现动态建表
+	但未知 model具体指什么,
+	从源码 发现 model 类似构造
+    class Migration(models.Model):
+        app = models.CharField(max_length=255)
+        name = models.CharField(max_length=255)
+        applied = models.DateTimeField(default=now)
+
+        class Meta:
+            apps = Apps()
+            app_label = "migrations"
+            db_table = "django_migrations"
+
+        def __str__(self):
+            return "Migration %s for %s" % (self.name, self.app) 
+	那么 在 models.py 构造的就是可以填入的 model
+	那么一个可用的 动态建表的代码像这样:
+		class kate_line(models.Model):
+		    name = models.CharField(max_length=255,verbose_name='kname')
+		    introduce = models.CharField(max_length=255,verbose_name='ksobject')
+		from django.db import connection
+		with connection.schema_editor() as editor:
+		    editor.create_model(kate_line)
+		// connection 与 BaseDatabaseSchemaEditor 的关联如上 connection.schema_editor()
+		//一定要用 with 因为涉及 __enter__ 和缺参数的问题
+		//python __enter__() 问题:https://www.cnblogs.com/DragonFire/p/6764066.html
+		//不能直接 connection.schema_editor().create_model(custom_model)
+	创建了数据表,添加数据内容:
+		base = kate_line(name = 'bilibiliai',
+		                 introduce = 'i still love u'
+		                 )
+		base.save()
+		// django 使用 ORM 的方式 访问 数据库
+		// 所以 可以这种方式 给 数据表 web_kate_line 写入数据 bilibiliai i still love u
+	另外脱离 models.py那种固定方式,可以使用参考dy_model_creat.py 的 create_model 这种自己建立一个class出来!! 
+建立一个保存按钮:页面右下角,鼠标移到显示,移开隐藏:
+	onmouseover="this.style.opacity=1;" onmouseout="this.style.opacity=0;"
+	点击,收集,并上存.json文件!!
+新的技术点,自建文件,并上传!!
+参考:
+	上传显示进度: https://newsn.net/say/jquery_ajax_upload.html
+	生成文件: https://www.jianshu.com/p/e7c7a8e4e9dc
+	参考:	https://blog.csdn.net/xcymorningsun/article/details/52949848
+		https://coderanch.com/t/549940/languages/generate-xml-file-submit-action
+		https://stackoverflow.com/questions/6066837/how-to-write-data-from-form-in-html-to-xml-with-javascript
+		https://blog.csdn.net/commandboy/article/details/55680654
+	frommdata: 重点有即时处理: https://www.javascripture.com/FormData
+	blob才是我需要的??:		https://robertnyman.com/2013/02/11/using-formdata-to-send-forms-with-xhr-as-keyvalue-pairs/
+	用blob发即时图片,django后端获得:	https://stackoverflow.com/questions/48097297/upload-an-image-blob-from-ajax-to-django
+	js blob 大文件分片传输:		https://www.jianshu.com/p/4d014a45aaf7
+	filereader 读取file但是读取的 都是从input choose 获得的文件:	 https://www.cnblogs.com/tianma3798/p/5836484.html
+	
+	非常直观填了新坑 !! https://blog.csdn.net/hsany330/article/details/52575459
+	不过还有 new file 的问题 active...
+新坑: File、FileReader、Blob、Fromdata 对象
+	一般 file对象是来自用户在一个 <input> 元素上选择文件后返回的FileList对象，也可以是来自由拖放操作生成的 DataTransfer对象
+		FileList {0: file, 1: file, length: 2 }
+			length: 2
+			0: file
+				lastModified: 130989987997
+				LastModifiedDate: Thu May 26 2011 23:59:00 GMT+0800
+				name: "aa.jpg" 
+				size: 902047
+				type: "image/jpeg"
+				webkitRelativePath: ""
+				__proto__: File
+			1: file
+			__proto__: FileList
+	FileReader 对 file 对象 blob 对象的 处理过程对象 例子
+		var reader = new FileReader();
+		reader.onload = function() {
+		    console.log(this.result);
+		}
+		reader.readAsDataURL(file);	//这里是 通过FileReader 读出一个 file 对象的 DataURL
+	dataurl: 一般用于把小文件 对应小的 file 对象 转换成 包含数据信息的 url 跟普通的url一样的使用方式:
+		DataURI 一般是把 file对象 编译成 base64 斌码 的 一条长字符串
+		格式为:		
+		data:[<MIME type>][;charset=<charset>][;base64],<encoded data>	
+		对应例子:
+		<img class='obj' src="data:[<MIME type>][;charset=<charset>][;base64],<encoded data>"
+	URL:一般是文件的位置,但如果文件读入到 file 对象里, 
+		可以通过 URL.createObjectURL() 对 file对象里的文件建立一个临时的 url
+		img.src = window.URL.createObjectURL(file);
+  		<img class="obj" src="blob:null/34c9b3b5-9ca9-4b18-9798-xxxxxx">
+	blob: blob 跟 file 对象是一样的, 不过 file对象一般是 通过 <input>选入的,但是 blob是凭空创建的
+		var arr = ['<h1>hello world</h1>'];
+		var blob = new Blob(arr, { "type" : "text/xml" }); // the blob
+		slice方法生成blob对象
+			var newBlob = Blob.slice(startingBytenum, endindBytenum);
+		DataURI（base64）对象转blob对象（二进制）
+			function dataURItoBlob(dataURI) { 
+				var byteString = atob(dataURI.split(',')[1]); 
+				var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]; 
+				var ab = new ArrayBuffer(byteString.length); 
+				var ia = new Uint8Array(ab); 
+				for (var i = 0; i < byteString.length; i++) { 
+					ia[i] = byteString.charCodeAt(i); 
+				} 
+				return new Blob([ab], {type: mimeString}); 
+			} 
+			// atob() 将base64解码 , btoa() 将字符串转码为base64 
+			var str = 'javascript'; 
+			window.btoa(str) 		//转码结果 "amF2YXNjcmlwdA==" 
+			window.atob("amF2YXNjcmlwdA==") //解码结果 "javascript"
+	FormData 用于 ajax 或者 XMLHttpRequest 上传数据到服务器!!
+		一般可以值直接把 <form> 内容在初始化时放入
+			<form id="uploadForm" enctype="multipart/form-data"> 
+				<input id="file" type="file" name="file"/> 
+				<button id="upload" type="button">upload</button> 
+			</form>
+			var fdata = new FormData($('#uploadForm')[0]);
+		也可以把数据一条一条放入, 通过 append()
+			var fd = new FormData(); // 构造FromData对象
+			var blob = dataURItoBlob(dataURI); // 将base64转为二进制blob对象
+			fd.append('file', blob);
+			append 可以加载 file blob 对象,还可以加载一般表单项
+		一般 FormData  例子:
+			<form id='test-form'>
+			  Input1: <input name='input1'><br>
+			  Input2: <input name='input2'><br>
+			  <input type='submit'>
+			</form>
+			..
+			  testForm.onsubmit = function(event) {
+			    event.preventDefault();
+			
+			    var request = new XMLHttpRequest();
+			    // POST to httpbin which returns the POST data as JSON
+			    request.open('POST', 'https://httpbin.org/post', /* async = */ false);
+			
+			    var formData = new FormData(document.getElementById('test-form')); //添加了 input1 input2 表项
+ 			
+			    formData.append('appendedFile1', new Blob(['foo']));	// 添加了 blob 对象
+			    formData.append('appendedFile2', new Blob(['bar']), 'bar.txt'); // 添加了 blob 对象
+    			    formData.append('appended1', 'appended value');		// 添加了 一般表单项
+			
+			    request.send(formData);
+			
+			    console.log(request.response);
+			  }
+			formData 内容: 这个表内容格式并不正确 已经误导我了!!1
+			{
+			  "args": {}, 
+			  "data": "", 
+			  "files": {			// file blob 对象 会加载到 flies 数组
+			    "appendedFile1": "foo",
+			    "appendedFile2": "bar"
+			  }, 
+			  "form": {			// 普通表项会加载到 from 数组
+			    "appended1": "appended value", 
+			    "input1": "dd", 
+			    "input2": "ddd"
+			  }, 
+			  "headers": {
+			    "Accept": "*/*", 
+			    "Accept-Encoding": "gzip, deflate, br", 
+			    "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2", 
+			    "Connection": "close", 
+			    "Content-Length": "648", 
+			    "Content-Type": "multipart/form-data; boundary=---------------------------56193008011516604521985403512", 
+			    "Host": "httpbin.org", 
+			    "Origin": "https://www.javascripture.com", 
+			    "Referer": "https://www.javascripture.com/FormData", 
+			    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:62.0) Gecko/20100101 Firefox/62.0"
+			  }, 
+			  "json": null, 
+			  "origin": "149.28.122.195", 
+			  "url": "https://httpbin.org/post"
+			}
+	ajax 与 XMLHttpRequest , ajax 是 jqurey 的方式  XMLHttpRequest是 标准 DOM
+		ajax: 例子1
+			var fd = new FormData(); // 构造FromData对象
+			var blob = dataURItoBlob(dataURI); // 将base64转为二进制blob对象
+			fd.append('file', blob);
+			$.ajax({ 
+				type: 'POST', 
+				url: '/upload', 
+				data: fd, 
+				processData: false, // 不会将 data 参数序列化字符串,必须false 
+				contentType: false, // 根据表单 input 提交的数据使用其默认的 contentType，必须false 
+				xhr: function() { 
+					var xhr = new window.XMLHttpRequest(); 
+					xhr.upload.addEventListener("progress", function(evt) { 
+						if (evt.lengthComputable) { 
+							var percentComplete = evt.loaded / evt.total; 
+							console.log('进度', percentComplete); 
+						} 
+					}, false); 
+					return xhr; 
+				} 
+			}).success(function (res) { 
+				// 拿到提交的结果 
+			}).error(function (err) { 
+				console.error(err); 
+			});
+		ajax: 例子2
+			$.ajax({ 
+				url: '/upload', 
+				type: 'POST', 
+				cache: false, 
+				data: new FormData($('#uploadForm')[0]), 
+				processData: false, 
+				contentType: false 
+			}).done(function(res) { 
+			}).fail(function(res) {
+			});
+		XMLHttpRequest 例子1
+			    var request = new XMLHttpRequest();
+			    // POST to httpbin which returns the POST data as JSON
+			    request.open('POST', 'https://httpbin.org/post', /* async = */ false);
+			    var formData = new FormData(document.getElementById('test-form'));		
+			    request.send(formData);
+	file对象 还有一种创建,非 input 输入的方式:
+		var objFile=new File(["First Line Text","Second Line Text"],FileName);
+		第一个参数是一个字符串数组。数组中的每一个元素对应着文件中一行的内容。
+		第二个参数就是文件名字符串。
+		var objFile=new File(["First Line Text","Second Line Text"],FileName,{type: "text/plain", lastModified: date});
+		如果是用三个参数的形式
+		第三个参数可以设定一些文件的属性，比如文件的MIME，最后更新时间等。 
+	js 的 file 对象相关 还有一个 ActiveXObject 不过是微软 activeX 内容,所以不考虑!!
+		但是这个涉及到完整的浏览器操作本地文件的过程:
+		参考:http://www.cnblogs.com/ayan/archive/2013/04/22/3036072.html
+实验: 
+	前端 使用 fd.append('file100',savlins) 或多次使用 append file对象 或者字符窜 到 file100
+	后端 使用 files = request.FILES.getlist('file100') 或者 file_obj = request.FILES.get('file100')
+	才能 获得 挂在 file100 里的 文件对象 数据, 
+	也就是 file100 是 一个数组, 而不是 key/value 格式的 key???
+	根据补充
+	//前端js 查看 formdata 内容的 方式
+	    for (var pair of fd.entries()) {
+	        console.log(pair[0]+ ', ' + pair[1]);
+	    }
+FormData补充:
+	FormData类型其实是在XMLHttpRequest 2级定义的，它是为序列化表以及创建与表单格式相同的数据（当然是用于XHR传输）提供便利。
+	构造函数
+		创建一个空对象实例
+			var formData = new FormData();
+			此时可以调用append()方法来添加数据
+		使用已有的表单来初始化一个对象实例
+			假如现在页面已经有一个表单
+			<form id="myForm" action="" method="post">
+			    <input type="text" name="name">名字
+			    <input type="password" name="psw">密码
+			    <input type="submit" value="提交">
+			</form>
+			我们可以使用这个表单元素作为初始化参数，来实例化一个formData对象
+			// 获取页面已有的一个form表单
+			var form = document.getElementById("myForm");
+			// 用表单来初始化
+			var formData = new FormData(form);
+			// 我们可以根据name来访问表单中的字段
+			var name = formData.get("name"); // 获取名字
+			var psw = formData.get("psw"); // 获取密码
+			// 当然也可以在此基础上，添加其他数据
+			formData.append("token","kshdfiwi3rh");
+	操作方法   首先，我们要明确formData里面存储的数据形式，一对key/value组成一条数据，
+		key是唯一的，一个key可能对应多个value。如果是使用表单初始化，每一个表单字段对应一条数据，
+		它们的HTML name属性即为key值，它们value属性对应value值。
+			key value
+			k1 	[v1,v2,v3]
+			k2 	v4
+		获取值
+			我们可以通过get(key)/getAll(key)来获取对应的value，
+			formData.get("name"); // 获取key为name的第一个值
+			formData.getall("name"); // 返回一个数组，获取key为name的所有值
+		添加数据
+			我们可以通过append(key, value)来添加数据，如果指定的key不存在则会新增一条数据，如果key存在，则添加到数据的末尾
+			formData.append("k1", "v1");
+			formData.append("k1", "v2");
+			formData.append("k1", "v1");
+			formData.get("k1"); // "v1"
+			formData.getAll("k1"); // ["v1","v2","v1"]
+		设置修改数据
+			我们可以通过set(key, value)来设置修改数据，如果指定的key不存在则会新增一条，如果存在，则会修改对应的value值。
+			formData.append("k1", "v1");
+			formData.set("k1", "1");
+			formData.getAll("k1"); // ["1"]
+		判断是否该数据
+			我们可以通过has(key)来判断是否对应的key值
+			formData.append("k1", "v1");
+			formData.append("k2",null);		
+			formData.has("k1"); 		// true
+			formData.has("k2"); 		// true
+			formData.has("k3"); 		// false
+		删除数据
+			通过delete(key)，来删除数据
+			formData.append("k1", "v1");
+			formData.append("k1", "v2");
+			formData.append("k1", "v1");
+			formData.delete("k1");			
+			formData.getAll("k1"); 		// []
+		遍历
+			我们可以通过entries()来获取一个迭代器，然后遍历所有的数据，
+			formData.append("k1", "v1");
+			formData.append("k1", "v2");
+			formData.append("k2", "v1");
+			var i = formData.entries();
+			i.next(); // {done:false, value:["k1", "v1"]}
+			i.next(); // {done:false, value:["k1", "v2"]}
+			i.next(); // {done:false, value:["k2", "v1"]}
+			i.next(); // {done:true, value:undefined}
+			每调用一次next()返回一条数据，数据的顺序由添加的顺序决定
+			返回的是一个对象，当其done属性为true时，说明已经遍历完所有的数据，这个也可以作为判断的依据
+			返回的对象的value属性以数组形式存储了一对key/value，数组下标0为key，下标1为value，
+			如果一个key值对应多个value，会变成多对key/value返回
+		我们也可以通过values()方法只获取value值
+			formData.append("k1", "v1");
+			formData.append("k1", "v2");
+			formData.append("k2", "v1");	
+			var i = formData.entries();
+			i.next(); // {done:false, value:"v1"}
+			i.next(); // {done:fase, value:"v2"}
+			i.next(); // {done:fase, value:"v1"}
+			i.next(); // {done:true, value:undefined}
+		发送数据
+			我们可以通过xhr来发送数据
+			var xhr = new XMLHttpRequest();
+			xhr.open("post","login");
+			xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+			xhr.send(formData);
+			这种方式可以来实现文件的异步上传。
+实验: 
+	前端 使用 fd.append('file100',savlins) 或多次使用 append file对象 或者字符窜 到 file100
+	后端 使用 files = request.FILES.getlist('file100') 或者 file_obj = request.FILES.get('file100')
+	才能 获得 挂在 file100 里的 文件对象 数据, 
+	也就是 file100 是 一个数组, 而不是 key/value 格式的 key???
+	根据formdata补充 知道: 
+	也就是 file100 是key 但是一个key可以对应很多 value, 而value的类型可以是单纯字符串,可以是file对象 等等 !!
+	//前端js 查看 formdata 内容的 方式1 
+	    for (var pair of fd.entries()) {
+	        console.log(pair[0]+ ', ' + pair[1]);
+	    }
+	//查看 formdata 内容的 方式2
+	    var i = fd.entries()
+	     console.log(i.next())
+	     console.log(i.next())
+	     console.log(i.next())
+	     console.log(i.next())
 
 
 ?????????????????????????????????????
+工作小结:
+	写出了html范本,基本构建富文本内容方式(未完善),(test1.html, base.js, body.css)
+	第一版,纯文本 test1.js 搭配 test1.html 这句
+<body>
+	<div Id="editor" contenteditable="true" onKeypress="ifenter(event)" onKeydown="ifdown(event)" onKeyUp="ifup(event)"><div>1:</div></div>
+</body>
+	第二版,加入媒体行!!
+	后来发现超过1000行,处理速度就开始卡了, 先尝试优化,不行的话,就使用框选编译方式,
+	开始设计数据库和表单!!!
+		发现还要添加的内容:
+		spac 禁止中文输入问题!!
+		关于上传文件的规范,要筛选处理,涉及安全,不能什么文件都能传
+	第三版,(未开始)
+	所谓框选:
+			--------------
+			.            .
+			.            .
+			|            |
+			|            |
+			|            |
+		      ------------------
+		      |                |
+		      |                |
+		      |                |
+		      |                |
+		      |                |
+		      |                |
+		      |                |
+		      ------------------
+			|            |
+			|            |
+			|            |
+			|            |
+			|            |
+			|            |
+			|            |
+			.            .
+			.            .
+			--------------
+
+
+设计:
 1,每行都有行号,行号前有标记色 
 	每一行前的标记色,新建, 修改, 换行! 无操作, 某行内容既换行,又修改时,设为修改色 
 	行号标记色点击可以选择该行的编辑内容,即行内容变换填充!!
-2,回车, 退格键,方向键, 粘贴组合键, tab键, 方向左键 
-	基本实现了回车,tab按键,退格键,方向左键,
-	但是tab的显示距离问题现在还无法很好实现字符制表
-	回车要自动添加新行号,转行,回车后字符串的处理
-	现有行,要插入数据并回车,后面的数据全部 换行
-	移动和退格都不能退到行号处!!
+	前端显示: cnteid 和 oid 的分配就是不用在前端做了,放到后端 !!
+	orgl : transparency cnteid:0(空行)/cnteid:xx(非空行), oid:yy (>=0)
+	newl : yellow cnteid:0, oid:0
+	svdl : green cnteid:0(空行)/cnteid:xx(非空行), oid:yy  (>=0)
+	wrpl : orange cnteid:0(空行)/cnteid:xx(非空行), oid:yy (>=0)
+	fixl : orange cnteid:0(空行)/cnteid:xx(非空行), oid:yy (>=0)
+2,回车, 退格键,方向键, 粘贴组合键, tab键, 方向左键, 还有鼠标点击  
+	回车要自动添加新行号,转行,回车后字符串处理, 修改标记色和id,
+		注意多媒体行无法使用回车, 相邻多媒体行中间插入行操作放入cntebar里
+	tab按键:当在一个div里只有文字才能完美实现距离问题,和缩进!!
+	退格键:不能退到行号处!!
+	方向键, 上下左右都要处理!!(只能捕捉并跳到 edtx 区!!,禁止出现在其他区域!!)
 3,公式编写,使用的一个开源库: JMEditor: http://www.html580.com/11952
 4,五线谱
 	使用 vextab 掌握 多段谱,而不是一段谱
@@ -2211,11 +3445,15 @@ div 居中与div内容居中: 更多扩展: https://www.thinkcss.com/jiqiao/1460
 		1000是长度
 		{scale: 0.8} 是 高度 0 ~ 无穷
 
-
+?? 多媒体行的间隔问题处理, spec 除了只允许输入空格,允许左右方向键 和上下方向按键 但是中文输入法可以突破输入的问题(未解决)
+	
 ??,定时 触发事件!!! 还有流文件上传事件!! 浮动按钮 ,	
 
 ??,输入日期格式 例如 20180819 ,自动成为标题数据.可以手动改回文本数据
 
+??,批量 定位 增删内容
+	保守加载的内容有10万行内容,浏览器压力会非常大,所以,应该提供批量功能
+	另外,提供右下角统计数据 滑动鼠标时显示已经加载的 行数据数 起始行-结束行:一共行数
 ??,页面
 	用户主页是编辑页面
 	搜索主页可调,一般是详细博客或者关键字博客嵌套页面
@@ -2225,22 +3463,33 @@ div 居中与div内容居中: 更多扩展: https://www.thinkcss.com/jiqiao/1460
 3,行号数据表 与 数据实体数据表
 	具体 数据条放在独立的数据表里, 每条数据条都有独立的序号 conteid
 	行号 放在独立的数据表里, 行号数据保存 对应的conteid 指向具体数据
-	流媒体数据 放在另外独立的数据表里. 提供url访问
+	流媒体数据 放在另外独立的数据表里. 提供url访问 当
+		流媒体数据先上传到数据库,生成链接供行号指向,没有行号指向的流媒体文件,一个月后会被物理清除,不可修复!! 
 	数据条类型:
-		空数据, conteid 指定为0 (其他每行用户数据各占一个独立的conteid)
-		另外前 256 个 conteid 保留 为各种衍生功能标记做预留,例如识别代码段实时调试
-		文本数据,  
-		图片数据, 可以多个 ( 图片url + 图片加密编码字符串 + 缩略图)
-		音频数据, 单个 (音频url + 音频加密编码字符串 + 音频片段/降码音频)
-		视频数据, 单个 (视频url + 视频加密编码字符串 + 视频裁剪缩略采样)
-		五线谱: 其实是纯文本,就是 vextab 语言纯文本
-	 	主题数据, 文本(推荐时间日期 + 简单标题) + 星号(收藏数/注水数) + 举报按钮
+		空数据(特殊的文本数据 cntety:1), cnteid 指定为0 (其他每行用户数据各占一个独立的cnteid)
+		另外前 256 个 cnteid 保留 为各种衍生功能标记做预留,例如识别代码段实时调试
+		文本数据, cntety:1 
+		图片数据, cntety:2 可以多个 ( 图片url + 图片加密编码字符串 + 缩略图 + 间隔数) 多个之间可以添加空格手动控制间隔
+		数学公式, cntety:3 可以多个 ( 文本数据 + 间隔数 )  多个之间可以添加空格手动控制间隔 
+		音频数据, cntety:4 单个 (音频url + 音频加密编码字符串 + 音频片段/降码音频)
+		视频数据, cntety:5 单个 (视频url + 视频加密编码字符串 + 视频裁剪缩略采样)
+		五线谱,   cntety:6 其实是纯文本,就是 vextab 语言纯文本
+	 	主题,     cntety:7 数据(推荐时间日期 + 简单标题 + 收藏数/注水数 间隔数 )
+			前端显示 推荐时间日期 + 间隔 + 简单标题 + 收藏数/注水数星号(收藏数/注水数) + 扩展按钮
+		(扩展文本数据,可以标记超链接和 v2.0再考虑如何改,)
+	mmedl:生成数据行
+		如果该行为 newl, 则 更改时  cnteid 不改
+		如果 其他xxxl 行数据变其他类型数据时 cnteid 设新id
+		这种修改机制会 很容易 浪费许多孤立cnteid 即么中间的一些cnteid没有内容,没有行号指向
+		所以(后期要做一个回收表!!) 
 ??,时间信任保存
 	所有流媒体内容 经过sha加密  行数据内容是 缩略图/音频片段 + 链接 + 256位加密码,
 		其中   缩略图/音频片段 + 256位加密码, 计入保存时间加密, 链接不计入!!
 	文本类内容(包括五线谱编码) 经过sha加密  行数据内容就是 文本内容!! 直接计入保存时间加密,
 	每行内容都有最后的修改日期!! 不过这条信息只有作者可看,运营方可看.
 	依照政策删除敏感内容后造成 保存链断裂 导致的 发布事件时间信任度问题
+	五线谱内容可以显示每次更新的内容!!状态!!
+	先不考虑完美的 保存链算法, 先简单实现产品,所以重点先在于确定哪些内容才是需要写进数据库的内容!!!!
 ??,收藏推广
 	可以关注别人,不设立粉丝
 	星号是 实名收藏为收藏数, 匿名收藏为注水数,注水数每季度清零一清,
@@ -2253,14 +3502,113 @@ div 居中与div内容居中: 更多扩展: https://www.thinkcss.com/jiqiao/1460
 		这些删除涉及真正的物理删除, 会造成其他用户的时间信任保存链断裂
 		所以运营方应该设计并仅运营方拥有的一个特殊的亢余数据库来修补 其他用户的时间信任保存链断裂的 问题!
 		当亢余数据库非常大,必须做修正工作,记录每一位涉及的用户!! 给出他们一个重新编排时间信任保存链的权利
-??,首先显示做一个网页模板分析 
-	<div conteid=666 contety=1 ><span style=background:#44ffff;> </span>00045:hello world<div>
-	conteid 内容id contety 行内容类型 <span>是开头的标记色
+??,首先做一个网页模板方案一:
+	/////////////////////////////////////////文本
+	<div class="edit" cnteid="0" cntety="1"><span class="newl">&nbsp;</span><span class="lid" oid="0">1087:</span><div class="edtx">	我有一只船<br></div></div>
+	/////////////////////////////////////////标题
+	<div class="hdty" cnteid="0" cntety="7"><span class="newl">&nbsp;</span><span class="lid" oid="0" style="font-size:0.84em; font-weight:normal;">1085:</span>
+		<div class="hdda">20181001</div>
+		<div class="spac">          </div>
+		<div class="hdti">今天我背了一首诗</div>
+		<div class="hdcr" contenteditable="false">
+			<div class="rlik">
+				<svg class="hdcr-svg" viewBox="0 0 14 16" version="1.1" width="60px" height="60px" aria-hidden="true"><path fill-rule="evenodd" style="fill:yellow;stroke:white;" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74L14 6z"></path></svg>			
+			</div>
+			<div class="rlikn">0</div>
+			<div class="flik">
+				<svg class="hdcr-svg" viewBox="0 0 14 16" version="1.1" width="60px" height="60px" aria-hidden="true"><path fill-rule="evenodd" style="fill:grey;stroke:white;" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74L14 6z"></path></svg>
+			</div>
+			<div class="flikn">0</div>
+			<div class="othrc">
+				<svg class="hdcr-svg" viewBox="0 0 12 16" version="1.1" width="60px" height="60px" aria-hidden="true"><path fill-rule="evenodd" style="fill:#aaa;stroke:white;" d="M12 9H7v5H5V9H0V7h5V2h2v5h5v2z"></path></svg>		
+			</div>
+		</div>
+	</div>
+	/////////////////////////////////////////图片
+	<div class="imgt" cnteid="432" cntety="2" contenteditable="false"><span class="wrpl">&nbsp;</span><span class="lid" oid="16">1064:</span>
+		<div class="imgd">
+			<div class="spac" contenteditable="true">          </div>
+			<div class="igdd">
+				<img class="imgs" src="/static/img/eye_expression.gif" alt="pic error">
+				<div class="imgi" contenteditable="true">sharp
+eye</div>
+			</div>
+			<div class="spac" contenteditable="true">          </div>
+			<div class="igdd">
+				<img class="imgs" src="/static/img/eye_expression.gif" alt="pic error">
+				<div class="imgi" contenteditable="true">sharp
+eye</div>
+			</div>
+			<div class="spac" contenteditable="true">          </div>
+			<div class="igdd">
+				<img class="imgs" src="/static/img/child.gif" alt="pic error">
+				<div class="imgi" contenteditable="true">child</div>
+			</div>
+		</div>
+	</div>
+	/////////////////////////////////////////视频
+	<div class="vido" cnteid="600" cntety="5" contenteditable="false"><span class="wrpl">&nbsp;</span><span class="lid" oid="19">1070:</span>
+		<div class="vidd">
+			<video controls="" width="320" height="240">
+				<source src="/static/video/movie.mp4" type="video/mp4">
+			</video>
+			<div class="vidi" contenteditable="true">amimal</div>		
+		</div>
+	</div>
+	/////////////////////////////////////////音频
+	<div class="adio" cnteid="0" cntety="4" contenteditable="false"><span class="newl">&nbsp;</span><span class="lid" oid="0">1068:</span>
+		<div class="adod">
+			<audio src="/static/music/yuxuanji.mp3" controls=""></audio>
+			<div class="adoi" contenteditable="true">Hanser-鱼玄机</div>		
+		</div>
+	</div>
+	/////////////////////////////////////////乐谱
+	<div class="stav" cnteid="694" cntety="6" contenteditable="false"><span class="wrpl">&nbsp;</span><span class="lid" oid="23">1074:</span>
+		<div class="stad">
+			<div style="white-space:pre; display:none;">
+<textarea class="vex-tab-editor">options space=20 player=true  tempo=80
+tabstave
+  notation=true
+  key=A time=4/4
+
+  notes :q =|: (5/2.5/3.7/4) :8 7-5h6/3 ^3^ 5h6-7/5 ^3^ :q 7V/4 |
+  notes :8 t12p7/4 s5s3/4 :8 3s:16:5-7/5 :h p5/4
+  text :w, |#segno, ,|, :hd, , #tr
+
+</textarea>
+        			<p id="errorTip" class="text-danger"></p>
+			</div>
+			<div class="spac" contenteditable="true">          </div>
+			<div>
+				<div class="tab-preview-container" style="margin-left:50px;">
+					<canvas class="tabPreviewer"></canvas>
+				</div>
+			</div>
+		</div>
+	</div>
+	/////////////////////////////////////////公式
+	<div class="math" cnteid="683" cntety="3" contenteditable="false"><span class="fixl">&nbsp;</span><span class="lid" oid="18">1066:</span>
+		<div class="matd">
+			<div class="spac" contenteditable="true">          </div>
+			<div class="mtdd">
+				<p><span class="mathquill-rendered-math" style="font-size:80px;"><span class="textarea"><textarea data-cke-editable="1" contenteditable="false"></textarea></span><big mathquill-command-id="43">∫</big><sub class="non-leaf limit" mathquill-command-id="45" mathquill-block-id="46" style="left: -0.25em;"><var mathquill-command-id="51">x</var><span mathquill-command-id="52" class="binary-operator">+</span><var mathquill-command-id="53">y</var></sub><sup class="non-leaf limit" mathquill-command-id="48" mathquill-block-id="49" style="left: -1.8125em; margin-right: -0.775em;"><var mathquill-command-id="55">x</var><sup class="non-leaf" mathquill-command-id="57" mathquill-block-id="58"><span mathquill-command-id="60">2</span></sup></sup><span class="fraction non-leaf" mathquill-command-id="61"><span class="numerator" mathquill-block-id="62"><var mathquill-command-id="73">y</var><sup class="non-leaf" mathquill-command-id="68" mathquill-block-id="69"><span mathquill-command-id="74">4</span><span mathquill-command-id="75" class="binary-operator">+</span><var mathquill-command-id="76">x</var></sup></span><span class="denominator" mathquill-block-id="63"><var mathquill-command-id="83">x</var><sub class="non-leaf" mathquill-command-id="85" mathquill-block-id="86"><var mathquill-command-id="89">i</var></sub></span><span style="display:inline-block;width:0">&nbsp;</span></span></span><span>&nbsp;</span><br></p>
+				<div class="mati" contenteditable="true">function A</div>
+			</div>
+			<div class="spac" contenteditable="true">          </div>
+			<div class="mtdd">
+				<p><span class="mathquill-rendered-math" style="font-size:80px;"><span class="textarea"><textarea data-cke-editable="1" contenteditable="false"></textarea></span><sup class="nthroot non-leaf" mathquill-command-id="90" mathquill-block-id="91"><sup class="non-leaf" mathquill-command-id="127" mathquill-block-id="128"><var mathquill-command-id="135">x</var></sup><span mathquill-command-id="130">/</span><sub class="non-leaf" mathquill-command-id="132" mathquill-block-id="133"><var mathquill-command-id="136">y</var></sub></sup><span class="scaled" mathquill-command-id="90"><span class="sqrt-prefix scaled" style="transform: scale(1, 2.4);">√</span><span class="sqrt-stem non-leaf" mathquill-block-id="92"><span class="fraction non-leaf" mathquill-command-id="108"><span class="numerator" mathquill-block-id="109"><var mathquill-command-id="117">y</var><sup class="non-leaf" mathquill-command-id="114" mathquill-block-id="115"><var mathquill-command-id="118">x</var></sup></span><span class="denominator" mathquill-block-id="110"><var mathquill-command-id="125">z</var><sup class="non-leaf" mathquill-command-id="122" mathquill-block-id="123"><var mathquill-command-id="126">y</var></sup></span><span style="display:inline-block;width:0">&nbsp;</span></span></span></span></span><span>&nbsp;</span><br></p>
+				<div class="mati" contenteditable="true">function B</div>		
+			</div>
+		</div>	
+	</div>
+
 ??,有待加入的功能:
 	代码高亮识别!!(以后再说!!)
 
 
 
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 开发_web_log 重要内容,因为涉及多机上传问题!!,所以未充分测试前不贸然实施
 full_stack_note 暂时 通过 hp机 备份到 selfweb 项目上去
 20180726
@@ -2275,7 +3623,7 @@ full_stack_note 暂时 通过 hp机 备份到 selfweb 项目上去
 不过注意!!!!!!!!!!
 	注意 由于并没有完全尝试用两部电脑交替上传文件,
 	因为,Apc 上传后得到的新节点, Bpc并不知道, bpc又上传时,因为不知情Apc的修改的内容而导致冲突!!!
-	所以,只能在 不重要的 selfweb 项目上做好充分的交替上传测试,财允许其他大型项目的实施
+	所以,只能在 不重要的 selfweb 项目上做好充分的交替上传测试,才允许其他大型项目的实施
 
 
 

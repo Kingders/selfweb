@@ -3032,6 +3032,7 @@ django 添加 .py 文件,跟普通python添加文件一样不需要另外特别�
 	sql命令笔记:
 		删除table sql语句:
 			drop table web_kate_line;
+			删表原则,先删子表,再母表
 		查看表内容:
 			select * from web_kate_line
 
@@ -3374,6 +3375,893 @@ FormData补充:
 	     console.log(i.next())
 	     console.log(i.next())
 	     console.log(i.next())
+关于python读写文件 和 按行读取文件:
+	按行读取文件参考: https://www.cnblogs.com/xuxn/archive/2011/07/27/read-a-file-with-python.html 
+	    if request.method == "POST":  # 请求方法为POST时，进行处理
+		//获取文件
+	        file_obj = request.FILES.get('file100')
+	        import os
+	        f = open(os.path.join("./", file_obj.name), 'wb+')
+	        print(file_obj, type(file_obj))
+	        for chunk in file_obj.chunks():
+	            f.write(chunk)
+	        f.close()
+		//按行读取文件
+	        file = open(os.path.join("./", file_obj.name), 'r')
+	        while 1:
+	            line = file.readline()
+	            if not line:
+	                break
+	            print(line)  # do something
+	        file.close()
+
+
+接下来就是数据库
+	详细参考: https://www.cnblogs.com/ccorz/p/5845711.html
+		http://www.liujiangblog.com/course/django/100
+		同步现存,增删查改: https://blog.csdn.net/vainfanfan/article/details/80556429?utm_source=blogxgwz0
+		系统 django https://code.ziqiangxuetang.com/django/django-queryset-api.html
+		重点参考!!
+		https://www.cnblogs.com/pythonxiaohu/p/5807059.html
+		https://www.cnblogs.com/pythonxiaohu/p/5814247.html
+详细学习 models class
+	models.AutoField　　自增列 = int(11)
+		如果没有的话，默认会生成一个名称为 id 的列，
+		如果要显示的自定义一个自增列，必须将给列设置为主键 primary_key=True。 models.AutoField(primary_key=True)
+	models.CharField　　字符串字段 
+		必须 max_length 参数 CharField(max_length=32)
+	models.BooleanField　　布尔类型=tinyint(1)
+　　		不能为空，Blank=True 
+	models.ComaSeparatedIntegerField　　用逗号分割的数字=varchar
+		继承CharField，所以必须 max_lenght参数	例如"12,2,3,4,5"
+	models.DateField　　日期类型 date
+		对于参数，auto_now = True 则每次更新都会更新这个时间；auto_now_add 则只是第一次创建添加，之后的更新不再改变。
+	models.DateTimeField　　日期类型 datetime
+		同DateField的参数
+	models.Decimal　　十进制小数类型 = decimal
+		必须指定整数位max_digits和小数位decimal_places
+	models.EmailField　　字符串类型（正则表达式邮箱） =varchar
+		对字符串进行正则表达式
+	models.FloatField　　浮点类型 = double
+	models.IntegerField　　整形
+	models.BigIntegerField　　长整形
+		　　integer_field_ranges = {
+		　　　　'SmallIntegerField': (-32768, 32767),
+		　　　　'IntegerField': (-2147483648, 2147483647),
+		　　　　'BigIntegerField': (-9223372036854775808, 9223372036854775807),
+		　　　　'PositiveSmallIntegerField': (0, 32767),
+		　　　　'PositiveIntegerField': (0, 2147483647),
+		　　}
+	models.IPAddressField　　字符串类型（ip4正则表达式）
+	models.GenericIPAddressField　　字符串类型（ip4和ip6是可选的）
+		参数protocol可以是：both、ipv4、ipv6
+		验证时，会根据设置报错
+	models.NullBooleanField　　允许为空的布尔类型
+	models.PositiveIntegerFiel　　正Integer
+	models.PositiveSmallIntegerField　　正smallInteger
+	models.SlugField　　减号、下划线、字母、数字
+	models.SmallIntegerField　　数字
+		数据库中的字段有：tinyint、smallint、int、bigint
+	models.TextField　　字符串=longtext
+	models.TimeField　　时间 HH:MM[:ss[.uuuuuu]]
+	models.URLField　　字符串，地址正则表达式
+	models.BinaryField　　二进制
+	models.ImageField   图片
+	models.FilePathField 文件
+连表结构
+	一对多:models.ForeignKey(其他表)
+	多对多:models.ManyToManyField(其他表)
+	一对一:models.ManyToManyField(其他表)
+具体操作:建表 读写 修改 使用 连表!!
+懂得一个后端调试手段,不需要打开服务器,直接在 终端调试!! python manage.py shell
+django mysql 储存 中文 编码问题:
+	(1366, "Incorrect string value: '\\xE7\\xAC\\xAC\\xE4\\xB8\\x80...' for column 'cnte' at row 1")
+	再 mysql 里 执行命令!!!
+	ALTER TABLE web_content MODIFY COLUMN cnte VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
+	参考: https://my.oschina.net/airship/blog/777146
+建表:
+	    from django.db import connection
+	    with connection.schema_editor() as editor:
+	        editor.create_model(Content) 	//Content即models.py里定义的,或自己函数定义的class
+直接记录连表操作:
+区分 子表 母表:
+	class Liker (models.Model):
+	    nid = models.AutoField(primary_key=True)
+	    name = models.CharField(max_length=255,blank=True, null=True)
+	
+	class Lnum (models.Model):
+	    linum = models.CharField(max_length=255,blank=True, null=True)
+	
+	class Content (models.Model):
+	    ctid = models.AutoField(primary_key=True)
+	    type = models.CharField(max_length=10)
+	    cnte = models.TextField(blank=True, null=True)
+	
+	class Line(models.Model):
+	    lineid = models.AutoField(primary_key=True)
+	    content = models.ForeignKey(Content,blank=True,null=True,on_delete=models.CASCADE)
+	    liker = models.ManyToManyField(Liker)
+	    lnum = models.OneToOneField(Lnum,on_delete=models.CASCADE)
+	Line是子表, Liker, Lnum, Content,是母表,
+	OneToOneField 建立 一对一 关系
+	ForeignKey 建立 一对多 关系
+	ManyToManyField 建立 多对多 关系
+基本api认识:
+	.get 是获得 数据表中符合条件的第一条数据对象
+	.filter 是获得 数据表中符合条件 的 一组数据对象 
+一对一:	(母表对象可以作为子表对象中的一个字段内容,但是每个母表对象不能重复出现在一个以上的子表对象里)
+	查:
+		子表原名.objects.get(子表字段=查询数据).母表表名小写.母表字段名   // 获得指定母表指定字段的内容
+		例如: 	Line.objects.get(lineid=4).lnum.linum
+
+		母表原名.objects.get(子表名(小写)__子表字段=查询数据).母表字段名	// 反向查找得到  指定母表指定字段的内容
+		例如:	Lnum.objects.get(line__lineid=5).linum		//注意到双下滑线在django models里 的独有用法!!
+
+		子表.objects.get(（一对一的子表字段）子表字段__母表字段=查询数据).子表字段	  //反向查询,得到指定子表字段的内容
+		例如:	Line.objects.get(lnum__linum='7').lineid
+	增:
+		先添加母表数据,然后再作为一个对象 赋给新建的子表对象
+		
+		//方法1 
+		母表.objects.create(字段名字=添加的数据)
+		子表.objects.create(（定义一对一）外键字段=母表的对象, 子表的字段=添加的数据)
+		例如:  	obj1 = a.Lnum.objects.create(linum='233')
+			a.Line.objects.create(lnum=obj1)
+		
+		//方法2
+		对象id=母表.objects.create(字段=数据).id
+		子表.objects.create(外键_id=对象id,字表字段=数据)
+		例如:	id1 = a.Lnum.objects.create(linum='323').id
+			a.Line.objects.create(lnum_id=id1)		//注注意到单下滑线在django models里 的独有用法!!
+		
+		//方法3
+		母表对象=母表.objects.create(字段=数据) 
+		子表对象=子表(外键=母表对象, 子表字段=数据)
+		子表对象.save() 
+
+		//方法4(字典导入)
+		母表对象=母表.objects.create(字段=数据)
+		dict={'子表字段':"数据"} 
+		子表.objects.create(外键=母表对象,**dict)
+	改:
+		//修改 母表里单个数据,
+		母表对象 = 母表.objects.get(字段=数据)    //get()等同于  .filter().first()
+		母表对象.字段名=要修改的数据
+		母表对象.save()
+	
+		//修改 多个指定子表对象 里 的母表对象数据,
+		子表.objects.filter(字段=数据).update(外键=母表对象, 子表字段=要修改的数据)  //update(), delete()是QuerySet方法
+		
+		//修改 多个 含母表对象的子表对象 的数据
+		子表.objects.filter(外键__母表字段=母表的数据).update(子表字段=要修改的数据)		
+
+		//也可以 通过字典修改
+    		dict = {"子表字段":"要修改的数据"}
+    		子表.objects.filter(~~~~).update(**dict)
+	删:
+		子表.objects.get(字段=数据).delete()	//对象和QuerySet都有delete()
+		母表.objects.all().delete()	//清空一张表
+
+		母表.objects.filter(字段=数据).delete()
+		例如	Lnum.objects.filter(linum='7').delete()
+
+一对多:	(母表对象可以作为子表对象中的一个字段内容, 每个母表对象可以重复出现在一个以上的子表对象里)
+	查:
+		子表.objects.get(字段=数据).母表.母表字段 	//(找的是母表数据)	
+		例如	Line.objects.get(lnum__linum='3').content.cnte
+	
+		母表.objects.get(子表__字段=数据).母表字段 	//找的是母表数据
+		例如	Content.objects.get(line__lineid=4).cnte
+
+		//查询含有指定母表对象的子表对象,方法1
+		母表对象 = 母表.objects.get(字段=数据) 
+		母表对象.子表_set.all() 	//注意：子表小写_set的写法,它实际上是一个QuerySet,可以用update,delete,all,filter等方法
+		例如	obj1 = a.Content.objects.get(ctid=2)
+			obj1.line_set.all()
+
+		//方法2
+		子表.objects.filter(字段=母表.objects.get(母表字段=数据)) 
+		子表.objects.filter(子表外键__母表字段=数据) 	//写法：filter(子表外键字段__母表字段='过滤条件')
+		
+		//方法3 
+		母表对象 = 母表.objects.get(字段=数据).id
+		子表.objects.filter(子表外键_id = 母表对象) 	//filter得到QuerySet,写法：filter(子表外键字段_母表主键=母表主键对象) 
+
+		关于 ValueQuerySet 问题:  通过QuerySet的.values()方法，将QuerySet转化为ValuesQuerySet
+		子表.objects.filter(子表外键名=母表.objects.get(母表字段=数据)).values('子表外键__母表字段名', '子表字段') 
+		子表.objects.filter(子表外键__母表字段=数据).values("子表外键__母表字段", '子表字段')
+			获取子表的某一个字段, 和母表的某一个字段，然后构成 ValuesQuerySet
+			即获得指定母表字段和对应的子表字段, 构成 字典序列 key:value 输出显示
+			获取母表字段写法: 子表外键字段名__母表字段名--适用于values()或filter() 
+		如果不加values(),返回的是:
+			[<子表: xxx>, <子表: xxx>]这样一个QuerySet集合，
+		通过values可以形成一个列表，列表中的每一个元素是一个字典，
+		可以通过list()将ValuesQeurySet转化为列表，之后返回给templates
+		另外可通过.values_list()将QuerySet转化为ValuesListQuerySet
+			返回：[(u'\u7ea2', u'\u7ea2\u889c\u5b50'), (u'\u7ea2', u'\u7ea2\u889c\u5b50')] 
+			得到的是一个列表，列表中是多个元组，每个元组是ValuesQuerySet中字典的value，
+			常用于从models里将数据取出后动态添加到前端模板中的select选项中
+		例如:	Line.objects.filter(content_id=2).values("content__cnte","lnum__linum")
+				<QuerySet [{'lnum__linum': '3', 'content__cnte': '第1条信息'}, 
+					   {'lnum__linum': '4', 'content__cnte': '第1条信息'}, 
+					   {'lnum__linum': '5', 'content__cnte': '第1条信息'}, 
+					   {'lnum__linum': '6', 'content__cnte': '第1条信息'}]>
+		例如:	Line.objects.filter(content_id=2).values_list("content__cnte","lnum__linum")
+				<QuerySet [('第1条信息', '3'), 
+					   ('第1条信息', '4'), 
+					   ('第1条信息', '5'),
+					   ('第1条信息', '6')]>
+	增: 
+		子表.objects.create(子表外键=母表.objects.get(母表字段=数据).子表字段=需要添加的数据) 
+	
+		子表.objects.create(子表外键_id=母表.objects.get(母表字段=数据).id, 子表字段=要添加的数据)
+
+		返回对象 = 子表(子表外键=母表.objects.get(母表字段=数据), 子表字段=要添加的数据) 
+		返回对象.save()
+	改:
+		//写法1 
+		子表.objects.filter(子表外键__母表字段=数据).update(子表需要更改的字段=改为什么的数据) 
+		//写法2
+		子表.objects.filter(子表外键_id=母表.objects.get(母表字段=数据).id).update(子表需要更改的字段=改为什么的数据)
+		//写法3 (对应母表的子表的id大于等于1的数据全部修改) 
+		母表对象 = 母表.objects.get(字段=数据) 
+		母表对象.子表_set.filter(id__gte=1).update(子表字段=改为什么数据)
+			__gt 大于 
+			__gte 大于等于 
+			__lt 小于 
+			__lte 小于等于
+		
+	删:
+		子表.objects.get(字段=数据).delete() //对象和QuerySet都有delete() 
+		母表.objects.filter(字段=数据).delete() 
+多对多:	(一个子表对象里 有包含母表对象的字段, 而这个字段可以包含多个母表对象 这些母表对象也可以被其他 子表对象所有共有)
+	建立多对多关系后 ,比如 mysql 会多建立一张表 web_line_liker,而不是在原来的 line表 添加一个 liker_id 字段
+
+	查:
+		// 查询并获得 子表对象里 含有的 所有对应多对多母表对象
+		返回对象 = 子表.objects.get(字段=数据) 	//写法：子表对象.子表多对多字段.过滤条件(all()/filter())
+    		返回对象.外键.all()
+		例如:	Line.objects.get(lineid=6).liker.all()
+		<QuerySet [<Liker: Liker object (1)>, <Liker: Liker object (2)>, <Liker: Liker object (3)>, 
+			   <Liker: Liker object (4)>, <Liker: Liker object (5)>, <Liker: Liker object (6)>, 
+			   <Liker: Liker object (7)>, <Liker: Liker object (8)>, <Liker: Liker object (9)>, 
+			   <Liker: Liker object (10)>, <Liker: Liker object (11)>, <Liker: Liker object (12)>, 
+			   <Liker: Liker object (13)>, <Liker: Liker object (14)>, <Liker: Liker object (15)>, 
+			   <Liker: Liker object (16)>, <Liker: Liker object (17)>, <Liker: Liker object (18)>, 
+			   <Liker: Liker object (19)>, <Liker: Liker object (20)>, '...(remaining elements truncated)...']>
+		
+		//反向查询 获得 所有对应多对多母表对象
+		母表.objects.filter(子表表名小写__子表字段名=数据)  //母表对象.filter(子表表名小写__子表字段名="过滤条件")	
+		例如:	Liker.objects.filter(line__lineid=6)
+		<QuerySet [<Liker: Liker object (1)>, <Liker: Liker object (2)>, <Liker: Liker object (3)>, 
+			   <Liker: Liker object (4)>, <Liker: Liker object (5)>, <Liker: Liker object (6)>, 
+			   <Liker: Liker object (7)>, <Liker: Liker object (8)>, <Liker: Liker object (9)>, 
+			   <Liker: Liker object (10)>, <Liker: Liker object (11)>, <Liker: Liker object (12)>, 
+			   <Liker: Liker object (13)>, <Liker: Liker object (14)>, <Liker: Liker object (15)>, 
+			   <Liker: Liker object (16)>, <Liker: Liker object (17)>, <Liker: Liker object (18)>, 
+			   <Liker: Liker object (19)>, <Liker: Liker object (20)>, '...(remaining elements truncated)...']>
+
+		//获得包含母表对象 的 子表对象
+		返回对象 = 母表.objects.get(字段=数据)
+		返回对象.子表_set.all()		
+		例如:	Liker.objects.get(nid=3).line_set.all()
+
+		//获得子表对象方法2
+		子表.objects.filter(子表外键=母表.objects.get(母表=数据))	
+		子表.objects.filter(子表外键__母表字段=数据)
+
+		//获得子表对象方法3
+		返回对象 = 母表.objects.get(字段=数据).id 
+		子表.objects.filter(子表外键=返回对象) ##filter得到QuerySet,写法：filter(子表外键字段=母表主键对象),
+		此处和一对多略有不同，是子表外键字段而不是外键字段_母表主键
+		例如:	obj1 = a.Liker.objects.get(nid=3).nid
+			a.Line.objects.filter(liker = obj1)	//注意,不是 filter(liker_id = objs)
+		因为 Line 和 Liker 是 多对多关系, Line表 没有 liker_id 字段,也没有liker字段, 他们的关系表现在一张新表里
+
+	增与改	(就是添加关系)
+		//写法1 
+		返回对象一 = 子表.objects.create(字段=数据)	//如果存在可以使用.get() 
+		返回对象二 = 母表.objects.all() 		//创建母表的所有数据QuerySet对象 
+		返回对象一.子表外键.add(*返回对象二) 		//写法：子表对象.子表多对多字段.add(*QuerySet对象)	
+
+		//写法2 
+		子表对象 = 子表.objects.get(字段=数据) 
+		母表对象 = 母表.objects.all() 
+		子表对象.子表外键=母表对象 		//注意没有用 *
+		子表对象.save() 
+
+		//让子表数据对象 添加指定几个母表数据 
+		子表对象 = 子表.objects.get(字段=数据) 
+		母表对象 = 母表.objects.filter(字段__in = ["数据一"， "数据二"])  //models默认只能用这种方式得到并集，
+										//如需更复杂的过滤逻辑，需使用模块Q 
+		子表对象.子表外键.add(*母表对象)	//add是追加模式，如果当前子表数据已经存在母表对应数据，
+						//那么执行后，子表原有对应关系不变,会额外增加数据对应 
+		子表对象.子表外键.clear()	//是清空子表对应的母表数据 
+
+		//添加一个母表数据
+		子表对象=子表.objects.get(字段="数据") 
+		母表对象=母表.objects.get(字段="数据") 
+		子表对象.子表外键.clear() 
+		子表对象.子表外键.add(母表对象) 	//此处没有* 
+
+		//反向插入,即从母表插入
+		子表对象=子表.objects.get(字段=数据) 
+		母表对象=母表.objects.get(字段=数据) 
+		母表对象.子表表名小写_set.add(子表对象) 	//从母表插入子表数据，写法：母表对象.子表名小写_set.add(子表对象)。 
+
+		//让子表所有数据 都添加同一个母表数据
+		子表对象=子表.objects.all() 
+		母表对象=母表.objects.get(字段=数据) 
+		母表对象.子表表名小写_set.add(*子表对象) //另外备注一下:
+							//母表对象.子表表名小写_set.clear(),是让所有子表数据去掉母表某一个数据对应,即删除关系
+							//母表对象.子表表名小写_set.all().delete(),这里不是删除关系,而是删除涉及的子表对象
+		关于_set写法，究竟什么时候使用_set,简单记忆，只有子表才有"子表名小写_set"的写法，得到的是一个QuerySet集合，
+		后边可以接.add(),.remove(),.update(),.delete(),.clear()
+		使用子表_set的接的add(),.remove(),.update(),.delete(),.clear()
+		子表.objects.get/filter 接的 add(),.remove(),.update(),.delete(),.clear() 部分函数功能不一样,例如clear.remove	
+
+	删:	(一般是 删除关联,)
+		//从子表来删 写法1 
+		子表对象=子表.objects.get(字段=数据) 
+		母表对象=母表.objects.all() 
+		子表对象.子表外键='' 
+		子表对象.save() 
+	
+		//从子表来删 写法2： 
+		子表对象=子表.objects.get(n字段="数据") 
+		母表对象=母表.objects.all() 
+		子表对象.子表外键.remove(*母表对象) 
+
+		//从子表来删 写法3： 
+		子表对象=子表.objects.get(字段="数据") 
+		子表对象.子表外键.clear() 
+
+		//从母表来删 写法1:
+		子表对象=子表.objects.all() 
+		母表对象=母表.objects.get(字段="数据") 
+		母表对象.子表表名小写_set.remove(*子表对象) 
+		
+		//从母表来删 写法2： 
+		母表对象=母表.objects.get(字段="数据") 
+		母表对象.子表表名小写_set.clear() 
+	
+		//以下不是删除关系,而是删除 指定表对象数据
+		母表对象=母表.objects.get(字段="数据") 
+		母表对象.子表表名小写_set.all().delete() #注意有.all() #删除包含对应母表对象所有子表对象及数据 
+		例如	Liker.objects.get(nid=4).line_set.all().delete()
+			lineid=6 的子表对象, 含有 nid=4 的母表对象!!
+			这句话的意思是 删除 lineid=6 的子表对象, 
+			而 lineidlineid=6 的子表对象, 包含 Liker母表的所有母表对象, 
+			所以, 这些母表对象也要被删除 !! 
+
+		//删除所有子表数据		
+		子表.objects.all().delete()
+关于 筛选:
+	利用双下划线将字段和对应的操作连接起来,例如:
+	# 大于，小于  利用双下划线将字段和对应的操作连接起来 
+	# models.Tb1.objects.filter(id__gt=1)              # 获取id大于1的值
+	# models.Tb1.objects.filter(id__lt=10)             # 获取id小于10的值
+	# models.Tb1.objects.filter(id__lt=10, id__gt=1)   # 获取id大于1 且 小于10的值
+	# models.Tb1.objects.all()[10:20]  #取所有数据的10条到20条，分页的时候用的到,注意不是id 10到20 的!!
+
+	注意,XX.objects.filter(description="黑球") 是筛选出一堆符合条件的的数据条成为数组,
+	    XX,objects.get(name="kate") 是选出对应的一个对象.
+	    filter选出的 数组有 .update()  .delete() 等方法改变数据,
+	    get得到的 单个对象,未知道有没有!!!
+	    然后其他函数都是在get 和 filter 后面接上的专门处理数据
+	现在改变连表关系时的数据排列问题!!
+	被 OneToOneField(Lnum,on_delete=models.CASCADE) 指定的 Lnum 无法使用 create()建立新内容
+models class 中的 meta 参数:
+	abstract = True 	//这个model就是一个抽象类,抽象类不会具体化,只有被继承后才会
+	app_label = 'web' 	//当 model 不是在models里定义,需要添加告诉django 这是那个django项目的表单
+	db_table = 'Students'	//定义该model在数据库中的表名称,
+	managed			//默认值为True，这意味着Django可以使用syncdb和reset命令来创建或移除对应的数据库。
+				//默认值为True,如果你不希望这么做，可以把manage的值设置为False	
+	ordering		//这个字段是告诉Django模型对象返回的记录结果集是按照哪个字段排序的。默认使用升序排列
+				//ordering=['order_date'] # 按订单升序排列
+				//ordering=['-order_date'] # 按订单降序排列，-表示降序
+				//ordering=['?order_date'] # 随机排序，？表示随机
+				//ordering=['-pub_date','author'] # 以pub_date为降序，在以author升序排列
+	verbose_name		//意思很简单，就是给你的模型类起一个更可读的名字一般定义为中文，例如verbose_name = "学校"
+
+关于执行 sql命令 和 检测数据库表是否存在的 django 操作:
+	检测数据库表单是否存在:
+		from django.db import connection
+		table_name in connection.introspection.table_names()	// in运算 返回true false
+	两个重点  Migration connection
+	https://code.djangoproject.com/wiki/DynamicModels  //Dynamic models 官方动态数据库教程
+	https://docs.djangoproject.com/zh-hans/2.1/topics/db/sql/	//执行纯 sql 指令
+	注意 raw 并不好用: 最执行纯 sql指令 的函数 是 execute():
+		from django.db import connection
+		with connection.cursor() as cursor:
+		    cursor.execute('ALTER TABLE web_content MODIFY COLUMN cnte VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL')		
+		//执行这条 纯 sql指令后  content 可以输入 中文!!
+
+关于删的过程中出现的 连带关系的改变
+	母表数据,如果与子表数据联系了,就删除会出错,系统不允许删除
+	子表数据删除,会连带母表数据也被删除
+	如果母表数据被多个 子表对象共享, 未知 删除某个子表对象,会导致母表对象被删除
+	最后发现,使用 django orm 方式
+	母表对象必须存在即 已经 save 的情况下才可以 写到 子表里
+	删除子表时,连表到的母表并没有删掉! 需要自己删掉!!
+
+models 技巧: select_related prefetch_related
+
+python学习补充:		
+	__str__ 是 python的内容,	
+	lambda表达式可以理解成为匿名函数，其功能就是定义了一个函数，不过这个函数形式非常简单，通常是一行。过于复杂的函数还是正经定义的好。
+		例如:	g = lambda x:x+1
+			g(1)
+		例如:'__str__' : lambda  self : '%s %s %s %s' % (self.type, self.category, self.title, self.answer),
+			xx.__str__()
+
+
+
+
+
+
+20181024:
+	django 的 数据库 摸得差不多了,开始简单数数据库
+	建立三张表
+	user:
+	自动id 用户名  密码+用户名sha 实名 身份证 信息信用表 save_sha表 line表 xontent表 最大contentid 最大lineid 最后修改时间!!
+	line表:
+	自动id lineid 一对多content 最后修改时间
+	content表:
+	自动id contentnum type	 content history  count  最后修改时间 
+	
+	最后修改时间是服务器自己分配的时间,而不是前端用户点击保存传递过来的时间!!
+	另外的信用表记录信用事件,未规划如何使用
+	save_sha表 计划 每次save 都产生一个sha, 计划用于防止恶意修改数据 未规划如何使用
+	刷新数据库前,先处理内容冲突, 发现冲突,不刷新数据,通知用户先 把修改后的数据拷贝到记事本上,重新刷新后,重新修改!!
+		比如说数据库上 14行 本来是 contentid 为40 的内容  type 是text
+		不知道是什么问题, 前端保存数据时 提交的信息说 原来 14行是contentid为20的内容 type是pic 的内容,
+
+分析每一个要用到是 数据 的类型!!! 顺便测试建模
+	https://docs.djangoproject.com/en/2.1/ref/models/fields/	//参考
+	用户名: models.CharField(max_length=100),
+	密码+用户名sha (64位16进制):  models.CharField(max_length=100), 
+		用64个字符保存吧,或者 64位16进制数字 转成32个char字节,再保存!!	//不好实现
+	实名: models.CharField(max_length=100), 但是要求中文!!
+	身份证 (种类:数字) models.CharField(max_length=100),
+	信息信用表 models.CharField(max_length=100),
+	save_sha表,line表,xontent表: models.CharField(max_length=100), 表名字
+		关于 models.CharField(max_length=xx), 一定要填 max_length, 但是注意 他是按照 asscii 编码来算字符
+		但我们 改成utf编码后,是按照utf来数字符的, 比如 max_length=23 表示最多 23 个 utf 字符.
+		除了 max_length=xx 一般还使用通用的 blank=True, null=True, 表示可以填入空字符!!
+		    
+	最大contentid, 最大lineid,大整数, contentid, count: IntegerField(Field)  即可 -2147483648 ～ 2147483647  足以应付1300.0000 行
+		关于models.IntegerField(), 一般使用通用参数 blank=True, null=True 就好了
+		填入的 是数字内容 	
+	最后修改时间: 我们使用 DateTimeField : https://blog.csdn.net/liereli/article/details/79790303 参考:
+		关于 models.DateTimeField(blank=True, null=True), 这个本质是继承字符串的一种格式
+		一般的格式是这样的: 2018-10-27 15:19:32.175228. 
+		我们填写要当成字符串填写: 例如   
+			'datetime': models.DateTimeField(blank=True, null=True),
+			datetime='2019-10-22 21:49:05.456263'
+		此外 DateTimeField 还有自己独有的参数: auto_now_add=True auto_now=True
+			auto_now_add=True 表示 但我们xx.save()等方式写入一条新数据记录时, DateTimeField 字段会自己获得系统时间
+				并存入到 DateTimeField 字段里, 当下次修改这条记录时,不会自动这个 DateTimeField 字段 的内容
+			auto_now=True 表示,不管我们更新还是修改 一条数据记录时, DateTimeField 字段会自己获得系统时间,
+				并存入到 DateTimeField 字段里,
+		另外, 不使用 auto_now=True 或者 auto_now_add=True 可以通过以下方式获得系统时间
+			from datetime import datetime
+			from datetime import timezone
+			datetime=datetime.now().replace(tzinfo=timezone.utc)
+	content, history : textfield
+		关于 models.TextField(blank=True, null=True), 一般 使用blank=True, null=True 参数 允许空字符输入就好了
+		TextField() 一般就是可以输入不限个字符的 CharField
+	使用动态建模,过程: 整体未遇到什么坑
+		fields = {
+		    'user': models.CharField(max_length=100),
+		    'pw_sha': models.CharField(max_length=64),
+		    'realname': models.CharField(max_length=100),
+		    'pesonalid': models.CharField(max_length=100),
+		    'XXXtable': models.CharField(max_length=100),
+		    'content': models.TextField(blank=True, null=True),
+		    'count': models.IntegerField(blank=True, null=True),
+		    'datetime': models.DateTimeField(blank=True, null=True),
+		}
+		options = {
+		    'ordering': ['user', 'count', 'datetime'],
+		    'verbose_name': 'william_test',
+		}
+		admin = {}
+		from django.utils.encoding import smart_str  #  convert unicode to string
+		
+		custom_model = create_model('william',
+		                            fields,
+		                            options=options,
+		                            app_label='web',
+		                            module='web',
+		                            admin=admin
+		                            )
+		install(custom_model)		//之前都是定义模型参数,这里就是建立实体mysql库
+		with connection.cursor() as cursor:	//这里是 修改指定字段可以输入中文
+		    cursor.execute(
+		        'ALTER TABLE web_william MODIFY COLUMN user VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL')
+field 主要参数 详解
+	https://www.jianshu.com/p/79a418826357		//通用 field 参数讲解
+	https://www.cnblogs.com/linxiyue/p/3662535.html	//通用 field 参数讲解
+	通用的:
+		verbose_name: 这是 字段 在 admin 管理页面显示的通俗名字 一般如 verbose_name='书本名字'
+		null	: 允许空字符
+		blank	: 也有允许空字符的意思?? 一般和null 一起使用 blank=True, null=True 表示允许空字符
+非通用的
+	auto_now :使用解释如 DateTimeField 所说
+	auto_now_add :使用解释如 DateTimeField 所说
+	on_delete: 用于连表字段 models.ForeignKey(其他表) models.ManyToManyField(其他表)  
+		多对多(ManyToManyField)没有 on_delete 参数 !!!
+		值一般可 =
+		models.CASCADE:这就是默认的选项，级联删除，母表数据被删,这边子表的数据也要被删
+		models.DO_NOTHING: 母表数据被删,这边子表什么都不做
+		models.PROTECT: 保护模式，如果采用该选项，母表数据被删的时候，会抛出ProtectedError错误。
+		models.SET_NULL: 置空模式，母表数据被删的时候，子表的这个外键连表字段会被置空,
+			前提这个外键连表字段要设置 blank=True, null=True,定义该字段的时候，允许为空。
+		models.SET_DEFAULT: 置默认值，母表数据被删的时候，子表的这个外键连表字段设置为默认值，
+			所以定义子表的这个外键连表字段的时候注意加上一个默认值。
+		models.SET(): 自定义一个值，,母表数据被删的时候，子表的这个外键连表字段设置为某个指定内容!!
+			SET()使用例子:
+			    user = models.ForeignKey(USER, on_delete=models.SET( USER.objects.get(id=100) )
+基本数据库的坑补得差不多了,现在需要 js 和 py 对 xml 的处理问题, 
+	考虑到多媒体文件不是单行字符串数据, 对应的content 需要塞入多行内容,所以需要使用xml
+	js找来了一个生成 xml 文件的库函数 xmlwriter.js,但是要做补充, 自己写自己的 tofromstring, 具体还是要说明一下!!
+	这里主要学习 字符串的 replace 函数 把 & < > " 等字符转成转义字符,避免注入攻击
+	然后就是python的了!!有多种方法,优先使用ElementTree 高速!!
+		例如 example.xml
+		<?xml version="1.0"?>
+		<doc>
+
+		<Line><Cndt>1:1:1:256:0</Cndt>
+		<Cnte> 这是第一篇文章的开头</Cnte>
+		</Line>
+			
+		<Line><Cndt>1:1:2:257:0</Cndt>
+		<Cnte> 床前明月光</Cnte>
+		</Line>
+		
+		</doc>
+
+		import xml.etree.ElementTree as ET
+		tree = ET.ElementTree(file='example.xml')
+		root = tree.getroot()	
+		root[0].tag	//Line
+		root[0][0].tag	//Cndt
+		root[0][1].tag	//Cnte
+		root[0][1].tag	//这是第一篇文章的开头
+	python 写 xml 同样 使用 ET 参考 : https://www.cnblogs.com/AlwinXu/p/5483177.html
+	js 读 xml,主要使用 原生DOM方式,原生js 使用 window.XMLHttpRequest 或者 window.DOMParser 方式 
+		https://blog.csdn.net/u013719339/article/details/73181122
+		https://blog.csdn.net/zxyudia/article/details/62891849
+		http://www.w3school.com.cn/tiy/t.asp?f=xmle_node_parsertest_1
+	还要解决 django的 GET 请求!!其实也就是:
+	if request.method == "GET":  # 请求方法为GET时，进行处理
+		return render('/static/clients/clie001/example.xml')
+	但是,关于,django 这个 request 的详细内容,可以看 http://djangobook.py3k.cn/appendixH/
+python 读文件片段 
+        file = open(os.path.join("./", file_obj.name), 'r')
+        while 1:
+            line = file.readline()
+            if not line:
+                break
+            print(line)  # do something
+        file.close()
+现在搭路 前端写xml 传到后端 后端存数据库 然后后端读取数据库写xml:
+	前端写xml,只使用 Kate Bobe spac 三个tag
+	然后后端 先检查 <>符号和 tag 然后直接把 Cnte 的全部内容写入 数据库
+	检查建立数据库表单出现的问题!!
+		textfield 是不能使用: ALTER TABLE web_william MODIFY COLUMN user VARCHAR(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL 来更改 字符编码的
+		应该使用: 'ALTER TABLE web_william MODIFY COLUMN user TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL
+		mysql 这句话的意思:
+			ALTER TABLE web_william 	//选择表
+			MODIFY COLUMN user		//更改字段内容
+			VARCHAR(100) /TEXT		//如果这个字段是 charfield 那么使用 VARCHAR(100) 限制多少个字符!!
+							  字符个数与字符编码有关系,并不是8bit数据为一个字符
+							  如果这个字段是 textfield 那么是并不限制字符个数的!!
+			CHARACTER SET utf8 COLLATE utf8_general_ci	//表示 字符编码设置为 utf-8
+			NOT NULL / NULL  		//表示这个字段 不允许空 或者允许空 状态
+	python 补坑:
+		python没有 switch !! 最好还是使用 if elif 代替	
+		password-sha 格式  用户名<签名>密码 转成的sha256	
+		数字转字符串 int(xx) 数字字符窜转数字 str('xxx')
+		注意.子表对象不能直接对包含的母表对象内容直接修改:只能通过反向查询获得母表对象然后母表对象对自身内容进行更改
+			例如不能 23line.content.count = 1
+				 23line.save()
+			只能反向查询  cnt = Cnte.objects.get(line0001__linenum=23)
+				cnt.count = 1
+				cnt.save()
+		例如:needyou<i dont like it>123456 -> 574087358D1D69F0EACEBEE4C5ED10DE65A6B3FC0DEC680714294284F5847A6B
+		一定要添加一条 userlist 用户数据 才可以好好模拟接下来的事情!!
+		还有 使用 objects.get()不存在的数据条可能会出错,所以适合使用 try: expect: 而不是 if: else:
+		python Elementtree 处理 xml 的重点 以及处理 复杂的编码准换关系 :
+			ET 不能有 包含子tag的text 但是可以通过tostring和fromstring 转换格式来存储,
+			然而也有问题
+			参考: https://www.zybuluo.com/Alston/note/778377
+			先:cnte = ET.tostring(child[1],encoding='utf-8') 
+			使用tostring 只能获取整段子内容字符串格式,但是不是一般的字符串对象,是有很多其他继承内容的 特殊字符串对象
+			然后 必须先解码: cnte.decode('utf-8'), 显然这个decode是这个字符串特有的继承函数
+			然后才把解码后的字符串写入数据库 写入的内容是 <ss><a>喜欢你</a></ss>
+			然后重新读出来后使用 formstring 就可以完美重构 Element对象内容:
+			        kk1 = lucy[6].linecnte.content
+				xmlcnte = ET.fromstring(kk1)
+			如果不decode, 直接把字符串写入数据库,
+			那么写入的内容是 b'<ss><a>\54\57\64\</a></ss>'
+			重新读出来也是 这个奇怪的字符串内容,
+			读出来的这个奇怪字符串是一个普通的字符串对象,没有继承,所以不可以使用 decode
+			直接 fromstring 也会出错.
+			另外补充: tostring的得到字符串 也是 b'<ss><a>\54\57\64\</a></ss>'
+				但是这个tostring的字符串是特殊字符串,所以可以直接 fromstring 回去 不出错!!
+			xml 节点换行美化问题:
+			节点结构:
+			<kate age=12 tall='6feet'> hello all </kate>
+			   |    \	 /             |        |    |
+			  tag     attrib              text     tag  tail
+			注意 tostring 会把 tail 的字符内容也算入
+			很多时候我们需要节点换行,其实就是在tail添加 \n 符号  
+			关于根节点的的 换行,使用 Elementtree库的话,	直接在 root.text='\n'就好.
+			因为.text赋值的内容紧贴着<root> 而不是紧贴</root>,也不会在中间
+			注意 tostring 会把 tail 的字符内容也算入字符串,但是 append时会忽略tail的内容
+		python 比较 字符串 使用 == 当两个字符串完全相同,true 否则 false
+		python 初始化数组有两个类型:
+			aa = []
+			bb = {}
+			使用[]的 无法使用 aa[2] = 90, 给成员赋值,只能 使用 aa.append(90)	
+			使用{}的 可以使用 aa[1] = 89, 的方式赋值
+    后端接收xml参考片段:
+    # 接收 xml 文件
+    if request.method == "POST":  # 请求方法为POST时，进行处理
+        print('2222')
+        file_obj = request.FILES.get('file100')
+        import os
+        f = open(os.path.join("./", file_obj.name), 'wb+')
+        print(file_obj, type(file_obj))
+        for chunk in file_obj.chunks():
+            f.write(chunk)
+        f.close()
+        print('xml file get')
+
+
+
+        # 检查并生成数据库表单
+        from django.db import models
+        from django.db import connection
+        from web.dy_model_creat import create_model
+        from web.dy_model_creat import install
+        table_name = 'web_userlist'
+        fields = {
+            'user': models.CharField(max_length=32),
+            'pwsha': models.CharField(max_length=64),
+            'realname': models.CharField(max_length=64),
+            'pesonid': models.CharField(max_length=100),
+            'trusttb': models.CharField(max_length=100),
+            'svshatb': models.CharField(max_length=100),
+            'linetb': models.CharField(max_length=100),
+            'cntetb': models.CharField(max_length=100),
+            'blinenum': models.IntegerField(blank=True, null=True),
+            'bcntenum': models.IntegerField(blank=True, null=True),
+            'datetime': models.DateTimeField(blank=True, null=True),
+        }
+        options = {
+            'ordering': ['user', 'datetime'],
+            'verbose_name': '用户列表',
+        }
+        admin = {}
+        # from django.utils.encoding import smart_str  #  convert unicode to string
+        Userlist = create_model('userlist',
+                                fields,
+                                options=options,
+                                app_label='web',
+                                module='web',
+                                admin=admin
+                                )
+        if  table_name in connection.introspection.table_names() :
+            pass
+        else :
+            install(Userlist)
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    'ALTER TABLE web_userlist MODIFY COLUMN user VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL')
+                cursor.execute(
+                    'ALTER TABLE web_userlist MODIFY COLUMN realname VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL')
+        #添加 用户 使用try expect 而不是 if else 
+        try:
+            user = Userlist.objects.get(user='needyou', pwsha='574087358D1D69F0EACEBEE4C5ED10DE65A6B3FC0DEC680714294284F5847A6B')
+            ltb = 'web_' + user.linetb
+            ctb = 'web_' + user.cntetb
+            biglinenum = user.blinenum
+            bigcntenum = user.bcntenum
+            print(ltb,ctb,'///////////////////////////////////////////////')
+        except:
+            Userlist.objects.create(user='needyou',    #needyou<i dont like it>123456
+                                pwsha='574087358D1D69F0EACEBEE4C5ED10DE65A6B3FC0DEC680714294284F5847A6B',
+                                realname='下半世',
+                                pesonid='chinaid:33987117809046775',
+                                trusttb='trust0001',
+                                svshatb='svsha0001',
+                                linetb='line0001',
+                                cntetb='cnte0001',
+                                blinenum=0,
+                                bcntenum=255,
+                                datetime='2019-10-22 21:49:05.4587')
+            ltb = 'web_line0001'
+            ctb = 'web_cnte0001'
+            biglinenum = 0
+            bigcntenum = 255
+
+        #添加 用户相关数据表
+        fields = {
+            'cntenum': models.IntegerField(blank=True, null=True),
+            'type': models.CharField(max_length=10),
+            'content': models.TextField(blank=True, null=True),
+            'history': models.TextField(blank=True, null=True),
+            'count': models.IntegerField(blank=True, null=True),
+            'datetime': models.DateTimeField(blank=True, null=True),
+        }
+        options = {
+            'ordering': ['cntenum', 'datetime'],
+            'verbose_name': '0001内容表',
+        }
+        admin = {}
+        # from django.utils.encoding import smart_str  #  convert unicode to string
+        Cnte = create_model('cnte0001',
+                            fields,
+                            options=options,
+                            app_label='web',
+                            module='web',
+                            admin=admin
+                            )
+        if  ctb in connection.introspection.table_names() :
+            pass
+        else :
+            install(Cnte)
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    'ALTER TABLE web_cnte0001 MODIFY COLUMN content TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL')
+                cursor.execute(
+                    'ALTER TABLE web_cnte0001 MODIFY COLUMN history TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL')
+            #创建 空内容行
+            Cnte.objects.create(cntenum=0,
+                                type='edit',
+                                content='<Cnte>&lt;br&gt;</Cnte>\n',
+                                count=0
+                                )
+
+        fields = {
+            'linenum': models.IntegerField(blank=True, null=True),
+            'linecnte': models.ForeignKey(Cnte, blank=True, null=True, on_delete=models.CASCADE),
+            'datetime': models.DateTimeField(blank=True, null=True),
+        }
+        options = {
+            'ordering': ['linenum', 'linecnte', 'datetime'],
+            'verbose_name': '0001行表',
+        }
+        admin = {}
+        # from django.utils.encoding import smart_str  #  convert unicode to string
+        Line = create_model('line0001',
+                            fields,
+                            options=options,
+                            app_label='web',
+                            module='web',
+                            admin=admin
+                            )
+        if ltb in connection.introspection.table_names():
+            pass
+        else:
+            install(Line)
+
+        #读取xml文件并写入数据到数据库
+        from datetime import datetime
+        from datetime import timezone
+        dt = datetime.now().replace(tzinfo=timezone.utc)
+
+        import xml.etree.ElementTree as ET
+        from xml.etree.ElementTree import Element
+        from xml.etree.ElementTree import ElementTree
+        tree = ET.parse('testfile')
+        root = tree.getroot()
+        epty = '<Cnte>&lt;br&gt;</Cnte>\n'
+        for child in root:
+            # print(child[0].text)
+            strl = child[0].text
+            if 'newl' in strl:
+                strl = strl.split(':')
+                typ = strl[1]       # 不能使用 type 变量,只能使用typ
+                cnte = ET.tostring(child[1],encoding='utf-8')
+                cnte = cnte.decode('utf-8')
+                # print(cnte.decode('utf-8'))
+                # print(lucy[4].linecnte.content, kong, '::::::', cnte == epty)
+                if cnte == epty :
+                    # print('yes')
+                    content = Cnte.objects.get(cntenum=0)
+                else:
+                    bigcntenum += 1
+                    contentnum = bigcntenum
+                    content = Cnte.objects.create(cntenum = contentnum,
+                                              type = typ,
+                                              content = cnte,
+                                              count = 0,
+                                              datetime = dt)
+                numl = int(strl[2])
+                if numl > biglinenum :
+                    Line.objects.create(linenum = numl,
+                                        linecnte = content,
+                                        datetime = dt)
+                    Tom = Cnte.objects.get(line0001__linenum = numl)    #反向查询
+                    Tom.count += 1
+                    Tom.save()
+                    biglinenum += 1
+                else:
+                    Tom = Line.objects.get(linenum = numl)
+                    Tom.linecnte = content
+                    Tom.save()
+                    Tom = Cnte.objects.get(line0001__linenum = numl)    #反向查询
+                    Tom.count += 1
+                    Tom.save()
+        user = Userlist.objects.get(user='needyou',
+                         pwsha='574087358D1D69F0EACEBEE4C5ED10DE65A6B3FC0DEC680714294284F5847A6B')
+        user.blinenum = biglinenum
+        user.bcntenum = bigcntenum
+        user.datetime = dt
+        user.save()
+
+
+        #读数据库 生成xml文件  注意 node 点不能共用
+        parser = ET.XMLParser(encoding="utf-8")
+        doc = Element('doc')
+        lucy = Line.objects.filter(linenum__lte = user.blinenum )
+        kate = lucy.values_list('linenum','linecnte__cntenum','linecnte__type')
+        i = 0
+        xmlline = {}
+        xmlcndt = {}
+        xmlcnte = {}
+        for baby in lucy :
+            kity=baby.linecnte.content
+            xmlcndt[i] = Element('Cndt')
+            xmlcndt[i].text = str(kate[i][0]) +':'+ str(kate[i][1]) +':'+ kate[i][2]
+            xmlcndt[i].tail = '\n'
+            xmlcnte[i] = ET.fromstring(kity)
+            xmlcnte[i].tail = '\n'
+            xmlline[i] = Element("Line")
+            xmlline[i].append(xmlcndt[i])
+            xmlline[i].append(xmlcnte[i])
+            xmlline[i].tail = '\n\n'
+            doc.append(xmlline[i])
+            i += 1
+        doc.text='\n\n'       #这个提交的text内容,紧贴在<doc>后,并不是紧贴在在</doc>前
+        creTree = ElementTree(doc)
+        creTree.write("Lexicon.xml",encoding="utf-8", xml_declaration=True)
+	
+
+
+
+
+
+
+
+
+
+
+
+20181106
+后端读取数据库写xml 传到前端并刷新页面 !!		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 
 
 ?????????????????????????????????????

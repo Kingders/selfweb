@@ -18235,6 +18235,232 @@ VSS为数字地，VSSQ为信号地，若无特别说明，两者是等效的。V
 	6.8k/3k 可以构建分压1.2v 得到 0.69V
 	8.2/3.6k 
 
+	ddr的差分时钟信号: clk+ 高电平, clk-低电平时, 整体时钟信号是 positive edge
+		所有信号,控制线 都在 整体时钟信号为positive edge 时 使能或数据有效 !
+		信号线, 同时也使用到 整体时钟信号为negative edge 状态 是数据有效, 实现 double data rate,提高速度
+		NL3DM627: clk+: CK_t  clk-: CK_c
+	ddr CKEn CSn# : 之所以有多个,是应为可能有多个 独立的ddr块, 每个 CKEn 控制一个ddr块(piece) 的时钟使能!! CSn# 用于片选ddr块(piece)
+		注意这里 的 块(piece) 与 块内的区间(banks) 指代不一样!!
+		参考 MT42L128M16D1KL-25-IT_A-Micron datasheet 会 知道 CKE CS# 的含义:
+		回到 NL3DM627: ddr是  16M words X 32bits X 8 banks 
+				      只有 1 piece 4Gb in 1 package
+				即 16M X 8 banks = 128M
+				即 16M words X 32bits X 8 banks === 128Meg x 32
+				128Meg x 32 = 4Gbit
+		整个 NL3DM627 的LPDDR3 只有 1 piece 4Gb, 所以 NL3DM627 只用到 CKE0 和 CS0#, CKE1和CS1#不作为!  
+		a5d2 只有 一针 CKE 和 一针 cs ,所以意味着 
+			a5d2 只能并接 两块 16bit数据线的ddr 
+			或者 只能接一块 32bit数据线的ddr
+		lpddr3 地址线只有 ca[0-9] 但是却可以实现 row[0-13], column[0-9],,
+	ddr ZQ 一般用来内部稳定和匹配的配置针.很多产品是 串接 240r 到GND
+		但是 NL3DM627 是的 ZQ 却有好多解释可以配置 上拉还是 下拉,,,,,,都不知到怎么弄这个!!!
+	    ODT 主要用来消耗 芯片内部的有害信号反射
+		ODT 和 ZQ 都不知道如何接,所以用一个万能的接法,
+		ZQ 默认串联240R 到 GND ,但留出 上拉到 VDDQ的通道
+		ODT 默认串联 0R 到 GND ,但露出 上拉到 VDDQ的通道 
+	eMMc CLK 注意阻抗匹配.现在是在近MPU处串接了39R
+	eMMc DS HS400模式下才会用到的线,但是a5d2不支持,所以不接!!
+		DS是eMMc发到 host端 的 时钟线!!
+		
+
+接下来就是 lcd加触控 摄像头 
+	LCD 有PB PC 两条总线, 按照参考,使用 PC 的DATA口, 不使用PB的
+	注意高频规律线的阻抗匹配,例如是时钟线 data addr并线 的高2,3,4位置和低2,3,4位
+	还有一般为了空间和成本, 只选两端的单侧匹配,条件允许可以双侧匹配!!
+cam:
+	PD16 VS peripheral_E	
+	PD17 HS peripheral_E
+	PD2 Mck peripheral_E (被取缔)	PD11 MCK PERIPHERAL_F (改后)	
+	PD15 pck peripheral_E
+	PD18 FIELD peripheral_E
+	PB11 RST output1     
+	PB12 PWD output1    
+	PD3 D11 peripheral_E (被取缔)	PB25 D11 PERIPHERAL_F (改后)
+	PD4 D10 peripheral_E
+	PD5 D9 peripheral_E
+	PD6 D8 peripheral_E
+	PD7 D0 peripheral_E
+	PD8 D1 peripheral_E
+	PD9 D2 peripheral_E
+	PD10 D3 peripheral_E
+	PD11 D4 peripheral_E (被取缔)	PB30 D4 PERIPHERAL_F (改后)
+	PD12 D5 peripheral_E
+	PD13 D6 peripheral_E
+	PD14 D7 peripheral_E
+
+	PC6 TWD peripheral_C
+	PC7 TCK peripheral_C
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20181114
+usb phy debug串口,debug演示灯,按键  
+
+
+差分信号之间接电阻问题!!
+	在高速PCB理论上面有提到，
+	差分线中间的电阻是用作差模信号的匹配
+	差分线分别接电阻到地是用作共模信号的匹配
+	如果差分线分别接电阻，而2个电阻的另一端同时接一个电容，电容另一端接地，这是同时做差模和共模匹配用的
+ACC 模拟比较器
+	本质就是比较 两个信号源,哪个信号源比哪个高的问题!!
+由于 PD2,3 isc 与 dbug uart 共线,所以要做修改!!!
+DEBUG UART1
+	PD2 URXD1 PERIPHERAL_A
+	PD3 UTXD1 PERIPHERAL_A
+
+
+
+
+
+
+
+
+
+20181116
+拍照补光灯,标识led 然后把 剩下的 12c, spi, uart, pwm拉出
+统计分配了使用针口
+UART0
+	PB26 URXD0 PERIPHERAL_C
+	PB27 UTXD0 PERIPHERAL_C
+UART2
+	PD23 URXD2 PERIPHERAL_A
+	PD24 UTXD2 PERIPHERAL_A
+SPI1
+	PD26 MOSI PERIPHERAL_A
+	PD27 MISO PERIPHERAL_A
+	PA25 CS0 PERIPHERAL_D
+	PC5 CS1 PERIPHERAL_D
+	PD30 CS2 PERIPHERAL_A
+	PD25 SPCK PERIPHERAL_A
+QSPI0
+	PA15 CS PERIPHERAL_C
+	PA16 IO0 PERIPHERAL_C
+	PA17 IO1 PERIPHERAL_C
+	PA26 IO2 PERIPHERAL_F
+	PA27 IO3 PERIPHERAL_F
+	PA14 SCK PERIPHERAL_C
+I2C0
+	PC0 CLK PERIPHERAL_D
+	PD29 DA PERIPHERAL_E
+IRQ/FIQ
+	PB4 FIQ PERIPHERAL_C
+	PB3 IRQ PERIPHERAL_C 	/兼 PWMEXTRG1 PERIPHERAL_D
+	PA12 IRQ PERIPHERAL_B
+	PD31 IRQ PERIPHERAL_C	/兼 ADTRG PERIPHERAL_A
+	PB2 PWMFI0 PERIPHERAL_D
+TIME COUNTER
+	PA11 TCLK4 PERIPHERAL_D
+	PB24 TCLK2 PERIPHERAL_D
+	PB28 TIOA5 PERIPHERAL_D
+	PB29 TIOB5 PERIPHERAL_D
+ADC
+	PD19-22 AD0-3 PERIPHERAL_X1	/与电阻触摸共用 adc 信号功能,所以用电阻触摸就不要用adc了!!
+	PD28 AD9 PERIPHERAL_X1
+pwm
+	PA30 PWMH0 PERIPHERAL_D		
+	PA31 PWML0 PERIPHERAL_D	/兼 usb_bus_5v (普通的i/o)检测,另外引出一路i/o代替,原线路保留,当用pwm时,可以用双 0R 去耦截断线路
+	PB0 PWMH1 PERIPHERAL_D  /虽然接到了led灯,但是可以共用pwm信号, pwm信号越满,led越暗
+	PB1 PWML1 PERIPHERAL_D
+	PB5 PWMH2 PERIPHERAL_C  /虽然接到了led灯,但是可以共用pwm信号, pwm信号越满,led越暗
+	PB6 PWML2 PERIPHERAL_C  /虽然接到了led灯,但是可以共用pwm信号, pwm信号越满,led越暗
+	PB7 PWMH3 PERIPHERAL_C  /兼 LCD_IRQ (普通的OUTPUT), 应该另外引出一路i/o代替, 可以用一个 0R 去耦截断线路
+	PB8 PWML3 PERIPHERAL_C  /兼 LCD_IRQ (普通的OUTPUT), 应该另外引出一路i/o代替, 可以用一个 0R 去耦截断线路
+最后就是普通的i/o
+	PC8, PA13, PB13, PA23, PA24
+	实现: 补光灯控制, 定位灯/指示灯(共用), usb_bus_5V检测, 2xlcd_irq/通用io(共用!)
+	
+
+
+
+
+
+
+
+
+
+
+
+20181120
+检查原理图!!
+bga封装, 丝印边界不能与芯片的边界重合!!!!!
+已买:(*已收货)	
+*	mic5339	
+*	32.768khz 12.5pF mc146
+*	12mhz 15pF 3325
+*	13F-64GYD2PL2NL RJ45带灯
+*	KSZ8081RNB
+*	25mhz 20pF 3325
+	RB160M-60TR 丝印76  SOD-123
+	BAT54C	SOT-23
+	BSS138	sot-23
+	ADG849yksz
+	TLV431A sot-23-3
+	sp2525A-1en-l
+	prtr5v0u2x
+未购买芯片:
+	ts2113
+	fan48610	
+
+
+
+	ACT8945AQJ405-T
+	2.2uh 贴片点电感
+
+
+附加补充:特殊符号:http://w13.loxa.edu.tw/ctjh930220/
+
+重点检查对象:
+	pmic 关于电池电路不接没有问题, 关于reset wakeup,按原线路接合
+	检查了 eMcp 和 mpu 的封装,注意所有bga封装的,边框丝印线不能与芯片的面有面积上重合,刚刚结合最好,方便定位!!
+	检查 emcp 的差分信号例如 CK_t 就是 CK+, CK_c 就是 CK- 
+	检查每一个复用 GPIO 针
+		pb13 是 pmic_irg 不能复用!!! 	
+		pb13 接口冲突 优先处理 ! 先取消补光灯
+		PD22:TWCK0 PD21:TWD0  
+		PC7:TWCK1 PC6:TWD1
+		已经有两组 TWI 在工作, 可以释放 PC0:TWCK0 PD29:TWD0 两针!!
+			空出了 pc0 pd29
+		pb7 pb8 / pa24 pa23 默认78当lcd_irq, 当78做pwm时, 2423当lcd_irq
+		已经有一组spi1了,也用了cs0, 
+			空出 PA25 PD25 PD26 PD27
+		lcd数据线还是全部串 22R 吧!!
+		lcd_sys_id 可以跟 rgb_blue ,pwmh1 共存,而不需要断开其中一路,
+		rgb_green red 可以与pwm共存,而不需要断开其中一路,
+			AREF 是外接参照电压
+			关注 PB9, PA13 能不能去复用
+	多图项目的严谨原理图思路,
+		先局部画出各个部分, 然后检查,然后收集余下未分配针重新分配
+		最后补全编号,每个编号都确保唯一!!!
+		然后画pcb的经验步骤,把每个子部分器件摆放好!!
+		
+	pcb-tips
+		点击按住元器件,l快捷键 可以快速元器件换层!!
+		pcb元器件间距 rules-placement-componont clearance 控制
+		Q快捷键 切换 mil mm 
+
+	加工能力: 
+		孔 0.2mm 
+		丝印 5mil
+		10mil 理论可走1A
+		5mil 作为信号足以!!
+	多层pcb布线:
+
+
+
+
 
 ??????????????????
 

@@ -1559,6 +1559,209 @@ markup-significant and internationalization characters:
 ” &rdquo; 	? &bdquo; 	?&dagger; 	? &Dagger; 	‰ &permil; 	? &lsaquo; 	? &rsaquo; 	€ &euro; 
 
 
+正则表达式:
+((?=[\x21-\x7e]+)[^A-Za-z0-9])
+x21-\x7e]+)[^A-Za-z0-9])
+这个匹配所有键盘上可见的非字母和数字的符号
+
+var patrn = /[`~!@#$%^&*()_\-+=<>?:"{}|,.\/;'\\[\]·~！@#￥%……&*（）——\-+={}|《》？：“”【】、；‘’，。、]/im;  
+     if (!patrn.test(str)) {// 如果包含特殊字符返回false
+         return false;
+     }
+     return true;
+这个是输入框防止特殊字符勿输入验证，包括键盘上所有特殊字符的英文和中文状态。需要者可以根据自身需求而定！谢谢！
+
+[^\w\s]+
+匹配非空 非字母 非数字 即可
+
+1 数字：^[0-9]*$ 
+
+2 n位的数字：^\d{n}$
+
+3 至少n位的数字：^\d{n,}$ 
+
+4 m-n位的数字：^\d{m,n}$ 
+
+5 零和非零开头的数字：^(0|[1-9][0-9]*)$ 
+
+6 非零开头的最多带两位小数的数字：^([1-9][0-9]*)+(.[0-9]{1,2})?$ 
+
+7 带1-2位小数的正数或负数：^(\-)?\d+(\.\d{1,2})?$ 
+
+8 正数、负数、和小数：^(\-|\+)?\d+(\.\d+)?$ 
+
+9 有两位小数的正实数：^[0-9]+(.[0-9]{2})?$
+
+10 有1~3位小数的正实数：^[0-9]+(.[0-9]{1,3})?$
+
+11 非零的正整数：^[1-9]\d*$ 或 ^([1-9][0-9]*){1,3}$ 或 ^\+?[1-9][0-9]*$
+
+12 非零的负整数：^\-[1-9][]0-9"*$ 或 ^-[1-9]\d*$
+
+13 非负整数：^\d+$ 或 ^[1-9]\d*|0$
+
+14 非正整数：^-[1-9]\d*|0$ 或 ^((-\d+)|(0+))$
+
+15 非负浮点数：^\d+(\.\d+)?$ 或 ^[1-9]\d*\.\d*|0\.\d*[1-9]\d*|0?\.0+|0$
+
+16 非正浮点数：^((-\d+(\.\d+)?)|(0+(\.0+)?))$ 或 ^(-([1-9]\d*\.\d*|0\.\d*[1-9]\d*))|0?\.0+|0$
+
+17 正浮点数：^[1-9]\d*\.\d*|0\.\d*[1-9]\d*$ 或 ^(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*))$
+
+18 负浮点数：^-([1-9]\d*\.\d*|0\.\d*[1-9]\d*)$ 或 ^(-(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*)))$
+
+19 浮点数：^(-?\d+)(\.\d+)?$ 或 ^-?([1-9]\d*\.\d*|0\.\d*[1-9]\d*|0?\.0+|0)$
+
+二、校验字符的表达式
+
+1 汉字：^[\u4e00-\u9fa5]{0,}$ 
+
+2 英文和数字：^[A-Za-z0-9]+$ 或 ^[A-Za-z0-9]{4,40}$ 
+
+3 长度为3-20的所有字符：^.{3,20}$ 
+
+4 由26个英文字母组成的字符串：^[A-Za-z]+$ 
+
+5 由26个大写英文字母组成的字符串：^[A-Z]+$ 
+
+6 由26个小写英文字母组成的字符串：^[a-z]+$ 
+
+7 由数字和26个英文字母组成的字符串：^[A-Za-z0-9]+$ 
+
+8 由数字、26个英文字母或者下划线组成的字符串：^\w+$ 或 ^\w{3,20}$ 
+
+9 中文、英文、数字包括下划线：^[\u4E00-\u9FA5A-Za-z0-9_]+$
+
+10 中文、英文、数字但不包括下划线等符号：^[\u4E00-\u9FA5A-Za-z0-9]+$ 或 ^[\u4E00-\u9FA5A-Za-z0-9]{2,20}$
+
+11 可以输入含有^%&',;=?$\"等字符：[^%&',;=?$\x22]+
+
+12 禁止输入含有~的字符：[^~\x22]+
+
+三、特殊需求表达式
+1 Email地址：^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$ 
+a、自定义完美的邮箱验证：（java）
+^(([^<>()\\[\\]\\\\.,;:\\s@\"]+(\\.[^<>()\\[\\]\\\\.,;:\\s@\"]+)*)|(\".+\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$
+b、（js或jq）
+^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$
+
+2 域名：[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(/.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+/.? 
+
+3 InternetURL：[a-zA-z]+://[^\s]* 或 ^http://([\w-]+\.)+[\w-]+(/[\w-./?%&=]*)?$ 
+
+4 手机号码最新：
+    ^((13[0-9])|(14[5,7])|(15[0-3,5-9])|(17[0,3,5-8])|(18[0-9])|166|198|199|(147))\\d{8}$（java）
+    ^((13[0-9])|(14[5,7])|(15[0-3,5-9])|(17[0,3,5-8])|(18[0-9])|166|198|199|(147))\d{8}$(js或jq)
+
+5 电话号码("XXX-XXXXXXX"、"XXXX-XXXXXXXX"、"XXX-XXXXXXX"、"XXX-XXXXXXXX"、"XXXXXXX"和"XXXXXXXX)：^(\(\d{3,4}-)|\d{3.4}-)?\d{7,8}$  
+
+6 国内电话号码(0511-4405222、021-87888822)：\d{3}-\d{8}|\d{4}-\d{7} 
+
+7 身份证号(15位、18位数字)：^\d{15}|\d{18}$ 
+
+8 短身份证号码(数字、字母x结尾)：^([0-9]){7,18}(x|X)?$ 或 ^\d{8,18}|[0-9x]{8,18}|[0-9X]{8,18}?$ 
+
+9 帐号是否合法(字母开头，允许5-16字节，允许字母数字下划线)：^[a-zA-Z][a-zA-Z0-9_]{4,15}$
+
+10 密码(以字母开头，长度在6~18之间，只能包含字母、数字和下划线)：^[a-zA-Z]\w{5,17}$
+
+11 强密码(必须包含大小写字母和数字的组合，不能使用特殊字符，长度在8-10之间)：^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,10}$
+
+12 日期格式：^\d{4}-\d{1,2}-\d{1,2}
+
+13 一年的12个月(01～09和1～12)：^(0?[1-9]|1[0-2])$
+
+14 一个月的31天(01～09和1～31)：^((0?[1-9])|((1|2)[0-9])|30|31)$
+
+15 钱的输入格式：
+
+16 1.有四种钱的表示形式我们可以接受:"10000.00" 和 "10,000.00", 和没有 "分" 的 "10000" 和 "10,000"：^[1-9][0-9]*$
+
+17 2.这表示任意一个不以0开头的数字,但是,这也意味着一个字符"0"不通过,所以我们采用下面的形式：^(0|[1-9][0-9]*)$
+
+18 3.一个0或者一个不以0开头的数字.我们还可以允许开头有一个负号：^(0|-?[1-9][0-9]*)$
+
+19 4.这表示一个0或者一个可能为负的开头不为0的数字.让用户以0开头好了.把负号的也去掉,因为钱总不能是负的吧.下面我们要加的是说明可能的小数部分：^[0-9]+(.[0-9]+)?$
+
+20 5.必须说明的是,小数点后面至少应该有1位数,所以"10."是不通过的,但是 "10" 和 "10.2" 是通过的：^[0-9]+(.[0-9]{2})?$
+
+21 6.这样我们规定小数点后面必须有两位,如果你认为太苛刻了,可以这样：^[0-9]+(.[0-9]{1,2})?$
+
+22 7.这样就允许用户只写一位小数.下面我们该考虑数字中的逗号了,我们可以这样：^[0-9]{1,3}(,[0-9]{3})*(.[0-9]{1,2})?$
+
+23 8.1到3个数字,后面跟着任意个 逗号+3个数字,逗号成为可选,而不是必须：^([0-9]+|[0-9]{1,3}(,[0-9]{3})*)(.[0-9]{1,2})?$
+
+24 备注：这就是最终结果了,别忘了"+"可以用"*"替代如果你觉得空字符串也可以接受的话(奇怪,为什么?)最后,别忘了在用函数时去掉去掉那个反斜杠,一般的错误都在这里
+
+25 xml文件：^([a-zA-Z]+-?)+[a-zA-Z0-9]+\\.[x|X][m|M][l|L]$
+
+26 中文字符的正则表达式：[\u4e00-\u9fa5]
+
+27 双字节字符：[^\x00-\xff] (包括汉字在内，可以用来计算字符串的长度(一个双字节字符长度计2，ASCII字符计1))
+
+28 空白行的正则表达式：\n\s*\r (可以用来删除空白行)
+
+29 HTML标记的正则表达式：<(\S*?)[^>]*>.*?</\1>|<.*? /> (网上流传的版本太糟糕，上面这个也仅仅能部分，对于复杂的嵌套标记依旧无能为力)
+
+30 首尾空白字符的正则表达式：^\s*|\s*$或(^\s*)|(\s*$) (可以用来删除行首行尾的空白字符(包括空格、制表符、换页符等等)，非常有用的表达式)
+
+31 腾讯QQ号：[1-9][0-9]{4,} (腾讯QQ号从10000开始)
+
+32 中国邮政编码：[1-9]\d{5}(?!\d) (中国邮政编码为6位数字) 33 IP地址：\d+\.\d+\.\d+\.\d+ (提取IP地址时有用) 34 IP地址：((?:(?:25[0-5]|2[0-4]\\d|[01]?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d?\\d)) 
+
+正则表达式可以为空值，不为空则要格式。
+
+格式如下：
+
+^$|^(\d+|\-){7,}$ （"|"后边的是要符合格式。）
+
+如果可以为空的空可以是空格和制表符那就这么写：^\s*$|^(\d+|\-){7,}$
+
+正则表达式不为空用\S匹配，不能有空格可以用[^ ]匹配，[]中^后面是一个空格。
+
+[size=12px]1。^d+$　　//匹配非负整数（正整数 + 0） 
+2。^[0-9]*[1-9][0-9]*$　　//匹配正整数 
+3。^((-d+)|(0+))$　　//匹配非正整数（负整数 + 0） 
+4。^-[0-9]*[1-9][0-9]*$　　//匹配负整数 
+5。^-?d+$　　　　//匹配整数 
+6。^d+(.d+)?$　　//匹配非负浮点数（正浮点数 + 0） 
+7。^(([0-9]+.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*.[0-9]+)|([0-9]*[1-9][0-9]*))$　　//匹配正浮点数 
+8。^((-d+(.d+)?)|(0+(.0+)?))$　　//匹配非正浮点数（负浮点数 + 0） 
+9。^(-(([0-9]+.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*.[0-9]+)|([0-9]*[1-9][0-9]*)))$　　//匹配负浮点数 
+10。^(-?d+)(.d+)?$　　//匹配浮点数 
+11。^[A-Za-z]+$　　//匹配由26个英文字母组成的字符串 
+12。^[A-Z]+$　　//匹配由26个英文字母的大写组成的字符串 
+13。^[a-z]+$　　//匹配由26个英文字母的小写组成的字符串 
+14。^[A-Za-z0-9]+$　　//匹配由数字和26个英文字母组成的字符串 
+15。^w+$　　//匹配由数字、26个英文字母或者下划线组成的字符串 
+16。^[w-]+(.[w-]+)*@[w-]+(.[w-]+)+$　　　　//匹配email地址 
+17。^[a-zA-z]+://匹配(w+(-w+)*)(.(w+(-w+)*))*(?S*)?$　　//匹配url 
+18。匹配中文字符的正则表达式： [u4e00-u9fa5]
+19。匹配双字节字符(包括汉字在内)：[^x00-xff]
+20。应用：计算字符串的长度（一个双字节字符长度计2，ASCII字符计1）
+String.prototype.len=function(){return this.replace([^x00-xff]/g,"aa").length;}
+21。匹配空行的正则表达式：n[s| ]*r
+22。匹配HTML标记的正则表达式：/<(.*)>.*</1>|<(.*) />/ 
+23。匹配首尾空格的正则表达式：(^s*)|(s*$)
+
+* 正则表达式用例
+  * 1、^S+[a-z A-Z]$ 不能为空 不能有空格  只能是英文字母
+  * 2、S{6,}         不能为空 六位以上
+  * 3、^d+$          不能有空格 不能非数字
+  * 4、(.*)(.jpg|.bmp)$ 只能是jpg和bmp格式
+  * 5、^d{4}-d{1,2}-d{1,2}$ 只能是2004-10-22格式
+  * 6、^0$            至少选一项
+  * 7、^0{2,}$        至少选两项
+  * 8、^[s|S]{20,}$ 不能为空 二十字以上
+  * 9、^+?[a-z0-9](([-+.]|[_]+)?[a-z0-9]+)*@([a-z0-9]+(.|-))+[a-z]{2,6}$邮件
+  * 10、w+([-+.]w+)*@w+([-.]w+)*.w+([-.]w+)*([,;]s*w+([-+.]w+)*@w+([-.]w+)*.w+([-.]w+)*)* 输入多个地址用逗号或空格分隔邮件
+  * 11、^(([0-9]+))?[0-9]{7,8}$电话号码7位或8位或前面有区号例如（022）87341628
+  * 12、^[a-z A-Z 0-9 _]+@[a-z A-Z 0-9 _]+(.[a-z A-Z 0-9 _]+)+(,[a-z A-Z 0-9 _]+@[a-z A-Z 0-9 _]+(.[a-z A-Z 0-9 _]+)+)*$
+  *     只能是字母、数字、下划线；必须有@和.同时格式要规范 邮件
+  * 13 ^w+@w+(.w+)+(,w+@w+(.w+)+)*$上面表达式也可以写成这样子，更精练。
+    14   ^w+((-w+)|(.w+))*@w+((.|-)w+)*.w+$ [/size]
+
+
 
 浮窗代码片段:
 新闻弹窗: https://blog.csdn.net/kaikaihuiyuan/article/details/79142126  //新闻弹窗
@@ -2353,8 +2556,8 @@ CSS 框模型
 	|      |      |                            |      |     |
 	|      |      |                            |      |     |
 	|      |      ------------------------------      |     |
-	|      |                                          |     |
-	|      |                                          |     |
+	|      |                                   |            |
+	|      |                                   |            |
 	|      --------------------------------------------     |
 	|                                                       |
 	|                                                       |
@@ -2714,6 +2917,9 @@ display:
 
 	none:	元素不会计入页面排版,不占用位置,所以也不就不能显示, 
 		对应类似属性: visibility:hidden, 但是这个属性会把元素计入排版,即会占用位置只是不显示
+	注意 inline 说的是元素被假装看作字符,所以特别注意两个元素对象中间隔着的换行空格符号,在浏览器里一律以一个空格显示
+	这时但你想两个元素对象紧贴时,你会发现两个inline元素对象 死活不贴在一起,不是设计magin的问题,而是中间隔了个空格的问题!!
+	
 dispay:flex  display新属性!!,弹性布局,是容器属性, 即设置在父元素上的.
 	子元素的float、clear和vertical-align属性将失效。
 	display:flex 需要配合以下属性,一起使用
@@ -3591,6 +3797,10 @@ django mysql 储存 中文 编码问题:
 					   ('第1条信息', '4'), 
 					   ('第1条信息', '5'),
 					   ('第1条信息', '6')]>
+
+		最后一条数据,第一条数据:
+			xxx.objects.last()
+			xxx.objects.first()
 	增: 
 		子表.objects.create(子表外键=母表.objects.get(母表字段=数据).子表字段=需要添加的数据) 
 	
@@ -4240,10 +4450,1495 @@ python 读文件片段
 
 
 
+20181106
+后端读取数据库写xml 传到前端并刷新页面 !!		
+	前端的这个请求
+	$.get("../loadfile", function(data,status,xhr){ readyloadfile(data,status,xhr) } )
+	注意最终只是当前页面获得了一个数据文件或者数据页面,并没有 新建页面 或者 内容覆盖当前页面
+	对应的后端只能发 template 里的文件,
+	def loadf(request):
+	    dy_model_creat_log()
+	    if request.method == "GET":  # 请求方法为GET时，进行处理
+	        return render(request,'bili.html') 	# template 里的 bili.html
+		或者 return render(request,'kk.xml') 	# template 里的 kk.xml
+	其他 文件夹里的都显示出错!!
+	return render(request,'/static/clients/clie001/bili.html')
+	return render(request,'/static/clients/clie001/kk.xml')	
+
+		
+	然而,前端使用这段代码:
+	    if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+	        xmlhttp=new XMLHttpRequest();
+	    } else {// code for IE6, IE5
+	        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	    }
+	    xmlhttp.open("GET","/static/clients/clie001/kk.xml",false);
+	    xmlhttp.send();
+	    xmlDoc=xmlhttp.responseXML;     //获取video2里的值：video2.mp4
+	    var xmlvar = xmlDoc.getElementsByTagName("Cnte")[1] //.childNodes[0].nodeValue;
+	    console.log(xmlvar)
+	并不需要通过后端自定义的程序, djanggo 自动提交/static/clients/clie001/kk.xml文件!!
+	注意最终只是当前页面获得了一个数据文件或者数据页面,并没有 新建页面 或者 内容覆盖当前页面
+
+	js创建新页面的 并跳转 三种方式
+	1.a标签
+		a标签:
+		<a href="http://www.jb51.net" title="脚本之家">Welcome</a>
+		<a href= “javascript:history.go(-1)”>  :上一个页面，就是前一个页面
+		<a href= “javascript:history.go(1)”>  :下一个页面，就是后一个页面
+		<a href="http://www.jb51.net" title="脚本之家" target="_blank">Welcome</a>
+	2 . location对象的href属性：
+		window.location.href="http://www.jb51.net";      //当前页面,获得新页面覆盖,没有另外建立新页面
+	3.open :
+		window.open(“http://www.w3schools.com”,”_blank”);     //在另外新建窗口中打开窗口
+		_self 表示当前窗口
+		_blank 表示新窗口
+		_parent 表示父窗口
+		_top 表示顶层窗口
+		这里注意 这些 方法都是要提交后端请求,重新获得页面上内容的,
+	现在我们尝试实现的的需求是,把当前信息放到新页面显示,不过好像是不可能实现,还是需要访问服务器获取内容!!
+	这样就得需要巧妙的设计,这里就先不讨论了
+	学到了 foreach
+	var arr = ["one","two","three"];
+
+	//只能遍历 这样这种写法只是表面修改 实际上没有改变数组本身内容!
+	arr.forEach(function(part){ 
+	  part = "four";
+	  return "four";
+	})	
+	//这种写法 就可以修改 数组本身内容!
+	arr.forEach(function(part, index, theArray) {
+  		theArray[index] = "hello world";
+	});
+	
+	//这种写法可以修改 数组本身内容
+	var spac = '3:4:5:6:7'
+	spac = spac.split(':')
+	spac.forEach(function(a,b,c){
+		spacnum = parseInt(a)
+		c[b] = 'y'
+		for(;spacnum > 1;){
+        		c[b] += 'y'
+        		spacnum -= 1
+        	}
+		console.log(c[b])
+	})
+	spac = spac[0] + ' << ' + spac[3] 
+	console.log(spac)
+	
+以下这段不成熟的片段,实现了从 xml 读取数据到 页面!!
+    //更新网页, 假设 xml里 是连续的行!! 不是分散的行!!
+    var ff = document.getElementsByClassName('main')
+    var flnum = parseInt(ff[0].firstElementChild.children[1].innerText)
+    var llnum = parseInt(ff[0].lastElementChild.children[1].innerText)
+    var linod = null
+    var clnum = null
+	var boby = null
+	var spac = null
+	var spacnum = null
+	var kate = []
+	var bobe = []
+	var rlikn = null
+	var flikn = null
+	var htmlcnte = null
+    var kl = null
+
+
+    //var root = r.getElementsByTagName('doc')
+    //console.log(r)
+
+    var parser = new DOMParser();
+    var tree = r.children[0].innerHTML
+    tree = '<root>' + tree + '</root>'
+    //tree = tree.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&amp;/g, "&")
+    //tree = tree.replace(/<br>/g, "<br></br>")
+    var xmldom = parser.parseFromString( tree , 'text/xml')
+    var root = xmldom.getElementsByTagName('root')
+    //root[0].innerHTML.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&amp;/g, "&")
+
+    //var kl = root[0].innerHTML
+    //kl =  kl.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&amp;/g, "&")
+    console.log(root[0].innerHTML)
+    console.log(xmldom)
+
+    //root[0].innerHTML = kl
+
+
+
+    var El = root[0].firstElementChild
+    while ( El != null) {
+        boby = El.children[0].innerHTML.split(':')
+        clnum = parseInt(boby[0])
+        if (( clnum <= llnum ) && ( clnum >= llnum )) {
+            linod = ff[0].children[clnum-flnum]
+            switch (boby[2]){
+                case "edit" :
+                    htmlcnte = '&#10;&#09;<div class="edit" cnteid="' + boby[1] + '" cntety="1"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + linod.children[1].innerText + '</span><div class="edtx">' + El.children[1].innerHTML.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&amp;/g, "&") + '</div></div>'
+                    break
+                case "hdty" :
+                    spacnum = parseInt(El.children[1].children[0].innerHTML)
+                    spac = ' '
+                    for(;spacnum > 1;){
+                        spac += ' '
+                        spacnum -= 1
+                    }
+                    rlikn = (El.children[1].children[3].innerHTML.split(':'))[1]
+                    flikn = (El.children[1].children[4].innerHTML.split(':'))[1]
+		            htmlcnte = '&#10;&#09;<div class="hdty" cnteid="' + boby[1] + '" cntety="7"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '" style="font-size:0.84em; font-weight:normal;">' + linod.children[1].innerText + '</span>&#10;&#09;&#09;<div class="hdda">' + El.children[1].children[1].innerHTML + '</div>&#10;&#09;&#09;<div class="spac">' + spac + '</div>&#10;&#09;&#09;<div class="hdti">' + El.children[1].children[2].innerHTML + '</div>&#10;&#09;&#09;<div class="hdcr" contenteditable="false">&#10;&#09;&#09;&#09;<div class="rlik">&#10;&#09;&#09;&#09;&#09;<svg class="hdcr-svg" viewBox="0 0 14 16" version="1.1" width="60px" height="60px" aria-hidden="true"><path fill-rule="evenodd" style="fill:yellow;stroke:white;" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74L14 6z"></path></svg>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;&#09;<div class="rlikn">' + rlikn + '</div>&#10;&#09;&#09;&#09;<div class="flik">&#10;&#09;&#09;&#09;&#09;<svg class="hdcr-svg" viewBox="0 0 14 16" version="1.1" width="60px" height="60px" aria-hidden="true"><path fill-rule="evenodd" style="fill:grey;stroke:white;" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74L14 6z"></path></svg>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;&#09;<div class="flikn">' + flikn + '</div>&#10;&#09;&#09;&#09;<div class="othrc">&#10;&#09;&#09;&#09;&#09;<svg class="hdcr-svg" viewBox="0 0 12 16" version="1.1" width="60px" height="60px" aria-hidden="true"><path fill-rule="evenodd" style="fill:#aaa;stroke:white;" d="M12 9H7v5H5V9H0V7h5V2h2v5h5v2z"></path></svg>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "imgt" :
+                    spac = El.children[1].children[0].innerHTML.split(':')
+                    spac.forEach(function(a,b,c){
+		                spacnum = parseInt(a)
+		                c[b] = ' '
+		                for(;spacnum > 1;){
+        	                c[b] += ' '
+        	                spacnum -= 1
+                        }
+                    })
+                    kate = El.getElementsByTagName('Kate')                                                     case "edit" :
+                    bobe = El.getElementsByTagName('Bobe')
+                    htmlcnte = '&#10;&#09;<div class="imgt" cnteid="' + boby[1] + '" cntety="2" contenteditable="false"><span class=""orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + linod.children[1].innerText + '</span>&#10;&#09;&#09;<div class="imgd">'
+                    spac.forEach(function(item,i){
+                        if( bobe.length >= i){  //发现了 spac 比 bobe kate 多 一项
+                            htmlcnte = htmlcnte + '&#10;&#09;&#09;&#09;<div class="spac" contenteditable="true">' + item + '</div>&#10;&#09;&#09;&#09;<div class="igdd">&#10;&#09;&#09;&#09;&#09;<img class="imgs" src="' + bobe[i].innerHTML + '" alt="pic error">&#10;&#09;&#09;&#09;&#09;<div class="imgi" contenteditable="true">' + kate[i].innerHTML + '</div>&#10;&#09;&#09;&#09;&#09;</div>'
+                        }
+                    })
+                    htmlcnte = htmlcnte + '&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "adio" :
+                    htmlcnte = '&#10;&#09;<div class="adio" cnteid="' + boby[1] + '" cntety="4" contenteditable="false"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + linod.children[1].innerText + '</span>&#10;&#09;&#09;<div class="adod">&#10;&#09;&#09;&#09;<audio src="' + El.children[1].children[1].innerHTML + '" controls=""></audio>&#10;&#09;&#09;&#09;<div class="adoi" contenteditable="true">' + El.children[1].children[0].innerHTML + '</div>&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "math" :
+                    spac = El.children[1].children[0].innerHTML.split(':')
+                    spac.forEach(function(a,b,c){
+		                spacnum = parseInt(a)
+		                c[b] = ' '
+		                for(;spacnum > 1;){
+        	                c[b] += ' '
+        	                spacnum -= 1
+                        }
+                    })
+                    kate = El.getElementsByTagName('Kate')
+                    bobe = El.getElementsByTagName('Bobe')
+                    htmlcnte = '&#10;&#09;<div class="math" cnteid="' + boby[1] + '" cntety="3" contenteditable="false"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + linod.children[1].innerText + '</span>&#10;&#09;&#09;<div class="matd">'
+                    spac.forEach(function(item,i){
+                        if( bobe.length >= i){
+                            htmlcnte = htmlcnte + '&#10;&#09;&#09;&#09;<div class="spac" contenteditable="true">' + item + '</div>&#10;&#09;&#09;&#09;<div class="mtdd">&#10;&#09;&#09;&#09;&#09;<p>' + bobe[i].innerHTML.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&amp;/g, "&")  + '</p>&#10;&#09;&#09;&#09;&#09;<div class="mati" contenteditable="true">' + kate[i].innerHTML + '</div>&#10;&#09;&#09;&#09;</div>'
+                        }
+                    })
+                    htmlcnte = htmlcnte + '&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "vido" :
+                    htmlcnte = '&#10;&#09;<div class="vido" cnteid="' + boby[1] + '" cntety="5" contenteditable="false"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + linod.children[1].innerText + '</span>&#10;&#09;&#09;<div class="vidd">&#10;&#09;&#09;&#09;<video controls="" width="320" height="240">&#10;&#09;&#09;&#09;&#09;<source src="' + El.children[1].children[1].innerHTML + '" type="video/mp4">&#10;&#09;&#09;&#09;</video>&#10;&#09;&#09;&#09;<div class="vidi" contenteditable="true">'  + El.children[1].children[0].innerHTML + '</div>&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "stav" :
+                    spac = ' '
+                    spacnum = parseInt(El.children[1].children[0].innerHTML)
+                    for(;spacnum > 1;){
+        	            spac += ' '
+        	            spacnum -= 1
+                    }
+                    htmlcnte = '&#10;&#09;<div class="stav" cnteid="' + boby[1] + '" cntety="6" contenteditable="false"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + linod.children[1].innerText + '</span>&#10;&#09;&#09;<div class="stad">&#10;&#09;&#09;&#09;<div style="white-space:pre; display:none;">&#10;<textarea class="vex-tab-editor">' + El.children[1].children[1].innerHTML + '</textarea>&#10;&#09;&#09;&#09;&#09;<p id="errorTip" class="text-danger"></p>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;&#09;<div class="spac" contenteditable="true">' + spac + '</div>&#10;&#09;&#09;&#09;<div>&#10;&#09;&#09;&#09;&#09;<div class="tab-preview-container" style="margin-left:50px;">&#10;&#09;&#09;&#09;&#09;&#09;<canvas class="tabPreviewer"></canvas>&#10;&#09;&#09;&#09;&#09;</div>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+		    }
+
+            linod.insertAdjacentHTML("afterEnd",htmlcnte)
+            linod.remove()
+        }else{
+            linod = ff[0].lastElementChild
+            switch (boby[2]){
+                case "edit" :
+                    htmlcnte = '&#10;&#09;<div class="edit" cnteid="' + boby[1] + '" cntety="1"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + boby[0] + ':</span><div class="edtx">' + El.children[1].innerHTML.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&amp;/g, "&") + '</div></div>'
+                    break
+                case "hdty" :
+                    spacnum = parseInt(El.children[1].children[0].innerHTML)
+                    spac = ' '
+                    for(;spacnum > 1;){
+                        spac += ' '
+                        spacnum -= 1
+                    }
+                    rlikn = (El.children[1].children[3].innerHTML.split(':'))[1]
+                    flikn = (El.children[1].children[4].innerHTML.split(':'))[1]
+		            htmlcnte = '&#10;&#09;<div class="hdty" cnteid="' + boby[1] + '" cntety="7"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '" style="font-size:0.84em; font-weight:normal;">' + boby[0] + ':</span>&#10;&#09;&#09;<div class="hdda">' + El.children[1].children[1].innerHTML + '</div>&#10;&#09;&#09;<div class="spac">' + spac + '</div>&#10;&#09;&#09;<div class="hdti">' + El.children[1].children[2].innerHTML + '</div>&#10;&#09;&#09;<div class="hdcr" contenteditable="false">&#10;&#09;&#09;&#09;<div class="rlik">&#10;&#09;&#09;&#09;&#09;<svg class="hdcr-svg" viewBox="0 0 14 16" version="1.1" width="60px" height="60px" aria-hidden="true"><path fill-rule="evenodd" style="fill:yellow;stroke:white;" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74L14 6z"></path></svg>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;&#09;<div class="rlikn">' + rlikn + '</div>&#10;&#09;&#09;&#09;<div class="flik">&#10;&#09;&#09;&#09;&#09;<svg class="hdcr-svg" viewBox="0 0 14 16" version="1.1" width="60px" height="60px" aria-hidden="true"><path fill-rule="evenodd" style="fill:grey;stroke:white;" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74L14 6z"></path></svg>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;&#09;<div class="flikn">' + flikn + '</div>&#10;&#09;&#09;&#09;<div class="othrc">&#10;&#09;&#09;&#09;&#09;<svg class="hdcr-svg" viewBox="0 0 12 16" version="1.1" width="60px" height="60px" aria-hidden="true"><path fill-rule="evenodd" style="fill:#aaa;stroke:white;" d="M12 9H7v5H5V9H0V7h5V2h2v5h5v2z"></path></svg>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "imgt" :
+                    spac = El.children[1].children[0].innerHTML.split(':')
+                    console.log(spac)
+                    spac.forEach(function(a,b,c){
+		                spacnum = parseInt(a)
+		                c[b] = ' '
+		                for(;spacnum > 1;){
+        	                c[b] += ' '
+        	                spacnum -= 1
+                        }
+                    })
+                    kate = El.getElementsByTagName('Kate')
+                    bobe = El.getElementsByTagName('Bobe')
+                    console.log(spac)
+                    console.log(bobe)
+                    htmlcnte = '&#10;&#09;<div class="imgt" cnteid="' + boby[1] + '" cntety="2" contenteditable="false"><span class=""orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + boby[0] + ':</span>&#10;&#09;&#09;<div class="imgd">'
+                    spac.forEach(function(item,i){
+                        if( bobe.length >= i){
+                            htmlcnte = htmlcnte + '&#10;&#09;&#09;&#09;<div class="spac" contenteditable="true">' + item + '</div>&#10;&#09;&#09;&#09;<div class="igdd">&#10;&#09;&#09;&#09;&#09;<img class="imgs" src="' + bobe[i].innerHTML + '" alt="pic error">&#10;&#09;&#09;&#09;&#09;<div class="imgi" contenteditable="true">' + kate[i].innerHTML + '</div>&#10;&#09;&#09;&#09;&#09;</div>'
+                        }
+                    })
+                    htmlcnte = htmlcnte + '&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "adio" :
+                    htmlcnte = '&#10;&#09;<div class="adio" cnteid="' + boby[1] + '" cntety="4" contenteditable="false"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + boby[0] + ':</span>&#10;&#09;&#09;<div class="adod">&#10;&#09;&#09;&#09;<audio src="' + El.children[1].children[1].innerHTML + '" controls=""></audio>&#10;&#09;&#09;&#09;<div class="adoi" contenteditable="true">' + El.children[1].children[0].innerHTML + '</div>&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "math" :
+                    spac = El.children[1].children[0].innerHTML.split(':')
+                    spac.forEach(function(a,b,c){
+		                spacnum = parseInt(a)
+		                c[b] = ' '
+		                for(;spacnum > 1;){
+        	                c[b] += ' '
+        	                spacnum -= 1
+                        }
+                    })
+                    kate = El.getElementsByTagName('Kate')
+                    bobe = El.getElementsByTagName('Bobe')
+                    htmlcnte = '&#10;&#09;<div class="math" cnteid="' + boby[1] + '" cntety="3" contenteditable="false"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + boby[0] + ':</span>&#10;&#09;&#09;<div class="matd">'
+                    spac.forEach(function(item,i){
+                        if( bobe.length >= i){
+                            htmlcnte = htmlcnte + '&#10;&#09;&#09;&#09;<div class="spac" contenteditable="true">' + item + '</div>&#10;&#09;&#09;&#09;<div class="mtdd">&#10;&#09;&#09;&#09;&#09;<p>' + bobe[i].innerHTML.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&amp;/g, "&")  + '</p>&#10;&#09;&#09;&#09;&#09;<div class="mati" contenteditable="true">' + kate[i].innerHTML + '</div>&#10;&#09;&#09;&#09;</div>'
+                        }
+                    })
+                    htmlcnte = htmlcnte + '&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "vido" :
+                    htmlcnte = '&#10;&#09;<div class="vido" cnteid="' + boby[1] + '" cntety="5" contenteditable="false"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + boby[0] + ':</span>&#10;&#09;&#09;<div class="vidd">&#10;&#09;&#09;&#09;<video controls="" width="320" height="240">&#10;&#09;&#09;&#09;&#09;<source src="' + El.children[1].children[1].innerHTML + '" type="video/mp4">&#10;&#09;&#09;&#09;</video>&#10;&#09;&#09;&#09;<div class="vidi" contenteditable="true">'  + El.children[1].children[0].innerHTML + '</div>&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+                case "stav" :
+                    spac = ' '
+                    spacnum = parseInt(El.children[1].children[0].innerHTML)
+                    for(;spacnum > 1;){
+        	            spac += ' '
+        	            spacnum -= 1
+                    }
+                    htmlcnte = '&#10;&#09;<div class="stav" cnteid="' + boby[1] + '" cntety="6" contenteditable="false"><span class="orgl">&nbsp;</span><span class="lid" oid="' + boby[0] + '">' + boby[0] + ':</span>&#10;&#09;&#09;<div class="stad">&#10;&#09;&#09;&#09;<div style="white-space:pre; display:none;">&#10;<textarea class="vex-tab-editor">' + El.children[1].children[1].innerHTML + '</textarea>&#10;&#09;&#09;&#09;&#09;<p id="errorTip" class="text-danger"></p>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;&#09;<div class="spac" contenteditable="true">' + spac + '</div>&#10;&#09;&#09;&#09;<div>&#10;&#09;&#09;&#09;&#09;<div class="tab-preview-container" style="margin-left:50px;">&#10;&#09;&#09;&#09;&#09;&#09;<canvas class="tabPreviewer"></canvas>&#10;&#09;&#09;&#09;&#09;</div>&#10;&#09;&#09;&#09;</div>&#10;&#09;&#09;</div>&#10;&#09;</div>'
+                    break
+
+            }
+            //console.log(linod)
+            linod.insertAdjacentHTML("afterEnd",htmlcnte)
+        }
+        console.log(El)
+        El = El.nextElementSibling
+    }
+    // 统一处理行号格式
+    spacnum = ff[0].lastElementChild.children[1].innerText.length
+    linod = ff[0].firstElementChild
+    while ( linod != null) {
+        boby = spacnum - linod.children[1].innerText.length
+        for(;boby > 0;){
+    	    linod.children[1].innerText = '0' + linod.children[1].innerText
+            boby -= 1
+        }
+        console.log(linod , linod.nextElementSibling)
+        linod = linod.nextElementSibling
+    }
+
+    onloadlast()
+
+当中遇到了很多设计上的问题, 例如 <spac>10:10:10:</spac>, 应该改为 <spac>10:10:10</spac>
+使用 原生js parser 分析 xml 有很多坑, 重点是, 使用parser分析的xml文件必须是一个规范的xml
+以下:
+	<kate> < </kate>
+	<kate> <br> </kate>
+	都不是规范的 xml 文件的内容,要分析这样的文件,或者改成这样子, parser都会崩溃
+因为 parser 这么严格的特点
+那么就要重新考虑,假如 行内容 要显示 禁忌符号 < > & " 的 xml和数据库的内容存放 问题
+
+附加补充:特殊符号:http://w13.loxa.edu.tw/ctjh930220/
+
+
+
+
+
+
+
+
+20181124
+处理了 wrap 
+考虑以下情景:
+	原来:  	line32 -> cnte47	line55之后没有line
+	后来可以出现以下各种情形
+	1,	line32_mewl,  line33_wrap-> cnte47
+	2,	line32_newl,	没有line -> cnte47
+	3,	line32_wrapl-> cnte46,	line33-> cnte47
+	4,	line20_wrapl-> cnte47,	line32-> cnte60
+	5,	line20_wrapl-> cnte47,	line32_newl
+	....
+后来想到一个合理的 cnte count 改变策略
+	line_newl时, 如果line本存在,先把当前line指向的cnte_count-1,然后line再指向新cnte,并新cnte_count+1
+		     如果line新建,line再指向新cnte,并cnte_count+1
+	line_wrap时, 当前line指向的cnte_count-1,然后line再指向新cnte,并新cnte_count+1
+	line_fxl时, 获得cnte的content 比较讲究,
+			如果 xml的数据条是 = <br> 就直接用特定的哦空白cnte
+			如果 != <br> xml获得 cntenum != 0 则是新cnte,需要建立另外存储
+			否则 就是就就内容,直接从库里取得内容,
+				获得的内容需要添加history,并修改当前内容
+				还要注意有时候fixl但是cnte 到最后还是没有变化,所以不算修改
+				所以不用添加history,什么都不用做
+		    然后就是修改line指向
+			如果是新行,行号大于现有的 建立新指向
+			如果是指向没有变,那么什么都不变
+			不过有种例外,如果本来有的行内容变成空白的cnte,并不是在cnte本身修改成空白cnte
+			而是让line直接指向特定的空白cnte!!!
+然后是整合到一块!
+	首先为了跟好测试,原来用于调试而建立的分立系统就是不需要动了,另外建立新的内容来整合测试
+原来的分立测试,页面右下角 onclick="savefile(this,event) 然后 整合xml testfile传到服务器 项目根目录
+	服务器 views.saveline 处理并写入数据表单 web_cnte0001 web_line0001 然后整洁读出数据到 lexicon.xml存在项目根目录
+	手动把 lexicon.xml 拷贝到 clie001 的kkl.xml, 
+	还不要 忘了ready.js loadfile 
+		$.get("/static/clients/clie001/kk1.xml", function(data,status,xhr){ readyloadfile(data,status,xhr) } )
+		还有 onloadlast 通过加载 kkl.xml 来展示内容
+	首先, 关闭 $.get 加载 loadtest_new 来测试 数据库新建立数据条
+	然后打开 $.get 加载loadtedt_空白来检测
+		由于历史原因, new 需要多次 saveline 才行,不然不能接着做wrap测试
+	如此类推,loadtest_wrap 调试 wrap后 刷写数据库
+		loadtest_build_for_fix 为 fix建立调试环境
+		loadtest_fix1 调试 fix
+		loadtest_fix2 调试 带 wrap的fix
+	注意 在 base1.js 的多媒体内容上传都在 clie001 了,先不管
+	
+整合测试,直接使用新的数据表单和函数 不要与分立测试共用,另外这里我都使用加 2 的命令方式
+	另外 django的 架构很有问题,我使用views.saveline2,他还是跳回到分立测试的 views.saveline函数,
+	就是 onclick="savefile(this,event) 收集变化内容 上传服务器 然后 saline 存数据库,然后重获 xml返回,
+	最后更新页面!!! 
+	记录未完
+	接下来还没有实现 httpresponse 返回文件和更新页面的问题
+	网上看到了一个 download文件的例程函数: http://www.cnblogs.com/crystaltu/p/9228454.html
+def download(request):  
+    """                                                                           
+    Send a file through Django without loading the whole file into                
+    memory at once. The FileWrapper will turn the file object into an             
+    iterator for chunks of 8KB.                                                   
+    """   
+      
+    #读取mongodb的文件到临时文件中  
+    fileid_=request.GET["fileid"]  
+    filepath_ = ('%s/%s'%(MEDIA_ROOT, fileid_)) #文件全路径  
+    file_=TFiles.objects.get(fileid=int(fileid_))  
+    filename_=file_.filename  
+    filetype_=file_.filetype  
+  
+    if os.path.isfile(filepath_):  
+        pass  
+    else:  
+        mongoLoad(fileid_)  
+      
+    #下载文件  
+    def readFile(fn, buf_size=262144):#大文件下载，设定缓存大小  
+        f = open(fn, "rb")  
+        while True:#循环读取  
+            c = f.read(buf_size)  
+            if c:  
+                yield c  
+            else:  
+                break  
+        f.close()  
+    response = HttpResponse(readFile(filepath_), content_type='APPLICATION/OCTET-STREAM') #设定文件头，这种设定可以让任意文件都能正确下载，而且已知文本文件不是本地打开  
+    response['Content-Disposition'] = 'attachment; filename='+filename_.encode('utf-8') + filetype_.encode('utf-8')#设定传输给客户端的文件名称  
+    response['Content-Length'] = os.path.getsize(filepath_)#传输给客户端的文件大小  
+    return response
+	
+	尝试修改迎合自己需求!!			
+
+
+
+
+
+
+
+
+
+
+
 
 
 20181106
-后端读取数据库写xml 传到前端并刷新页面 !!		
+后端读取数据库写xml 传到前端并刷新页面 !!
+重点问题:
+	django  save1() save2()	自动纠错? save1()函数错误,执行save2()?
+	firefox 缓存问题 shift+crtl+delect 删缓存 ,
+		关闭缓存 about:config 页面
+			browser.cache.disk.enable = false
+			browser.cache.memory.enable = false
+			browser.cache.offline.enable = false
+	jquery $.get() $.post() django 可以处理为 静态资源路径STATICFILES_DIRS的内容, 
+		也可以是urlpatterns,自己注册的内容
+		
+
+
+
+
+
+20181205
+建立登录界面:
+	使用模板, 模板中 第3方登录图标 使用diaplay:flex 出现了不必要的下滑线,需要使用bootstrap框架的css 来解决
+	但是发现使用 bootstrap 框架会绑架了 body 标签
+	自己 body 设计的参数不再起作用!	
+	关于使用 span 放置 特殊符号,比如 密码图案还有 ::before ::after 的使用
+	改变 inpput 预填充文字的颜色例如:
+		input::-webkit-input-placeholder { /* WebKit, Blink, Edge */
+		    color:    #909;
+		}
+		input:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+		   color:    #909;
+		}
+		input::-moz-placeholder { /* Mozilla Firefox 19+ */
+		   color:    #909;
+		}
+		input:-ms-input-placeholder { /* Internet Explorer 10-11 */
+		   color:    #909;
+		}
+js 补习:
+	一般的 js 数组 array 和 html 的DOM 数组对象还是有所区别的
+	例如 array 可以使用 pop() 获得最后一个成员, 但是 DOM对象数组咩没有这样的函数
+	例如 classList 一个 典型的 Dom对象数组:
+		<div id="demo" class="wrap-login100 p-l-55 p-r-55 p-t-65 p-b-54 login-log">
+		获得
+		var demo=document.getElementById("demo").classList;
+		添加add()  
+		demo.add("style");
+		删除remove()
+		demo.remove("style");
+		包含contains()
+		var is=demo.contains("style");
+		console.log(is);//返回false
+		其他属性：
+		demo.length;//获取class的个数-1
+		demo.item(0);//获取第一个类名
+		原生通过正则对class的操作 
+
+
+
+
+
+
+
+
+
+
+20181213
+对于表单内容的验证,使用 login 例子本身自带的 Validate js 模板,再补上 正则表达式子来判断!!
+在一个页面上画一个按钮，有四种办法：
+    <input type="button" /> 这就是一个按钮。如果你不写javascript 的话，按下去什么也不会发生。
+    <input type="submit" /> 这样的按钮用户点击之后会自动提交 form，除非你写了javascript 阻止它。
+    <button> 这个按钮放在 form 中也会点击自动提交， (即<form> 里的 button 会默认点击触发 submmit 事件!!)
+	比前两个的优点是按钮的内容不光可以有文字，还可以有图片等多媒体内容。（当然，前两个用图片背景也可以做到）。它的缺点是不同的浏览器得到的 	value 值不同；可能还有其他的浏览器兼容问题（葛亮）。
+    其他标签，例如 a, img, span, div，然后用图片把它伪装成一个按钮。
+对于 form submit的 加强学习:
+例子!
+<form>
+    标题：<input type="text" name="title" /><br />
+    内容：<textarea name="content"><textarea/><br />
+    <button>提交</button>
+</form>
+方法1
+$('button').on('click', function() {
+
+    $('form').on('submit', function() {
+        var title = $('inpur[name=title]').val(),
+            content = $('textarea').val();
+
+        $(this).ajaxSubmit({
+            type: 'post', // 提交方式 get/post
+            url: 'your url', // 需要提交的 url
+            data: {
+                'title': title,
+                'content': content
+            },
+            success: function(data) { // data 保存提交后返回的数据，一般为 json 数据
+                // 此处可对 data 作相关处理
+                alert('提交成功！');
+            }
+            $(this).resetForm(); // 提交后重置表单
+        });
+        return false; // 阻止表单自动提交事件
+    });
+});
+方法2
+    $('form').on('submit', function() {
+        var title = $('inpur[name=title]').val(),
+            content = $('textarea').val();
+
+        $(this).ajaxSubmit({
+            type: 'post', // 提交方式 get/post
+            url: 'your url', // 需要提交的 url
+            data: {
+                'title': title,
+                'content': content
+            },
+            success: function(data) { // data 保存提交后返回的数据，一般为 json 数据
+                // 此处可对 data 作相关处理
+                alert('提交成功！');
+            }
+            $(this).resetForm(); // 提交后重置表单
+        });
+        return false; // 阻止表单自动提交事件
+    });
+首先form 里的 button 默认触发 form submit事件,如果我们选择了方法2,
+	jquery 会给submit事件注册一个行为, 
+	这样每当submit事件触发时先预处理(就是 on('submit', function() {}) 的function 内容),然后再执行默认的表单submit事件
+	注意如果 这个预处理function return false 时, 预处理function后,不会继续执行默认的 submit 操作!!
+如果我们选择了方法1,
+	我们要知道, 点击button时,触发 submit事件的同时,也触发了 onclick, 不过似乎先执行onclick事件,后执行submit
+	jquery 会给onclick事件注册一个行为,
+	而这个onclick事件又会重新注册一个 submit前预处理行为
+	即每一次 onclick时,都会 重新注册一个 submit前预处理行为
+	onclick后轮到 submit事件执行时,会按着最新注册的预处理 执行一次,然后在submit表单内容到服务器
+	当然 如果 最新注册的预处理function 也遇到return false 时,不会继续执行默认的 submit 操作!!
+HTML <form> 标签的 enctype 属性
+	application/x-www-form-urlencoded 	在发送前编码所有字符（默认）
+	multipart/form-data 	不对字符编码。在使用包含文件上传控件的表单时，必须使用该值。
+	text/plain 	空格转换为 "+" 加号，但不对特殊字符编码。
+form submit 但不跳转 例子
+	 <html>    
+	  <body>    
+	      
+	  <form action="/api/user/register" method="post" id="registSubmit" >    
+	      <input type="text" id="id_input_text" name="nm_input_text" />    
+	      <input type="submit" id="id_submit" name="nm_submit" value="提交" />    
+	  </form>         
+	  </body>    
+	  </html> 
+	
+	$('#registSubmit').on('submit', function(event){
+	      registPost()
+	     event.preventDefault() //阻止form表单默认提交
+	})
+	
+	function registPost () {     
+	   $.ajax({
+	       type: "POST",
+	       url: "/api/user/register",
+	       data: $('#registSubmit').serialize(),
+	       success: function(message) {
+	     			console.log(message)
+	   		},
+	       fail: function(err){
+				console.log(err)
+		   	},
+	    /*
+	     或者用jquery.form.min.js提交
+	     $('#registSubmit').ajaxSubmit(function(message){
+	        console.log(message);
+	     })
+	     */
+	}
+form submit 后 django后端获取数据和处理:
+html:input设置:
+	<input class="input100" type="text" name="username" placeholder="请输入用户名" autocomplete="off">
+	<input class="input100" type="password" name="pass" placeholder="请输入密码">
+	print(request)
+		<WSGIRequest: POST '/login/'>
+	print(request.POST)
+		<QueryDict: {'pass': ['12345678Qq'], 'username': ['ss']}>
+	print(request.path)
+		/login/
+	print(request.method)
+		POST
+	print(request.session)
+		<django.contrib.sessions.backends.db.SessionStore object at 0x7f0e8a597ac8>
+        print(request.COOKIES)
+		{}
+	print(request.raw_post_data)  // django 1.6以后 是request.body
+		b'username=ss&pass=12345678Qq'
+        print(request.POST.get('username'))
+		ss
+        print(request.POST['username'])
+		ss
+        print(request.POST.getlist('username'))
+		['ss']
+需要 前后端都要检测 表单的输入内容,使用正则表达式匹配
+	前端 js
+	    //正则判断 密码至少包含大写字母，小写字母，数字，且不小于于8位,不大于16!!
+	    var re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^]{8,16}$/
+	    //正则判断 正确的邮箱格式 !!
+	    var re1 = /^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{1,5}|[0-9]{1,3})(\]?)$/
+	    //正则判断  正确 11位 手机号码
+	    var re2 = /^1\d{10}$/
+	    //正则判断 含有标点符号
+	    var re3 = /^((?=[\x21-\x7e]+)[^A-Za-z0-9])$/
+	    //正则判断 密码至少包含大写字母，小写字母，数字，且不小于于8位,不大于16,且不含特殊符号除了'_'
+	    var re4 = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9_]{8,16}$/
+	    //正则判断 只能 字母数字下划线 汉字 至少大于5个字符
+	    var re5 = /[A-Za-z0-9_\u4e00-\u9fa5]{5,}$/
+	    // 只要含有 @  因为username 可以 phone email name 所以 验证邮箱要附加条件
+	    var re6 = /^(?=.*[@])[^]{1,}$/
+		然后
+		    var loginput = $('.validate-loginput .input100');
+		    var reginput = $('.validate-reginput .input100');
+		for(...){
+			if( re4.test( $(loginput[i]).val().trim() ) ) ..	//正则匹配, 这个test()是原生js正则表达式自带的
+			if( $(reginput[i]).val().trim().match(re1) ) ..		//或者这样正则匹配
+		}
+	后端 python 
+		import re
+		注意 python re 不接受这样的写法:
+			    // 只要含有 @  因为username 可以 phone email name 所以 验证邮箱要附加条件
+			    ^(?=.*[@])[^]{1,}$
+			中的 [^] ,这个表示没有不该出现的,即,所有字符都可以出现
+			但是python 不允许, 这样, ^ 就得必须带内容 比如[^a],表示不允许a出现
+			如果要表示所有字符都可以出现 ,可以使用. 即
+			    ^(?=.*[@]).{1,}$
+后端用户密码加密解密验证过程!!
+	使用 django 自带的框架好了:
+	django的密码加密验证  安装加密算法 的使用教程
+		https://django.readthedocs.io/en/2.1.x/topics/auth/passwords.html 
+	setting.py 添加:
+		PASSWORD_HASHERS = (
+		    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+		    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+		    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+		    'django.contrib.auth.hashers.BCryptPasswordHasher',
+		    'django.contrib.auth.hashers.SHA1PasswordHasher',
+		    'django.contrib.auth.hashers.MD5PasswordHasher',
+		    'django.contrib.auth.hashers.UnsaltedMD5PasswordHasher',
+		    'django.contrib.auth.hashers.CryptPasswordHasher',
+		    'django.contrib.auth.hashers.Argon2PasswordHasher',
+		)
+        表示密码的编码加密算法有: md5 unsalted_md5 pbkdf2_sha256 pbkdf2_sha1 bcrypt_sha256 aargon2 等
+        bcrypt_sha256 需要另外安装库 pip install django[bcpt]
+        argon2 需要另外安装库 pip install django[argon2]
+	要使用的地方添加:
+	from django.contrib.auth.hashers import make_password, check_password
+        sha_pwd = make_password('needyou2<i dont like it>1234567', None, 'argon2')
+        print(check_password('needyou2<i dont like it>1234567', '919c77acf44af0773fbe493d335e374f'))
+	make_password: 根据密码生成加密串,数据库保存加密串而不是密码,减低帐号风险
+		参数1:是要加密的密码串,例如这里 needyou2<i dont like it>1234567
+		参数2: None 表示 每次生成的加密串都可以不一样,这个根据加密算法的性质看
+		参数3: 选择一种加密算法
+		结果是一条长长的加密字符串,例如 argon2$argon2i$v=19$m=512,t=2,p=2$dlVScVpodzVUTjRm$s9/1A8TEW3fpV0nslRUUkA
+	check_password:
+		直接检查秘密是否对上
+		参数1:是密码串
+		参数2:是加密串
+		枚举,把 密码串重新加密后得到 加密串, 再跟已有的加密串比对!
+		注意有些算法, 同一个密码串可以加密出多个不一样的加密串,
+		但是由于是枚举比对的,所以只要 加密串曾经是这个密码串加密出来的,就可以匹配!!!
+		而且不用告诉是什么算法加密的,函数会根据 加密串自动分析!!
+django中render()与render_to_response()区别
+	render()与render_to_response()均是django中用来显示模板页面的，但是在django1.3之后，render()便比render_to_response()更加招人待见！
+	最明显的就是前者会自动使用RequestContext，而后者需要coding进去，例如：
+		render(request,'share.html', {'registAdd': registAdd})
+		render_to_response('share.html',{'registAdd':registAdd},context_instance = RequestContext(request)
+
+
+做图片验证码:captcha
+	https://blog.csdn.net/teavamc/article/details/77566781
+	https://baijiahao.baidu.com/s?id=1592206104048546399&wfr=spider&for=pc
+	https://blog.csdn.net/hejunw/article/details/80158473
+	https://blog.csdn.net/u014745194/article/details/73997737
+	https://stackoverflow.com/questions/34471102/python-nameerror-name-include-is-not-defined 关于 include 找不到
+	https://django-simple-captcha.readthedocs.io/en/latest/usage.html#example-usage-for-ajax-form
+	http://www.cnblogs.com/zhaijunming5/p/7570180.html
+这个 captcha 非常棘手!!
+	主要不知道如何单单揪出来 结合自定义的表格!!!!,也不知道如何处理样式!!
+	整理captcha 的使用过程!!!
+	安装: pip install django-simple-captcha
+	settings.py 配置:
+		INSTALLED_APPS = [
+			....
+			'captcha',
+		]
+		# django_simple_captcha 验证码配置其他配置项查看文档
+		# 默认格式
+		CAPTCHA_OUTPUT_FORMAT = '%(image)s %(text_field)s %(hidden_field)s '
+		CAPTCHA_NOISE_FUNCTIONS = ('captcha.helpers.noise_null', # 没有样式
+		    # 'captcha.helpers.noise_arcs', # 线
+		    # 'captcha.helpers.noise_dots', # 点
+		)
+		# 图片中的文字为随机英文字母，如 mdsh
+		# CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.random_char_challenge'
+		 # 图片中的文字为数字表达式，如2+2=
+		CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'
+		# 超时(minutes)
+		CAPTCHA_TIMEOUT = 1
+	urls.py 配置:
+		from django.conf.urls import url, include
+		urlpatterns = [
+		    .......
+		    url(r'^captcha/', include('captcha.urls')),
+		    url('load_test22',userctrl.some_view),	//专门 为检验 captcha建立的链接!!,例子一般写在views.py里.
+		}						//这里自定义 到 userctrl.py里
+	建立forms.py:
+		from django import forms
+		from captcha.fields import CaptchaField
+		class LoginForms(forms.Form):
+		    email = forms.CharField(label="邮箱", max_length=128)
+		    password = forms.CharField(label="密码", max_length=128, widget=forms.PasswordInput)
+		    captcha = CaptchaField()
+	自定义的 userctl.py:
+		from web.forms import LoginForms
+		def some_view(request):
+		    if request.POST:
+		        form = LoginForms(request.POST)
+		
+		        # Validate the form: the captcha field will automatically
+		        # check the input
+		        if form.is_valid():
+		            human = True
+		            return HttpResponse('hahah')
+		        else:
+		            return HttpResponseRedirect('/load_test22/')
+		    else:
+		        form = LoginForms()
+
+		    #return render_to_response('loadtest.html',{'login_form':form},context_instance =RequestContext(request))
+		    return render(request, 'loadtest.html', {'login_form':form})
+	loadtest.html 在合适的地方加上:
+		<form action='.' method='POST' style="display:none">
+		    {% csrf_token %}
+		    {{ login_form }}
+		<input type="submit" value='submit' />
+		</form>
+		-->
+	这样,当我们`登录 127.0..../load_test22/ 传递userctl.some_view 内容`
+		就会打开 loadtest.html
+		login_form 会被自动替代!!
+		其中 login_form.captcha 对应的内容是
+	<input type="hidden" name="csrfmiddlewaretoken" value="dE16z9Ppx5aMrpGPdouOr6g2R9yO02X2seIiFKaqaPkiXYqjnMDkRMIIBQcqQzV5">
+	<img src="/captcha/image/2924b20cacc3a722fd0a9b6685c46ca9fe73a799/" alt="captcha" class="captcha">
+	<input autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" id="id_captcha_1" name="captcha_1" type="text">
+	<input id="id_captcha_0" name="captcha_0" type="hidden" value="2924b20cacc3a722fd0a9b6685c46ca9fe73a799">
+	由于 form action='.' 所以 submit后, 会重新的登录 127.0..../load_test22/ -> userctl.some_view
+		form = LoginForms(request.POST)
+		form.is_valid()
+		直接 验证套装 captcha 的容,判断内容是否正确!!
+	这种处理看着简单,但是用起来起来非但复杂,而且不好2次修改,只适合很模式化的登录注册页面设计! 也不通用!!!!!!,所以推荐自己写!!!
+	特别是 对于 captcha 的 css 设计非常困难, 单独拆出来使用也麻烦
+	单独拆出来使用的 思路 html里 {{ login_form.captcha }}
+		或者 class LoginForms(forms.Form) 只有 captcha = CaptchaField()
+自己做 验证码图片
+	https://www.cnblogs.com/cq146637/p/7831387.html
+	https://github.com/happy-python/check_code/blob/master/core/tools.py
+	双方都有些错误,最后组合成功!!!
+	urls.py 配置:
+	urlpatterns = [
+	    re_path(r'check_code',userctrl.check_code),
+	    .......
+	}
+	userctl.py 添加!!:
+		import random
+		from PIL import Image, ImageDraw, ImageFont, ImageFilter
+		from io import BytesIO
+		
+		def check_code(request):
+		    stream = BytesIO()          #开辟一块内存空间，不用写在外存，减少读写操作
+		    img, code = create_validate_code()
+		    img.save(stream,'PNG')
+		    img.save('idencode.png')  # 保存验证码图片 到项目根目录!!
+		    print(code)
+		    request.session['CheckCode'] = code
+		    return HttpResponse(stream.getvalue())
+		
+		_letter_cases = "abcdefghjkmnpqrstuvwxy"  # 小写字母，去除可能干扰的i，l，o，z
+		_upper_cases = _letter_cases.upper()  # 大写字母
+		_numbers = ''.join(map(str, range(3, 10)))  # 数字
+		init_chars = _letter_cases + _upper_cases + _numbers
+		
+		
+		def create_validate_code(size=(120, 30),
+		                         chars=init_chars,
+		                         img_type="GIF",
+		                         mode="RGB",
+		                         bg_color=(255, 255, 255),
+		                         fg_color=(0, 0, 255),
+		                         font_size=18,
+		                         font_type="Monaco.ttf",
+		                         length=4,
+		                         draw_lines=True,
+		                         n_line=(1, 2),
+		                         draw_points=True,
+		                         point_chance = 2):
+		
+		    '''
+		    生成验证码图片
+		    @param size: 图片的大小，格式（宽，高），默认为(120, 30)
+		    @param chars: 允许的字符集合，格式字符串
+		    @param img_type: 图片保存的格式，默认为GIF，可选的为GIF，JPEG，TIFF，PNG
+		    @param mode: 图片模式，默认为RGB
+		    @param bg_color: 背景颜色，默认为白色
+		    @param fg_color: 前景色，验证码字符颜色，默认为蓝色#0000FF
+		    @param font_size: 验证码字体大小
+		    @param font_type: 验证码字体
+		    @param length: 验证码字符个数
+		    @param draw_lines: 是否划干扰线
+		    @param n_lines: 干扰线的条数范围，格式元组，默认为(1, 2)，只有draw_lines为True时有效
+		    @param draw_points: 是否画干扰点
+		    @param point_chance: 干扰点出现的概率，大小范围[0, 100]
+		    @return: [0]: PIL Image实例
+		    @return: [1]: 验证码图片中的字符串
+		    '''
+		    width, height = size  # 宽， 高
+		    img = Image.new(mode, size, bg_color)  # 创建图形
+		    draw = ImageDraw.Draw(img)  # 创建画笔
+		
+		    def get_chars():
+		        '''生成给定长度的字符串，返回列表格式'''
+		        return random.sample(chars, length)
+		
+		    def create_lines():
+		        '''绘制干扰线'''
+		        line_num = random.randint(*n_line)  # 干扰线条数
+		        for i in range(line_num):
+		            # 起始点
+		            begin = (random.randint(0, size[0]), random.randint(0, size[1]))
+		            # 结束点
+		            end = (random.randint(0, size[0]), random.randint(0, size[1]))
+		            draw.line([begin, end], fill=(0, 0, 0))
+		
+		    def create_points():
+		        '''绘制干扰点'''
+		        chance = min(100, max(0, int(point_chance)))  # 大小限制在[0, 100]
+		        for w in range(width):
+		            for h in range(height):
+		                tmp = random.randint(0, 100)
+		                if tmp > 100 - chance:
+		                    draw.point((w, h), fill=(0, 0, 0))
+		
+		    def create_strs():
+		        '''绘制验证码字符'''
+		        c_chars = get_chars()
+		        strs = ' '.join(c_chars)  # 字符前后以空格隔开
+		        font = ImageFont.truetype(font_type, font_size)
+		        font_width, font_height = font.getsize(strs)
+		        draw.text(((width - font_width) / 3, (height - font_height) / 3),
+		                    strs, font=font, fill=fg_color)
+		        return ''.join(c_chars)
+			
+		    if draw_lines:
+		        create_lines()
+		    if draw_points:
+		        create_points()
+		    strs = create_strs()
+		
+		    # 图形扭曲参数
+		    params = [1 - float(random.randint(1, 2)) / 100,
+		              0,
+		              0,
+		              0,
+		              1 - float(random.randint(1, 10)) / 100,
+		              float(random.randint(1, 2)) / 500,
+		              0.001,
+		              float(random.randint(1, 2)) / 500
+		              ]
+		    img = img.transform(size, Image.PERSPECTIVE, params)  # 创建扭曲
+		
+		    img = img.filter(ImageFilter.EDGE_ENHANCE_MORE)  # 滤镜，边界加强（阈值更大）
+		
+		    return img, strs
+
+	userctl.py 修改!!:		
+		def login(request):
+			...
+		        code = request.POST.get('check_code')
+		        if code.upper() == request.session['CheckCode'].upper():
+		            print('验证码正确')
+		        else:
+		            print('验证码错误')	
+	然后 作为测试的 我们使用 127.0...../load_test,所以 loadtest.html 添加
+		<form...>
+			<div>
+                    		<input type="text" class="form-control" placeholder="请输入验证码" name="check_code">
+			        <img src="/check_code" onclick="changeCheckCode(this);">
+			</div>
+		</form>
+	<img src="/check_code"就是会访问  def check_code(request): 获得图片数据	
+	form submit 提交后会在 	def login(request): 的
+		        code = request.POST.get('check_code')
+		        if code.upper() == request.session['CheckCode'].upper():
+		进行验证码的检测!!
+cookie 操作问题!!!
+`	http://www.yihaomen.com/article/python/277.htm
+	http://www.cnblogs.com/skying555/p/4964112.html	
+
+	每个HttpRequest对象都对应一个COOKIES对象,该对象是字典形式.!!
+	例如  对于 127.0.0.1:8000/load_test,
+		和 127.0.0.1:8000/load_test33, 是两个不一样的对象,所以 两个不一样的cookie 
+	session 的概念有点区别, 是浏览器没有,但是 服务器后端会生成并存储的, 是数据加密串!!
+		用来区别,每一个浏览器机器登录状态
+		比如 A 远程电脑 登录 127.0.0.1:8000/load_test, 或者 127.0.0.1:8000/load_test33, 他们都共用一个 session 
+		比如 用户A和用户B 的登录 127.0.0.1:8000/load_test 都修改 使用同一个 session
+		用户 A使用时 ,这个session记录 用户A 的状态, 轮到用户B登录时,session会发现不是用户A在使用,会根据操作变成用户B的状态
+		而用 B 远程电脑登录时, 服务器会新建 一个 session 数据 专门为 电脑B服务
+		session 存在服务器上的是加密内容,从远程电脑登录时 会获得内容(cookie)和机器码(ip,电脑识别id等)加密后,
+		与存在电脑的加密内容匹配 识别身份!!!
+	实验:
+	userctl.py 添加:
+		from django.template import loader ,Context
+		from django.http import HttpResponse
+		def check_cookiesession(request):
+		    # response = HttpResponse("hello world")	# 也可以这样!
+		    response = render_to_response('loadtest.html', {}), #给 django 架构的request 设置 返回数据
+		    cookie_v = 'user=12345&session=yutuusjis'
+		    response.set_cookie('my_cookie1', cookie_v)	 #给 request 设置cookies ,即这个设定的cookies 会传给远程客户端浏览器保存
+		    return response
+	urls.py 添加:
+		urlpatterns = [
+		    url('load_test33', userctrl.check_cookiesession),
+		    ...
+		}
+	这样 登录 127.0.0.1:8000/load_test33 服务端会 执行  check_cookiesession  然后设置cookie添加内容,最后传回浏览器,
+	浏览器就得到关于这个页面的 cookie
+	上面介绍了 服务端 即 django 设置cookie 的api
+		response.set_cookie(key, value='', max_age=None, expires=None, path='/', domain=None, secure=None, httponly=False, samesite=None)
+		expires: 有效期 格式: 例如字符串:  "Wdy, DD-Mon-YY HH:MM:SS GMT" or a datetime.datetime object in UTC
+	        max_age默认:None ,cookie需要延续的时间（以秒为单位） 如果参数是\ None`` ，这个cookie会延续到浏览器关闭为止。
+		path 默认是"/" ,cookie生效的路径前缀。 浏览器只会把cookie回传给带有该路径的页面，
+			这样你可以避免将cookie传给站点中的其他的应用,当你不是控制你的站点的顶层时，这样做是特别有用的。
+		domain 默认None,这个cookie有效的站点。 你可以使用这个参数设置一个跨站点（cross-domain）的cookie。 
+			比如，\ domain=".example.com" 可以设置一个在\ www.example.com 、\ www2.example.com 
+			以及\ an.other.sub.domain.example.com 站点下都可读到的cookie。
+			如果这个参数被设成\ None ，cookie将只能在设置它的站点下可以读到。
+		False 默认False ,如果设置为 True ，浏览器将通过HTTPS来回传cookie。
+		我们说的 set_cookie 是添加一条cookie数据条, 每条数据条都有效期, 所有关于当前页面的 cookie数据条 都放入一个文件里,
+	那么用户如何获得当前页面的cookies? 使用js:
+		function getCookie(c_name)
+		{
+		if (document.cookie.length>0)
+		  {
+		  c_start=document.cookie.indexOf(c_name + "=")
+		  if (c_start!=-1)
+		    {
+		    c_start=c_start + c_name.length+1
+		    c_end=document.cookie.indexOf(";",c_start)
+		    if (c_end==-1) c_end=document.cookie.length
+		    console.log(document.cookie.substring(c_start,c_end))
+		    return unescape(document.cookie.substring(c_start,c_end))
+		    }
+		  }
+		return ""
+		}
+	例如 cookie 中有一项内容是 my_cookie1 = user=12345&session=yutuusjis
+	getCookie('my_cookies1') 就得到 user=12345&session=yutuusjis 的内容
+	如果 服务器 需要 获得远程客户端页面 的cookies,
+		实时上 http 给服务器提交 request 时,会附带浏览器当前页附带的cookies
+		远程服务器 只要:
+			value = request.COOKIES["my_cookie1"] 
+			也可以i:
+			value = request.COOKIES.get('sessionid', None)	
+		就可以获得 user=12345&session=yutuusjis 的cookie内容!!
+	上面介绍 创建cookie 是 服务器自己创建了传回 远程客户端,但是也可以页面自己生成
+		function setCookie(c_name,value,expiredays)
+		{
+			var exdate=new Date()
+			exdate.setDate(exdate.getDate()+expiredays)
+			document.cookie=c_name+ "=" +escape(value)+
+			((expiredays==null) ? "" : ";expires="+exdate.toGMTString())
+		}
+		expiredays 是有效 日期 !!
+	然后 分析 session!!
+		上面说过 session 是服务器保存 运城登录用户的状态信息
+		让django项目支持session,则必须在settings.py中指定
+		INSTALLED_APPS = [
+		....	
+		    'django.contrib.sessions',
+		]
+
+		MIDDLEWARE = [
+		    'django.contrib.sessions.middleware.SessionMiddleware',
+		    #'django.middleware.csrf.CsrfViewMiddleware',  #禁用跨站请求伪造的中间件
+		......
+		]
+		还有一点，在django处理请求的过程中，需要经过中间件的过滤，涉及到跨站请求伪造时，django会把请求阻止过滤掉，
+		所以我们要在setting.py中禁用跨站请求伪造的中间件，如果不禁用，
+		默认情况django使用 django.contrib.sessions.models.Session将session存储在你的数据库中
+		mysql 查看 session表:
+			mysql -u root -p		
+			mysql> use db_selfweb_pyth3
+			mysql> select * from django_session;
+			可以看到
+			每条数据哟有 三个内容 
+			session_key session_data expire_date
+			而 session_key session_data 都是加密的内容  expire_date 是有效时间
+			注意 这里 一条数据 就是 一个session文件, 对应一台登录远程客户端的 状态信息
+			注意 这里的 expire_date 与 cookie 的 expire_date 不一样,这里对应着整个session文件,
+			而 cookie 的 expire_date 仅仅是cookie文件的一条cookie数据!
+		服务器会生成session 但是申生成的 session数据 但并不会 回传到运程客户端!
+			#get 从数据库获得 对应远程客户端的 session 数据条 fav_color 的内容! 
+			# 注意根据 request 据可以区别是那个 远程端发来的请求
+				fav_color = request.session['fav_color']     
+			#set 为对应对应远程客户端 添加 一条 fav_color=blue session数据条,并加密存入数据库
+				request.session['fav_color'] = 'blue'           #set
+			# 判断 对应远程客户端的session 文件 是否 有fav_color session数据条!! 
+			'fav_color' in request.session
+			# 获得 session数据条
+				fav_color = request.session.get('fav_color', 'red')
+		
+		安全匹配
+			用户登录了网站后,一直处于登录状态的做法!!!
+			登录成功后, 服务器 会建立 session数据条: 比如 user=william,加密存入数据库,
+			也生成 cookie user=william 返回 运程客户端!!
+			当 远程客户端执行下一步访问 数据内容时, 会返回 含有  cookie user=william 的请求
+			服务器检查 发现 跟 session 的 user=william 一致,于是允许继续访问!! 实现一直处于登录状态
+			注意:
+				cookie是明文, 容易获取拷贝!!
+				服务端匹配 cookie 和 session 要用 专门api, 不要用以下蠢方法:
+					A = requwst.COOKIE['user']
+					B = requwst.session['user']
+					if A == B .....
+				因为这样就没有用上session 的加密 抗安全的风险!!,因为这是明文比对,
+				人家只要搞到cookie 就可以骗过 服务器 黑入账户!!
+				很遗憾, 我发现网上都是 这样子的明文比对, django的例程好像也是这样子!!
+				只能自己干了!!
+				根据 request.META 结合 cookies 使用!!
+		从 django shell 处理 查看 session内容		
+			python manage.py shell
+			>>> from django.contrib.sessions.models import Session
+			>>> s=Session.objects.all()
+			>>> for i in s:
+			...     i.get_decoded()
+			... 
+			{'williamcolor': 'blue', 'CheckCode': 'QNYy'}
+			{'_auth_user_id': '1', '_auth_user_backend': 'django.contrib.auth.backends.ModelBackend', '_auth_user_hash': '95cf94e3674d7a5ef33a4eabf0d8f3bd18442be2'}
+			{'williamcolor': 'blue', 'CheckCode': 'awqp'}
+			>>> 
+input 输入提示 的方式:https://blog.csdn.net/qq_41573860/article/details/82750116
+
+email:使用邮箱发送验证消息!!
+	settings.py
+		# email_for_sending check
+		EMAIL_HOST = "smtp.163.com"   # 服务器
+		EMAIL_PORT = 25               # 一般情况下都为25
+		EMAIL_HOST_USER = "xxxxxxm@163.com"   # 账号
+		EMAIL_HOST_PASSWORD = "AAAAAAAAAaa"  # 密码
+		EMAIL_USE_TLS = False             # 一般都为False
+		EMAIL_FROM = "xxxxxxxm@163.com"        # 邮箱来自
+	userctl.py
+		from random import Random # 用于生成随机码
+		from django.core.mail import send_mail # 发送邮件模块
+		from selfweb_pyth3.settings import EMAIL_FROM  # setting.py添加的的配置信息		
+
+		# 生成随机字符串
+		def random_str(randomlength=8):
+		    str = ''
+		    chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789'
+		    length = len(chars) - 1
+		    random = Random()
+		    for i in range(randomlength):
+		        str+=chars[random.randint(0, length)]
+		    return str
+		
+		# 利用  xxxxxxm@163.com 给 dddd@qq.com ssssss@qq.com 发邮件 的例子
+		code = random_str(16)
+		receiver = 'dddd@qq.com'
+		receiver2 = 'ssssss@qq.com'
+		email_title = "注册激活链接"
+		email_body = "请点击下面的链接激活你的账号:http://127.0.0.1:8000/active/{0}".format(code)
+		send_status = send_mail(email_title, email_body, EMAIL_FROM, [receiver,receiver2])
+		print(send_status)
+解决了 svg 标签 的 问题!!
+	登录页面用到的符号是 svg 矢量图, 而我们用到的库是 iconic : http://zavoloklom.github.io/material-design-iconic-font/icons.html
+	注意 原来有很多这样的 icon 库, 不如 font-awsome: http://fontawesome.dashgame.com/
+	注意,不同库 ,图标与对应的 unicode标识码不一样!!!!
+	注意,一般用法是
+		下载了库:
+		然后库里面的整合 css 包含!!
+		<link rel="stylesheet" type="text/css" href="/static/css/logincss/fonts/iconic/css/material-design-iconic-font.min.css">
+		<i class="fa fa-shield"></i>
+	但是这里,我们这样用: 通过使用 标识码,需要类似这样设置!
+		<span class="focus-input100" data-symbol="&#xf2c8;/&#xf15a;"></span>
+		.focus-input100 {
+		  position: absolute;
+		  display: block;
+		  width: 100%;
+		  height: 100%;
+		  top: -10px;
+		  left: 0;
+		  pointer-events: none;
+		}
+		
+		.focus-input100::after {
+		  content: attr(data-symbol);
+		  font-family: Material-Design-Iconic-Font;
+		  color: #adadad;
+		  font-size: 30px;
+		
+		  display: -webkit-box;
+		  display: -webkit-flex;
+		  display: -moz-box;
+		  display: -ms-flexbox;
+		  display: flex;
+		  align-items: center;
+		  justify-content: center;
+		  position: absolute;
+		  height: calc(100% - 20px);
+		  bottom: 0;
+		  left: 0;
+		  padding-left: 13px;
+		  padding-top: 3px;
+		}
+		
+		.focus-input100::before {
+		  content: "";
+		  display: block;
+		  position: absolute;
+		  bottom: -2px;
+		  left: 0;
+		  width: 0;
+		  height: 2px;
+		  background: #7f7f7f;
+		  -webkit-transition: all 0.4s;
+		  -o-transition: all 0.4s;
+		  -moz-transition: all 0.4s;
+		  transition: all 0.4s;
+		}
+根本上解决 数据库支持中文问题!!:
+1、创建数据库 （注意设置 数据的字符编码）
+由于Django自带的orm是data_first类型的ORM，使用前必须先创建数据库
+create database day70 default character set utf8 collate utf8_general_ci;
+2、修改project中的settings.py文件中设置  连接 MySQL数据库（Django默认使用的是sqllite数据库）
+
+注意到 models.py 的表单类,其中一个项目要改变属性时,需要 重性 make migrations 和 migrate
+	注意,属性migrate改变不一定成功!!例如 本身存char数据的 改变成存 int, 如果char数据已存在的数据有abc 而不是123,migrate失败
+	数据表单不会接受改变
+	如果char 已存在的数据 都是 123这里数字字符串, 那么转成int时, 以int的123重新存储! 所以 migrate会成功,表单会改变!!
+
+django 并发问题 数据库锁
+考虑 stateb 的并发修改访问问题!!
+	使用django 的锁功能!! select for update
+	使用 select for update 数据库查询
+	select ... for update 是数据库层面上专门用来解决并发取数据后再修改的场景的，
+	主流的关系数据库 比如mysql、postgresql都支持这个功能， 新版的Django ORM甚至直接提供了这个功能的shortcut 。 
+	关于它的更多介绍，你可以搜索你使用的数据库的介绍文档。
+	使用 select for update 后，我们的代码可能会变成这样：
+
+from django.db import transaction
+class NotificationController(object):
+
+    ... ...
+
+    def mark_as_readed(self, notification_id):
+        # 手动让select for update和update语句发生在一个完整的事务里面
+        with transaction.commit_on_success():
+            # 使用select_for_update来保证并发请求同时只有一个请求在处理，其他的请求
+            # 等待锁释放
+            notification = Notification.objects.select_for_update().get(pk=notification_id)
+            # 没有必要重复标记一个已经读过的通知
+            if notication.has_readed:
+                return
+
+            notification.has_readed = True
+            notification.save()
+            # 在这里更新我们的计数器，嗯，我感觉好极了
+            self.update_unread_count(-1)
+注意: transaction.commit_on_success() 不再支持使用:
+	使用 transaction.atomic()
+	还有 django 的这个锁的原理是,其实是,建立了一个沙箱,
+	select_for_update() 是数据库底层级别的加锁,就是说是数据库本身自带的!
+	这里只不过是 django 做了个通用封装!!
+	还有 select_for_update() 只能在  with transaction.atomic(): 下生效
+	出了 django的沙箱是不允许使用的!
+	django的transaction沙箱就是一套原子操作框架! 
+		先挂起要使用的资源,允许其他访问但不允许更改,然后划了一个内存空间,做好了一些系列的操作后,
+		刷写挂起了的资源.最后解放资源,允许其他访问去修改!
+	注意 在沙箱 select_for_update().get() 会 完全锁住了表单的某行数据, 当沙箱过程没有结束!!!!
+		当 另外的 使用 with transaction.atomic(): select_for_update().get() 请求同一行数据时,这个get就被阻塞等待!
+		而其他 普通.get 请求同一行数据时,不会被阻塞还是可以获得访问的,但那是修改数据使用 .save()时会被被阻塞等待了!
+	比如
+		A 请求:
+	        with transaction.atomic():
+	            kk = williamtest.objects.select_for_update().get(text = 'buk')
+	            print('uuui')
+	            kk.text ='opt4'
+	            kk.save()
+	            time.sleep(60)
+		B请求:
+	        trydd = williamtest.objects.get(text='buk')
+	        trydd.text  = 'tre'
+	        print('78')
+	        trydd.save()
+	        print('90')
+	A使用沙箱获取了 buk的那行数据, 并把改成 opt4, 并.save(),然后再沙箱空等60S,沙箱过程未结束,所以 数据库里还是buk,还没变成opt4
+	B在A处于沙箱过程未结束时 普通地 get同一条数据,可以获得! ,但是改成 tre 后 .save 被阻塞了!
+	最后沙箱空等结束,退出了 transaction.atomic() 沙箱, 数据库buk变成了 opt4
+	然后B请求的 .save也不再阻塞了,最后 opt4 又变成了 tre  !!!
+
+
+
+
+
+
+
+
+
+20190101:
+一些坑:
+关于 datetime 格式和使用片段!
+	from datetime import datetime
+        ####
+        dt = datetime.today()
+        # statetb.objects.create(date=dt,usernum=0,flag='1')
+        dt2=statetb.objects.get(date="2018-12-29" )
+        dt2.flag= '67'
+        dt2.save()
+        print(dt2.flag)
+关于 数据库锁 和并发问题的 测试片段:
+class williamtest(models.Model):
+    text = models.CharField(max_length=100,blank=True,null=True)
+    number = models.IntegerField(blank=True,null=True)
+def william_test(str=None,num=None):
+    try:
+        trydd = williamtest.objects.get(text='buk')
+        print('iiiu')
+        with transaction.atomic():
+            kk = williamtest.objects.select_for_update().get(text = 'buk')
+            print('uuui')
+            kk.text ='opt4'
+            kk.save()
+            time.sleep(60)
+    except williamtest.DoesNotExist:
+        with transaction.atomic():
+            kk = williamtest.objects.select_for_update().get(text = 'Tom')
+            print('atomic')
+            kk.text ='lio'
+            time.sleep(10)
+            kk.save()
+    #williamtest.objects.create(text='super',number=90,)
+
+def william_test2():
+    try:
+        trydd = williamtest.objects.get(text='buk')
+        trydd.text  = 'tre'
+        print('78')
+        trydd.save()
+        print('90')
+    except:
+        print('fail')
+
+transaction.atomic()下,不能执行动态生成表单的功能,那么就不知道如何解决 可能同时生成相同表单的并发问题,
+幸亏,生成表单这个操作,从mysql底层看来就自己加入了并发处理!!,所以不需要 transaction.atomic()下 操作!
+from django.db.utils import InternalError
+    try:
+        install(UserList)
+        with connection.cursor() as cursor:
+            cursor.execute(order_1[0]+listtbn+order_1[1])
+            cursor.execute(order_1[0]+listtbn+order_1[2])
+    except InternalError:	# 已有表单的情况下,生成相同表单会出错!! 属于 InternalError
+        print('create userlist error')
+
+
+mysql: 数据执行命令
+	insert into web_statetb values(5,'2019-01-08',0,'1');	# 插入一条数据
+	delete from web_mailcheckcode where mail = '418128064@qq.com';	# 删一条数据
+	update web_statetb set flag='1' where id=2; # 修改一条数据
+	#批量drop 表
+		select concat('drop table ',table_name,';') from information_schema.tables where table_name like 'web_cntex%';
+		结果集合粘出来
+
+
+
+
+继续实现,
+	password 比对正确后, 生成uid和分配动态密码的cookies,和session,还要测试session的时效性
+	注意不能把用户密码写入cookies,风险太大!!
+	通过再通过获得的用户cookies, 加载内容和修改刷新内容!!
+	之前就测试过,不通过默认静态方式获得 xml 文件,而是通过传统的 httpresponse获得! 查看 postget 函数!!
+
+
+测试帐号:
+	你好大家_
+	1234567Ww
+	1234567Ww
+	418128064@qq.com
+	p8WW91
+后续才加上的功能和处理!
+	忘记密码,通过动态页面设置!
+	由于只有 uid 和 email 唯一!!, 而username phone可以多个, 所以要处理多个同名处理
+	跨页面的coskies 和 session 传递 处理的问题!!比如搜索页面我们要使用新页面的!!
+动态生成数据表单的出现的冲突问题:
+def william_tbtest(request):
+    fields = {
+        'cntenum': models.IntegerField(blank=True, null=True),
+        'type': models.CharField(max_length=10),
+        'content': models.TextField(blank=True, null=True),
+        'count': models.IntegerField(blank=True, null=True),
+        'datetime': models.DateTimeField(blank=True, null=True),
+    }
+    options = {
+        'ordering': ['cntenum', 'datetime'],
+        'verbose_name': '并发表',
+    }
+    admin = {}
+    tb1 = create_model('tbtest1',
+                    fields,
+                    options=options,
+                    app_label='web',
+                    module='web',
+                    admin=admin
+                    )
+    #install(tb1)
+    #tb1.objects.create(cntenum=22,
+    #                   type= 'person',
+    #                   content = 'Tom',
+    #                   count = 50
+    #                   )
+    print(tb1.objects.get(type='person'))
+
+    tb2 = create_model('tbtest2',
+                    fields,
+                    options=options,
+                    app_label='web',
+                    module='web',
+                    admin=admin
+                    )
+    #install(tb2)
+    #tb2.objects.create(cntenum=13,
+    #                   type= 'animal',
+    #                   content = 'rabbit',
+    #                   count = 20
+    #                   )
+
+    print(tb2.objects.get(type='animal'))	#当执行到这里,(1054, "Unknown column 'web_tbtest1.cntenum' in 'field list'")
+    return  HttpResponse('done')
+	(1054, "Unknown column 'web_tbtest1.cntenum' in 'field list'")
+	https://dynamic-models.readthedocs.io/en/latest/pdfindex.html#synchronising-processes	#链接
+	清除后台缓存:https://codeday.me/bug/20180507/162192.html (没用)
+	不管是 migration cache 什么的都找不到方法,
+	然后后面发现:
+		之所以发生这种情况,就是因为 第一次  create_model 时,会修改了共用的 fields 变量
+		然后 第二次 create_model 时, 会使用被修改的共用变量,然后会嵌入附加错误!
+		注意,动态model 生成后,用到的fields也就不再使用了,删除了也没有关系!
+		所以共用的全局变量 fields 不能直接使用,而是深度复制出的副本,
+		import copy
+		f1 = copy.deepcopy(fields)
+还有时区问题!
+	django setting.py
+	TIME_ZONE = 'UTC'  # 'UTC'(标准时区,格林彼治时间) 'Asia/Shanghai'(东八区) 
+	USE_TZ = True
+	表示使用 UTC 标准时间, 这时
+	from datetime import datetime
+	datetime.now() 得到的是 TIME_ZONE 设置的时区的时间 与  USE_TZ = True 没有关系!
+	datetime.utcnow() 得到的是 标准时区的时间	
+	
+	from datetime import timezone
+	dt = datetime.now().replace(tzinfo=timezone.utc)	把当前时区的时间变成标准时区时间
+
+	dt = datetime.today()	感觉与 now()没区别
+	datetime.now().date() 获取日期部分
+
+	from datetime import timezone
+	import pytz
+	datetime.today().replace(tzinfo=timezone.utc).astimezone(pytz.timezone('Asia/Shanghai')).date()
+	# 使用 datetime 的timezone 把获得的时间转成 utc时间, 又使用 astimezone 和 pytz.timezone,转成东八区时间,最后取日期部分 
+	#.replace(tzinfo=timezone.utc) 看似多此一举,但是 now(),utcnow(),today()直接astimezone 换成东八区时间是不可能的,
+	#所以需要 replace 这一步!
+使用reload 机制!!!
+	//document.body.reload()        //没有这样子的reload
+	window.location.reload()	
+遇到了一个世纪问题,幸亏解决了!!
+	http://www.yihaomen.com/article/python/342.htm
+	例如
+	Tom = cntetb.objects.get(line0002__linenum=numl)  # 反向查询
+	line0002__linenum 是不确定的,所以需要替换掉
+	line0002__linenum=numl get()函数看来是字典参数!
+	所以我们构造字典参数!代入
+	所以相当于!!
+	kk = {'line0002__linenum':'num'}
+	Tom = cntetb.objects.get(**kk)
+视频作为背景!
+	重点是 position:fixed; 还有 z-index:-11 层数必须负数
+	注意 Video 放在 login div 上, 所以, z-index:-11 是相对 同 logindiv 其他子 模块而言的,
+	即只放在 login div 的最底图层 显示!!
+	还有关于视频拖伸播放问题!!!1
+	例子:
+	video.vibagrd{
+	            margin: 0px;
+	            padding: 0px;
+	
+	            position: fixed;
+	            right: 0px;
+	            bottom: 0px;
+	
+	            object-fit:fill;		/*这个是视频填充拉伸整个height width 定义的页面意思*/
+	            height: 80%;
+	            width: 100%;
+	            left: 0%;
+	            top: 10%;
+	            /*加滤镜*/
+	            /*-webkit-filter: grayscale(100%);*/
+	            /*filter:grayscale(100%);*/
+	            z-index:-11
+	}
+	video.vibagrd source{
+	
+	            height: 100%;
+	            width: 100%;
+	        }
+	<div class="login" >
+	
+		<video class="vibagrd" autoplay loop muted poster="/static/img/bg-01.jpg" id="bgvid">
+			<!--<source src="polina.webm" type="video/webm">-->
+			<source src="/static/video/qbhn.mp4" type="video/mp4">
+		</video>
+			
+		.....
+	</div>
+
+django 定时程序:
+	https://www.cnblogs.com/perfe/p/6198213.html		////crontab   海关与定时调用终端执行命令
+	https://blog.csdn.net/sinat_21302587/article/details/72831002		/// crontab 可用!!!
+	https://crontab.guru/examples.html	//// crontab 定时格式编写
+
+	https://www.cnblogs.com/dengshihuang/p/8258621.html
+
+	https://blog.csdn.net/qq_21570029/article/details/80772561		///apscheduler 
+重点讨论 crontab
+	crontab 这个第三方本来不是 django 独有的,而是传统的 linux 软件
+	使用 crongtab 定时任务,即使 django项目没有 runserver , 定时任务还是会照样执行 !!!!
+	使用例子: https://blog.csdn.net/sinat_21302587/article/details/72831002		/// crontab 可用!!!
+	安装:
+	 pip install django-crontab
+	setting.py
+		INSTALLED_APPS = [
+		    'django_crontab',
+			.....
+		]
+		CRONJOBS = [	# 这里是添加 定时任务!!!
+		    ('*/5 * * * *', 'web.cron.test','>>/home/william/full_stack/selfweb_pyth3/crontabtest.log'),
+	
+		    ('21 21 * * *', 'web.cron.east8test', '>>/home/william/full_stack/selfweb_pyth3/crontabtest.log'),
+		    ('31 14 * * *', 'web.cron.utctest', 'TZ=UTC', '>>/home/william/full_stack/selfweb_pyth3/crontabtest.log'),	
+		    ('21 23 * * *', 'web.cron.statetbtest', '>>/home/william/full_stack/selfweb_pyth3/crontabtest.log'),
+		
+		]
+		至于格式 详细要百度: 常用的
+			*/5 * * * *   定时的设置 ,这里的 每隔5分钟, 31 14 * * * 这里是 每天的 14时31分
+			注意,这些时间默认是以当地系统时区 为准, 要是以其他时区的话也可以设置,但是未找到可行方法
+			目前通过 CRON_TZ=  TZ= 的 都是失败的!!  
+			比如这样设置 TZ=UTC 其实并不可行!!
+			('31 14 * * *', 'web.cron.utctest', 'TZ=UTC', '>>/home/william/full_stack/selfweb_pyth3/crontabtest.log'),
+			web.cron.utctest 等,是要执行的任务!!
+			>>/home/william/full_stack/selfweb_pyth3/crontabtest.log 执行过程中print等输出的信息都放入这里!!
+	任务:
+	跟 views.py 同目录 新建 cron.py 写要执行的任务:
+	def statetbtest():
+	    print('\n\r///////////////// statetb test /////////////////////')
+	    kl = statetb.objects.first().date
+	    print(kl)
+
+	最后 :
+	 python manage.py crontab add  会把 CRONJOBS 里的所有任务都加载 并定时执行,
+		并不需要 django project runserver 下才运行
+	 	所以执行相当独立
+	显示当前的定时任务  python manage.py crontab show 
+	关闭并删除所有正在执行的定时任务 python manage.py crontab remove
+
+	crontab 需要用到的功能不多,重点关注的部分有 
+		定时执行只能按当前系统时区为准,如果 与django项目是 UTC 等其他时区为准,要注意变换
+		定时的格式写法参考  https://crontab.guru/examples.html
+		crontab 执行的任务 是相对 django 项目的runserver 独立的, 
+		定时任务可以访问 django 项目 各种资源,例如数据库等
+
+
+	
 
 
 
@@ -4255,6 +5950,1497 @@ python 读文件片段
 
 
 
+
+
+20190117
+先 总结 docker tmux vim ssh 效率工具的学习 :
+ssh: 
+	scp root@149.28.122.195:/root note2 /home/william/temp   //从运城服务器下载文件 到 本地目录 /home/william/temp
+	scp /home/william/full_stack/selfweb/full_stack_note  root@149.28.122.195:/root/	 //把本地文件上传到远程服务器
+	ssh root@149.28.122.195		//登录远程服务器 root用户
+
+
+tmux:
+	ctrl + b  加  %   左右分屏.
+	ctrl + b  加  "   上下分屏,
+	ctrl + b  加  :  命令行 输入 copy  滚动 log 记录
+	ctrl + b  加  方向键 换分屏
+	ctrl + b  加  c  新键 session(对话)
+	ctrl + b  加  数字 换 session 
+		session 与 分屏, 相似,又不一样!!
+	ctrl + b  加  &  关闭当前 session
+	ctrl + b  加  x  关闭当前 分屏
+	ctrl + b  加  z  最大化当前分屏 或 退出最大化
+
+	vim :
+	打开文件后 , 处于命令行模式, 
+	i 命令 开始 输入模式, 
+	esc 回到 命令行模式
+	: 添加附加命令 的命令
+		:wq  保存并退出
+		:q!  不保存然后退出
+	
+docker:
+	参考:
+	https://blog.csdn.net/cow66/article/details/80096253
+	https://blog.csdn.net/bskfnvjtlyzmv867/article/details/81044217
+	docker run -it --name redis-master redis /bin/bash    新建一个名字为
+
+	ps命令在docker容器不存在	
+	apt-get update && apt-get install procps
+
+        docker pull ubuntu
+        docker pull redis
+                (pull 下载的 是 专门的镜像 如 ubuntu 是 ubuntu 的镜像, redis 是 专门用于redis数据库服务 的linux系统镜像 )
+        docker images (可以看到都，下载了那些镜像)
+                REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+                haproxy             latest              fd5f07592ca9        5 days ago          72.1MB
+                redis               latest              5d2989ac9711        3 weeks ago         95MB
+                ubuntu              latest              1d9c17228a9e        3 weeks ago         86.7MB
+                django              latest              eb40dcf64078        2 years ago         436MB
+
+        docker ps -a    （显示所有容器的情况）
+        CONTAINER ID  IMAGE      COMMAND                  CREATED        STATUS                    PORTS                    NAMES
+        b6a40392708f  haproxy    "/docker-entrypoint.…"   22 hours ago   Up 22 hours               0.0.0.0:6301->6301/tcp   HAProxy
+        edfe38f25c4f  django     "/bin/bash"              22 hours ago   Up 22 hours                                        APP2
+        73a540d60130  django     "/bin/bash"              22 hours ago   Up 22 hours                                        APP1
+        7db27ac7fc76  redis      "docker-entrypoint.s…"   22 hours ago   Up 22 hours               6379/tcp                 redis-slave2
+        73b92aeaf7f9  redis      "docker-entrypoint.s…"   22 hours ago   Exited (0) 14 hours ago                            redis-slave1
+        6745d8b53e8d  redis      "docker-entrypoint.s…"   22 hours ago   Up 12 hours               6379/tcp                 redis-master
+        9f82795ba41e  ubuntu     "/bin/bash"              36 hours ago   Exited (0) 18 hours ago                            web
+                （所谓容器 就是 通过 镜像安装在 docker 小型系统, 一个镜像可以安装多个 容器）
+                （比如，通过 同一个镜像redis，在docker 安装了 3个相互独立的容器， redis-master redis-slave1 redis-slave2 ）
+                （这3个容器 也就是我们理解的服务器节点，操作系统，或者说是三台相互独立运行的电脑！）
+                （STATES 是这些容器当前的状态， Up xx hours 表示这个容器节点已经开机xx个小时，Exited表示 这个容器节点已经关机 ）
+
+        创建一个容器：
+        docker run -it --name redis-master redis /bin/bash      （使用redis 镜像 创建一个名字为 redis-master 的容器节点,并启动容器）
+                （-it 表示创建运行容器后 并进入容器的命令行终端）
+		 (docker ps 显示 Up ,即开机运行状态)
+	
+	通过 run 进入 容器命令行终端后 , exit命令 , 推出容器终端,容器关机, docker ps 显示 Exited ,即关机状态
+	
+	再次启动容器:
+	docker start redis-master
+
+	启动容器后,才可以 登录 容器终端
+	第一种登录方式 :docker exec -it redis-master /bin/bash , 
+		输入 exit 时, 容器依然工作,只是退出登录终端而已
+	第二种登录方式: docker attach redis-master
+		输入 exit 时, 容器也会关机!
+
+	移除一个容器
+		docker rm redis-master
+	
+	注意对容器 的操作 可以 用 自定义的容器 名字, 也可以是 容器的id 
+		比如 docker start redis-master  等于  docker start 6745d8b53e8d 
+
+        docker info     （显示docker 的 基本信息！）
+	        Containers: 7
+	         Running: 5
+	         Paused: 0
+	         Stopped: 2
+	        Images: 4
+	        Server Version: 18.09.0
+	        Storage Driver: overlay2
+	         Backing Filesystem: extfs
+	         Supports d_type: true
+	         Native Overlay Diff: true
+	        Logging Driver: json-file
+	        Cgroup Driver: cgroupfs
+	        Plugins:
+	         Volume: local
+	         Network: bridge host macvlan null overlay
+	         Log: awslogs fluentd gcplogs gelf journald json-file local logentries splunk syslog
+	        Swarm: inactive
+	        Runtimes: runc
+	        Default Runtime: runc
+	        Init Binary: docker-init
+	        containerd version: c4446665cb9c30056f4998ed953e6d4ff22c7c39
+	        runc version: 4fc53a81fb7c994640722ac585fa9ca548971871
+	        init version: fec3683
+	        Security Options:
+	         apparmor
+	         seccomp
+	          Profile: default
+	        Kernel Version: 4.4.0-127-generic
+	        Operating System: Ubuntu 16.04.4 LTS
+	        OSType: linux
+	        Architecture: x86_64
+	        CPUs: 1
+	        Total Memory: 488.1MiB
+	        Name: william
+	        ID: NIX6:DNXE:T664:QSWG:3WFC:OE46:PQER:2ONA:ZX76:XWCK:PJAL:WI54
+	        Docker Root Dir: /var/lib/docker
+	        Debug Mode (client): false
+	        Debug Mode (server): false
+	        Registry: https://index.docker.io/v1/
+	        Labels:
+	        Experimental: false
+	        Insecure Registries:
+	         127.0.0.0/8
+	        Live Restore Enabled: false
+	        Product License: Community Engine
+	
+	        WARNING: No swap limit support
+
+在重构之前先学习好 集群 和 负载均衡 分布 高并发 的 实际操作应用
+	主流是 java + spring框架 +dubbo分布式任务 SOA 
+	未来需要 可能用上的有 redis(缓存数据库) elasticsearch(搜索引擎) Celery(分布式) Dubbo(分布式基于java)
+先名词解释几个概念
+	集群: 多个服务器一起只实现 一项特定服务,这些服务器是一个集群 cluster
+	分片: 集群的服务器,每一个服务器是一个节点,负责特定服务的某部分,或则被分配存放部分内容数据,这种行为是分片
+	高并发: 指一个服务器可以同时处理的连接数众多
+	负载均衡: 指把业务请求分给多个 都是处理相同任务的服务器处理,摊分工作量	
+	
+	一般 我们用 nginx的服务器 处理 负载均衡, 把接到的业务分配各个业务处理服务器,
+	但是这个ngnix服务器的吞吐量可能就是这个网站处理连接请求的天花板了
+	使用 uwsgi 提高 单个服务器并发处理 业务请求的 数量
+	多个服务器专门用来处理业务请求 是 业务处理服务器集群
+	每个业务处理服务器的内容都是一样的,他们分担众多业务请求工作
+	多个服务器专门用来保存数据 是 数据库服务器集群
+	每个数据库服务器不是都保存相同的数据,数据是分布存在不同的服务器的,这时数据库的分片保存
+	整个数据库集群一起实现一个完整的数库, 即所有分片
+
+	
+目标千万级pv 和亿级pv (一天有千万次浏览)
+案例参考:
+	像百度等巨型公司除了会采用常规的mysql及oracle数据库库外，会在性能要求更高的领域，大量的使用nosql数据库（非关系型的数据库），
+	然后前端在加DNS，负载均衡，分布式的读写分离，最后依然是拆业务，拆库，。。。逐步细化，然后每个点又可以是一组或多组机器。
+	数据库层的硬件好坏也会决定访问量的多少，尤其是要考虑磁盘IO的问题，大公司往往在性价比上做文章，
+	比如核心业务采用硬件netapp/emc及san光纤架构，对于资源数据存储，如图片视频，会采用sas或固态ssd盘，
+	如果数据超大，可以采取热点分取分存的方法：如：最常访问的10-20%使用ssd存储，中间的20-30%采用sas盘，最后的40-50%可以采用廉价的sata。
+
+一例日千万pv架构说明：
+    1,架构中直接引入软件名称的模块，是个人推荐使用的，如Haproxy、Hadoop等；
+    2,关于全局负载均衡，看成本投入情况，可以使用商业的产品，如F5-GTM，开源方案便是自搭智能DNS；
+    3,本地负载均衡方案，可以考虑F5-LTM或成熟的开源解决方案LVS；
+    4,代理层为什么推荐大家使用Haproxy？Haproxy是一个非常优秀的反向代理软件，十分高效、稳定。国内top 10的互联网公司都有在使用；
+    5,缓存层可以使用squid或Varnish，个人更倾向Varnish。配置灵活、运行稳定，提供非常便利的管理接口。
+	为啥在缓存层前面加一层代理？优点非常多，列举如下：
+    	A 根据应用配置URI路由规则，集中热点来提高后端缓存的命中率；
+    	B 轻松划分网站频道、版块，更好对应用进步组织、规划；
+    	C 对URI进行一般性安全过滤，抵御注入攻击；
+    	D 弹性调配硬件资源，应对突发事件产生大流量；
+    	E 可回收宝贵的公网ip资源；
+    6,应用层开源技术方案非常多且成熟，在此不详细描述；
+    7,数据库层主流开源解决方案mysql是首选，主从复制（一主对多从）是目前比较靠谱的模式；
+    8,于Nosql，应用场景不多说，可参考“给部门做的Mongodb技术交流PPT”文章，redis、memcached等作为热点数据存储、数据库缓存都非常理想；
+    9,网DNS扮演的角色非常重要，一定要消灭code中出现的内网IP地址，很大程度减少因IP变更、服务器故障而修改源码的情况，同时也便于维护；
+    10,内网LB适用在内部WEB接口、多台数据库Slave、多台Nosql Slave、公共服务等应用的负载均衡，可以使用LVS、Haproxy来实现，
+       可用性要求不高的应用可行直接使用Localhost DNS轮询；
+    11,hadoop适合海量数据的存储与处理，如做网站日志分析、用户数据挖掘等；
+    12,管理集群，平台的核心，运维的阵地；
+    13,以上粗略介绍了架构的几个组成部分，如大家有对哪块有疑问或感兴趣都可以展开来讨论，也可以通过weibo与我交流：http://t.qq.com/yorkoliu
+
+负载均衡技术的详细介绍 https://www.cnblogs.com/chanshuyi/p/how-loadbalance-works.html
+	https://www.cnblogs.com/rjzheng/p/10263562.html 
+	DNS轮询 比如说就是,百度挂在 电信,还是 联通,还是移动的服务器上,分流 移动 电信 联通 用户的访问
+	LVS : 一个网站的最前方,把访问的链接分流转发,
+	Nginx : LVS 分流过来的 一般会在 Nginx上再分流,或者直接处理,最后把内容直接返回 远程客户端,或者先回到 lvs,由lvs 返回远程客户端
+	三种机制:
+	DR: LVS 分配给下级服务器,处理,处理结果,下级服务器自己直接返回到网络!
+	NAT,FULL-NAT: LVS 分配给下级服务器,处理,处理结果,下级服务器把结果返回 LVS,LVS再返回到网络!
+	Tunnel: 之前的模式都是修改数据包的 IP头,MAC头什么的实现装发, Tunnel是直接外部再封装一个IP头后装,透过外加头转发到下级服务器,
+		下级服务器会把额外加上的 IP 头 拆掉,最后处理结果直接返回到网络!
+	Nginx相似的软件还有apche、squid、lighttpd等负载均衡软件,综合说 Nginx 比较高效,不容易堵塞,造成压力!!! 
+数据库 集群分片处理:
+	就是使用多个服务器 组合共同存储数据 !!
+	重点 redis 数据库, Mysql 数据库  
+	MySql Replication
+	Mysql PXC 集群方案（ Percona XtraDB Cluster ）
+
+参考:
+	亿级pv与负载均衡:
+	https://www.cnblogs.com/rjzheng/p/10263562.html
+	https://www.cnblogs.com/chanshuyi/p/how-loadbalance-works.html
+
+
+	Django并行分布式框架 Celery
+	https://blog.csdn.net/huanhuani/article/details/81202480 Django并行分布式框架 Celery
+	https://blog.csdn.net/max229max/article/details/51463632
+
+	Django redis
+	https://mengkang.net/356.html  ///// redis 数据类型
+	https://www.cnblogs.com/fuhuixiang/p/4174896.html 
+	http://www.cnblogs.com/zjchao/p/8903552.html
+	https://www.cnblogs.com/jiangchunsheng/p/9151257.html
+	https://www.cnblogs.com/yuanermen/p/5717885.html   ///redis 集群
+	https://www.cnblogs.com/cjsblog/p/9048545.html	  ///redis 集群 分片 重要参考
+
+
+
+	Mysql 
+	https://blog.csdn.net/annotation_yang/article/details/80860988		/////集群
+	https://www.cnblogs.com/robbinluobo/p/8294782.html      ///mysql 高可用方案
+
+
+	搭建参考例子
+	https://blog.csdn.net/cow66/article/details/80096253   /// Docker + Django + Redis 搭建 集群分布负载均衡 很好的启蒙例子 
+	https://blog.csdn.net/xun527/article/details/78375735	/// 一 django电商平台的搭建例子
+	https://blog.csdn.net/kangshuo2471781030/article/details/79253578	/////千万级PV规模高性能高并发网站架构详解
+
+
+django 和 redis:
+	redis 数据内容格式: key:value value可以:字符串,列表,hash值,set,zset 等等
+	安装:
+	pip3 install django-redis
+	配置:settings.py
+		# redis 缓存服务器 
+			CACHES = {
+			    'default': {
+			        'BACKEND': 'redis_cache.cache.RedisCache',
+			        'LOCATION': '127.0.0.1:6379',
+			        "OPTIONS": {
+			            "CLIENT_CLASS": "redis_cache.client.DefaultClient",
+			        },
+			    },
+			}
+			REDIS_TIMEOUT=7*24*60*60
+			CUBES_REDIS_TIMEOUT=60*60
+			NEVER_REDIS_TIMEOUT=365*24*60*60
+	代码测试:
+		from django.core.cache import cache #引入缓存模块 
+		from django.conf import settings	# 其实 这个 settings 既有 django 全局设置的内容,
+							# 也有本地projrct selfweb的settings内容 
+		cache.set('v', '555', 60*60) #写入key为v，值为555的缓存，有效期30分钟 
+		cache.has_key('v') #判断key为v是否存在 
+		cache.get('v') #获取key为v的缓存
+    		cache.set('word', 'helloworld', settings.NEVER_REDIS_TIMEOUT)
+	或者:
+        	from django_redis import get_redis_connection
+        	conn = get_redis_connection("default")
+        	conn.hset('n1','k1','v1') 
+	或者:
+		session 用 redis存储开启方式
+		setting.py
+	redis 存非cache 的例子!!
+		安装pip3 install redis 
+		import redis
+		conn = redis.Redis(host='10.0.0.10',port=6379)
+		conn.set('k1','v1') # 向远程redis中写入了一个键值对
+		val = conn.get('k1') # 获取键值对
+		print(val)	
+
+			SESSION_ENGINE = 'django.contrib.sessions.backends.cache'  # 引擎
+        	        SESSION_CACHE_ALIAS = 'default'  # 使用的缓存别名（默认内存缓存，也可以是memcache），此处别名依赖缓存的设置
+	redit 集群,分片 https://www.cnblogs.com/cjsblog/p/9048545.html
+		redit 本是独立与django 的模块, django 通过插件接口访问!
+		多个节点(服务器),(比如36个节点)一起提供一个数据库的 访问, 是这个 redis数据库的集群
+		主从节点, 比如 36个当中有 12个master节点,24个slave节点,即,每个master节点,都有 2个副本节点(slave)
+			他们这3个节点数据同步, 外部只访问master节点, master节点挂了,其中一个slave节点会补上充当master节点
+		redis 含 16384个 hash slots, 一般平均分摊给12个节点组(1 master 2 slave)
+			然后 redis 的 数据条: key:value 会 存入被指定的 hash slots里, 
+			相当于 这个redis数据库被分12片,分存数据内容
+	redis一般用于 存 session cache celery 等
+
+	redis 集群分片操作例子: *号重点
+		https://www.cnblogs.com/cxbhakim/p/9151720.html    // docker 实现 redis 集群搭建
+		https://www.cnblogs.com/zhaohuhu/p/9140673.html         //redis 是内存数据库的理解  *
+		https://blog.csdn.net/cow66/article/details/80096253	/// Docker + Django + Redis 搭建 集群分布负载均衡  *
+									///没有 主从故障切换
+			主要思想是 通过宿主机编辑好配置文件 然后传到容器里执行!!
+		http://www.cnblogs.com/vipzhou/p/8580495.html		///Docker下redis的主从、持久化配置 哨兵系统     *
+									///有 主从故障切换
+                https://www.cnblogs.com/linkenpark/p/7841608.html       /// python redis sentinel 实现master故障切换   *
+		https://blog.csdn.net/lfgxiaogang/article/details/78020408      
+									///redis sentinel 高可用（HA）方案部署，及python应用示例     *
+
+                https://blog.csdn.net/ownfire/article/details/51546543  ///搭建redis-sentinel(哨兵机制)集群
+                https://blog.csdn.net/yingxiake/article/details/51671335        ///配置哨兵监控Redis运行情况
+                https://www.sunzhongwei.com/test-redis-replication-with-sentinel.html   ///测试 redis replication & sentinel & python
+                http://www.cnblogs.com/janehoo/p/6118961.html           ///Redis多机常用架构-sentinel
+                        /// 哨兵和 redis数据库  是相互独立， 可以运行在相互独立的节点上！！，不一定要都运行在同个节点上！
+                https://www.cnblogs.com/kazihuo/p/9109824.html          /// sentinel + cluster 共同集成 高可用的 数据分片主从故障切换 先cluster 后 sentinel  *
+                https://blog.csdn.net/xlnhaha/article/details/80987368  /// sentinel + cluster 例子2
+
+		https://www.cnblogs.com/zhanchenjin/p/5379112.html     ///Redis Sentinel + Cluster  *
+
+
+		https://www.cnblogs.com/lianggp/articles/8136222.html		///docker + redis-cluster
+		
+		例子实践进程:
+			Docker + Django + Redis  实现了 web应用均衡访问, redis主从实现,
+			但是 redis master故障模拟切换没有实现
+			通过参考 Docker下redis的主从、持久化配置 实现了 主从模拟故障切换,
+			但是, redis-master 挂了 web应用没有 切换到访问新 master !!
+			应该说 redis-master 改了, 但是 django还是链接原来的 master 没有转换新的 master !!!  
+			所以 应该从 django 的 app 入手
+			先 单方面 实现 sentinel，然后单方面实现 cluster 最后在 cluster 上实现 sentinel
+
+在 django redis 简单主从数据库 基础上 实现 sentinel ( 单方面 实现 sentinel，)
+	( https://blog.csdn.net/cow66/article/details/80096253 ) 基础上 添加 sentinel
+        首先，关闭所有 容器！！
+        docker stop HAProxy APP1 APP2 redis-master redis-slave1 redis-slave2
+        打开所有容器
+        docker start redis-master redis-slave1 redis-slave2 APP1 APP2 HAProxy   //开机注意顺序
+        在tmux 建立7个终端方便操作：
+        先新建 7个 docker所在的宿主机终端，然后 有6个进入容器终端，剩下一个宿主终端
+        进入 redis-master容器终端 ：  docker exec -it redis-master /bin/bash
+        进入 redis-slave1容器终端 ：  docker exec -it redis-slave1 /bin/bash
+        进入 redis-slave2容器终端 ：  docker exec -it redis-slave2 /bin/bash
+        进入 APP1 容器终端 ：  docker exec -it APP1 /bin/bash
+        进入 APP2 容器终端 ：  docker exec -it APP2 /bin/bash
+        进入 HAProxy 容器终端 ：  docker exec -it HAProxy /bin/bash
+
+        进入各个redis服务器终端， 删除 所有原来的sentinel.conf
+        重新修改 sentinel 配置
+                在宿主机操作：
+                        vim sentinel.conf  ：
+                                /////////////
+                                port 10011                                              // 哨兵的 端口用 10011
+                                sentinel monitor mymaster 172.17.0.2 6379 1             // 1 表示 至少有1个 哨兵节点 支持，才能当master
+                                sentinel down-after-milliseconds mymaster 60000
+                                sentinel failover-timeout mymaster 180000
+                                sentinel parallel-syncs mymaster 1
+                                //////////
+                        放到 redis 容器：
+                                cp sentinel.conf $(docker inspect -f '{{ .Mounts }}' redis-master | awk '{print $3}')
+                                cp sentinel.conf $(docker inspect -f '{{ .Mounts }}' redis-slave1 | awk '{print $3}')
+                                cp sentinel.conf $(docker inspect -f '{{ .Mounts }}' redis-slave2 | awk '{print $3}')
+                redis 容器终端操作：
+                        cp /data/sentinel.conf /usr/local/bin/sentinel.conf
+        修改 django webapp 节点程序：
+                都在宿主机上操作：
+                        docker inspect HAProxy APP1 APP2 redis-master redis-slave1 redis-slave2 |grep IPAddress      //查看 redis节点 的 ip
+                            "SecondaryIPAddresses": null,
+                            "IPAddress": "172.17.0.7",
+                                    "IPAddress": "172.17.0.7",
+                            "SecondaryIPAddresses": null,
+                            "IPAddress": "172.17.0.5",
+                                    "IPAddress": "172.17.0.5",
+                            "SecondaryIPAddresses": null,
+                            "IPAddress": "172.17.0.6",
+                                    "IPAddress": "172.17.0.6",
+                            "SecondaryIPAddresses": null,
+                            "IPAddress": "172.17.0.2",
+                                    "IPAddress": "172.17.0.2",
+                            "SecondaryIPAddresses": null,
+                            "IPAddress": "172.17.0.3",
+                                    "IPAddress": "172.17.0.3",
+                            "SecondaryIPAddresses": null,
+                            "IPAddress": "172.17.0.4",
+                                    "IPAddress": "172.17.0.4",
+                        可以发现 redis-master redis-slave1 redis-slave2 分别为 172.17.0.2， 172.17.0.3， 172.17.0.4
+                        这次实验默认使用 redis-master redis-slave1 redis-slave2 分别为 172.17.0.2， 172.17.0.3， 172.17.0.4 这个初始参数
+                        （新建容器的时候就应该使用静态分配的ip，减少很多不必要麻烦处理）
+                        由于 建立容器时的不谨慎， 容器都是开机后获得 动态 IP 所以要知道 redis 节点的 ip
+                        修改APP内容：
+                                # APP 1
+                                cd ~/Projects/Django/App1/dockerweb/redisweb/
+                                vim helloworld/views.py
+                                # APP 2
+                                cd ~/Projects/Django/App2/dockerweb/redisweb/
+                                vim helloworld/views.py
+//////////////////
+
+from django.shortcuts import render
+
+# Create your views here
+from django.http import HttpResponse
+import redis
+from redis.sentinel import Sentinel
+def hello(requset):
+    # 加载 哨兵的节点， 注意 之前设置 哨兵节点的 端口是 10011
+    sentinel = Sentinel([('172.17.0.2', 10011),('172.17.0.3', 10011),('172.17.0.4', 10011)], socket_timeout=0.2)
+    print(sentinel.discover_master('mymaster'))         # 通过 哨兵节点 获得 redis数据库master节点的 ip和端口
+    print(sentinel.discover_slaves('mymaster'))         # 通过 哨兵节点 获得 redis数据库slaves节点的 ip和端口
+    slave = sentinel.slave_for('mymaster', socket_timeout=0.1)          # 获得一个 redis数据库slave节点 接口
+    print('stu_num: ',slave.get('stu_num'))             # 获得数据库数据并打印数据
+    master = sentinel.master_for('mymaster', socket_timeout=0.1)        # 获得一个 redis数据库master节点 接口
+    master.set('app_info', 'HelloWorld-APP1')           # 给数据库写入一个数据  # 在APP2节点修改为HelloWorld-APP2
+    print('app_info: ',master.get('app_info'))
+    app_info = bytes.decode(slave.get('app_info'))
+    stu_num_info = int(master.get('stu_num'))
+    info = "Hello, everyone!<br/>Get Hi: {0}<br/>Get stu_num: {1}<br/>".format(app_info, stu_num_info)
+    return HttpResponse(info)
+
+    #r = redis.Redis(host='db', port=6379, db=0)
+    # 在APP2节点修改为HelloWorld-APP2
+    #r.set('app_info', 'HelloWorld-APP1')
+    #app_info = bytes.decode(r.get('app_info'))
+    #stu_num_info = int(r.get('stu_num'))
+    #info = "Hello, everyone!<br/>Get Hi: {0}<br/>Get stu_num: {1}<br/>".format(app_info, stu_num_info)
+    #return HttpResponse(info)
+
+def hello__dsdsds (request):
+    return HttpResponse('helloworld')
+
+////////////
+
+        在所有redis容器 启动 redis数据库 节点
+                cd /usr/local/bin/
+
+                # master:
+                //注意曾经的哨兵系统工作时会修改 redis.conf 里的内容，所以重新启动数据库需要先更新回初始设置
+                cp /data/redis-master.conf /usr/local/bin/redis.conf
+                redis-server redis.conf
+
+                # slave1 slave2
+                //注意曾经的哨兵系统工作时会修改 redis.conf 里的内容，所以重新启动数据库需要先更新回初始设置
+                cp /data/redis-slave.conf /usr/local/bin/redis.conf
+                redis-server redis.conf
+
+        同在 redis容器终端下 启动 sentinel 节点服务
+                redis-sentinel sentinel.conf
+                //// 也可以这样？？？  redis-server sentinel.conf --sentinel
+                sentinel 和 redis数据库 是相互独立的，
+                实际部署 sentinel 和 redis数据库 应该 放在不同的服务器物理机子 独立运行
+                即放在不同的容器上执行
+                这次图方便 sentinel 和 redis数据库 放同一容器上了
+
+        APP容器终端下启动  App
+                cd /usr/src/app/dockerweb/redisweb
+                python manage.py migrate
+
+                # APP1:
+                python manage.py runserver 0.0.0.0:8001
+
+                # APP2:
+                python manage.py runserver 0.0.0.0:8002
+        HAProxy 容器终端下：
+                启动HAProxy程序
+                cd /usr/local/sbin
+                haproxy -f haproxy.cfg
+
+        浏览器登陆： 149.28.122.195:6301 成功
+        然后 kill掉 master服务， 登陆时出错，那是因为哨兵还没完成同步处理
+        过会 登陆， 又好了，
+        把原来的master服务 重新加入，会被降级为 slave！
+
+
+ssh自动断开问题: https://www.cnblogs.com/aoyihuashao/p/3298950.html
+	
+
+
+redis 单方面实现 cluster实验  (这里cluster 指的是 分片集群 shrding cluster)
+	(https://blog.csdn.net/qq_22211217/article/details/80436996)
+	(https://redis.io/topics/cluster-tutorial/)
+	停止所有容器 ,不管以前的容器, 使用新建的容器测试!!!
+	需要 ruby 参与 分片: 添加 ruby 镜像: docker pull ruby
+	创建测试用的 网段(局域网): docker network create redis-net
+	#查看网段信息
+		docker network ls
+		docker network inspect  redis-net  | grep "Gateway" |  grep --color=auto -P '(\d{1,3}.){3}\d{1,3}' -o
+		172.18.0.1 (查到这个网段的网关IP)
+	创建配置文件模版
+		pwd
+		/root
+		mkdir ./redis-cluster ##在home 目录下创建 集群配置文件加
+		cd ./redis-cluster    ##在创建目录中
+		vim redis-cluster.tmpl  ##创建模版件
+/////////////
+port ${PORT}                        ##节点端口
+cluster-enabled yes                 ##cluster集群模式
+cluster-config-file nodes.conf      ##集群配置名
+cluster-node-timeout 5000           ##超时时间  
+cluster-announce-ip 172.18.0.1      ##实际为各节点网卡分配ip  先用上网关ip代替
+cluster-announce-port ${PORT}       ##节点映射端口
+cluster-announce-bus-port 1${PORT}  ##节点总线端
+appendonly yes                      ##持久化模式
+////////////
+	终端命令  批量创建节点配置文件
+		for port in `seq 7010 7015`; do \
+		  mkdir -p ./${port}/conf \
+		  && PORT=${port} envsubst < ./redis-cluster.tmpl > ./${port}/conf/redis.conf \
+		  && mkdir -p ./${port}/data; \
+		done
+	还要批量修改 /root/redis-cluster/${port}/conf/redis.conf 的 cluster-announce-ip 
+		分别为 六个将要建立的节点 的 ip 172.18.0.2/3/4/5/6/7
+	然后,检查:
+		在 /root/redis-cluster # tree
+			.
+			├── 7010
+			│   ├── conf
+			│   │   └── redis.conf
+			│   └── data
+			│       ├── appendonly.aof
+			│       ├── dump.rdb
+			│       └── nodes.conf
+			├── 7011
+			│   ├── conf
+			│   │   └── redis.conf
+			│   └── data
+			│       ├── appendonly.aof
+			│       ├── dump.rdb
+			│       └── nodes.conf
+			├── 7012
+			│   ├── conf
+			│   │   └── redis.conf
+			│   └── data
+			│       ├── appendonly.aof
+			│       ├── dump.rdb
+			│       └── nodes.conf
+			├── 7013
+			│   ├── conf
+			│   │   └── redis.conf
+			│   └── data
+			│       ├── appendonly.aof
+			│       ├── dump.rdb
+			│       └── nodes.conf
+			├── 7014
+			│   ├── conf
+			│   │   └── redis.conf
+			│   └── data
+			│       ├── appendonly.aof
+			│       ├── dump.rdb
+			│       └── nodes.conf
+			├── 7015
+			│   ├── conf
+			│   │   └── redis.conf
+			│   └── data
+			│       ├── appendonly.aof
+			│       ├── dump.rdb
+			│       └── nodes.conf
+			└── redis-cluster.tmpl
+			
+			18 directories, 25 files
+		在 /root/redis-cluster # cat 701*/conf/redis.conf
+			port 7010
+			cluster-enabled yes
+			cluster-config-file nodes.conf
+			cluster-node-timeout 5000
+			cluster-announce-ip 172.18.0.2
+			cluster-announce-port 7010
+			cluster-announce-bus-port 17010
+			appendonly yes
+
+			port 7011
+			cluster-enabled yes
+			cluster-config-file nodes.conf
+			cluster-node-timeout 5000
+			cluster-announce-ip 172.18.0.3
+			cluster-announce-port 7011
+			cluster-announce-bus-port 17011
+			appendonly yes
+			
+			port 7012
+			cluster-enabled yes
+			cluster-config-file nodes.conf
+			cluster-node-timeout 5000
+			cluster-announce-ip 172.18.0.4
+			cluster-announce-port 7012
+			cluster-announce-bus-port 17012
+			appendonly yes
+			
+			port 7013
+			cluster-enabled yes
+			cluster-config-file nodes.conf
+			cluster-node-timeout 5000
+			cluster-announce-ip 172.18.0.5
+			cluster-announce-port 7013
+			cluster-announce-bus-port 17013
+			appendonly yes
+			
+			port 7014
+			cluster-enabled yes
+			cluster-config-file nodes.conf
+			cluster-node-timeout 5000
+			cluster-announce-ip 172.18.0.6
+			cluster-announce-port 7014
+			cluster-announce-bus-port 17014
+			appendonly yes
+			
+			port 7015
+			cluster-enabled yes
+			cluster-config-file nodes.conf
+			cluster-node-timeout 5000
+			cluster-announce-ip 172.18.0.7
+			cluster-announce-port 7015
+			cluster-announce-bus-port 17015
+			appendonly yes
+			
+	宿主机终端批量新建启动容器 并 启动redis 服务
+		for port in `seq 7010 7015`; do \
+		  docker run -d -ti -p ${port}:${port} -p 1${port}:1${port} \
+		  --privileged=true -v /root/redis-cluster/${port}/conf/redis.conf:/usr/local/etc/redis/redis.conf \
+		  --privileged=true -v /root/redis-cluster/${port}/data:/data \
+		  --restart always --name redis-${port} --net redis-net \
+		  --sysctl net.core.somaxconn=1024 redis redis-server /usr/local/etc/redis/redis.conf; \
+		done
+		备注：命令译为  循环7010 - 7015  运行redis 容器 并运行 redis服务
+		docker  run            运行
+		-d                          守护进程模式
+		--restart always     保持容器启动
+		--name redis-710* 容器起名
+		--net redis-net    容器使用虚拟网卡
+		-p                        指定宿主机器与容器端口映射 701*:701*
+		-P                        指定宿主机与容器redis总线端口映射 1701*:1701*
+		 --privileged=true -v /root/redis-cluster/701*/conf/redis.conf:/usr/local/etc/redis/redis.conf
+		    付权将宿主701*节点文件挂载到容器/usr/local/etc/redis/redis.conf 文件中
+		--privileged=true -v /root/redis-cluster/${port}/data:/data \
+		   付权将宿主701*/data目录挂载到容器/data目录中
+		--sysctl net.core.somaxconn=1024 redis redis-server /usr/local/etc/redis/redis.conf;
+		   容器根据挂载的配置文件启动 redis服务端
+	查看网段ip分配情况: docker network inspect redis-net
+		[
+		    {
+		        "Name": "redis-net",
+		        "Id": "738f3ba557ea37f27d3d8ba6839ce962bd76fd2ffc24b8ea5c752ced7c3f6df6",
+		        "Created": "2019-01-26T13:36:00.113700469Z",
+		        "Scope": "local",
+		        "Driver": "bridge",
+		        "EnableIPv6": false,
+		        "IPAM": {
+		            "Driver": "default",
+		            "Options": {},
+		            "Config": [
+		                {
+		                    "Subnet": "172.18.0.0/16",
+		                    "Gateway": "172.18.0.1"
+		                }
+		            ]
+		        },
+		        "Internal": false,
+		        "Attachable": false,
+		        "Ingress": false,
+		        "ConfigFrom": {
+		            "Network": ""
+		        },
+		        "ConfigOnly": false,
+		        "Containers": {
+		            "07da0eb6dc9be4e38c7d3c8426b1181ad9dd89489bee1a79d4928be05664d9a0": {
+		                "Name": "redis-7014",
+		                "EndpointID": "156a352401c46f85eb8c04c0bb94b83620541c9a8a9d67364dedba60cde14981",
+		                "MacAddress": "02:42:ac:12:00:06",
+		                "IPv4Address": "172.18.0.6/16",
+		                "IPv6Address": ""
+		            },
+		            "1640364a670c4eafdef9593bca23b41b923f1182a5e6cac604261ebced77d2eb": {
+		                "Name": "redis-7015",
+		                "EndpointID": "1eb2db7ace2ff6fbb0cfdfa95eb220ed2d8a73cbca7e457a18de8a5e2015eeda",
+		                "MacAddress": "02:42:ac:12:00:07",
+		                "IPv4Address": "172.18.0.7/16",
+		                "IPv6Address": ""
+		            },
+		            "4266d49967b191a420413dbc80d35049a8f3b893c8bad7e6ea3757c9f793ef94": {
+		                "Name": "redis-7013",
+		                "EndpointID": "16cbed49c75e578f939ade3ef06aaf3a52c58f284fd065e5d2c9db5fda0062f5",
+		                "MacAddress": "02:42:ac:12:00:05",
+		                "IPv4Address": "172.18.0.5/16",
+		                "IPv6Address": ""
+		            },
+		            "88459f13cf11a256c0c9df7aa19c5fb615b9b4eb89911cf9a3335f9a8bf71c07": {
+		                "Name": "redis-cluster",
+		                "EndpointID": "ac1cc0cc86985d53aa193601868cfe5b9210f00b0cd2409d13244cc6ce19a6ae",
+		                "MacAddress": "02:42:ac:12:00:08",
+		                "IPv4Address": "172.18.0.8/16",
+		                "IPv6Address": ""
+		            },
+		            "bd57b93856da61535dc83235a19625a1417dbfd0833b88c8b668aa288b8174af": {
+		                "Name": "redis-7012",
+		                "EndpointID": "7cbf8cef0ff4e9ba6192db08bf539a24ae0f605a669152ff4c2df77ad7eef6b2",
+		                "MacAddress": "02:42:ac:12:00:04",
+		                "IPv4Address": "172.18.0.4/16",
+		                "IPv6Address": ""
+		            },
+		            "e2d11bc6682bdab96713631b1352b51790ee94c8bd05d854a92f45a9da93ab65": {
+		                "Name": "redis-7010",
+		                "EndpointID": "60975dd5073934ee28d47e9a0495347ac295e0915ffd7d085713af3d6a742dd2",
+		                "MacAddress": "02:42:ac:12:00:02",
+		                "IPv4Address": "172.18.0.2/16",
+		                "IPv6Address": ""
+		            },
+		            "f36fc8b2efaa14dcbc2b5c49d641a9f3d7ed501bc5a3891d420902369fd03fee": {
+		                "Name": "redis-7011",
+		                "EndpointID": "b24ac4af7db62086f457bbfc221330d1a4670864f2e6fdd39b7d879aed288813",
+		                "MacAddress": "02:42:ac:12:00:03",
+		                "IPv4Address": "172.18.0.3/16",
+		                "IPv6Address": ""
+		            }
+		        },
+		        "Options": {},
+		        "Labels": {}
+		    }
+		]
+		检查 redis-701* 容器 的 ip 正好 跟 被分配持有的 redis.conf配置文件的 cluster-announce-ip  一致!
+		不一致的就要删除容器 好好修改重新建立容器:
+		/////补充知识
+		#  批量 删除指定容器!!
+		for port in `seq 7010 7015`; do \
+		  docker stop redis-${port};
+		  docker rm redis-${port};
+		done
+	开始启动redis-cluster集群				
+		echo yes | docker run -i --rm --net redis-net ruby sh -c '\
+		  gem install redis \
+		  && wget http://download.redis.io/redis-stable/src/redis-trib.rb \
+		  && ruby redis-trib.rb create --replicas 1 \
+		  '"$(for port in `seq 7010 7015`; do \
+		    echo -n "$(docker inspect --format '{{ (index .NetworkSettings.Networks "redis-net").IPAddress }}' "redis-${port}")":${port} ' ' ; \
+		  done)
+		实际上就是 建立并启动 可以执行ruby程序的 容器 :docker run --net redis-net ruby
+		然后在这个容器 执行
+		gem install redis  //安装 ruby 的 redia 插件
+		wget http://download.redis.io/redis-stable/src/redis-trib.rb   // 获得实现 cluster 的 ruby 脚本
+		ruby redis-trib.rb create --replicas 1 172.18.0.2:7010 172.18.0.3:7011 172.18.0.4:7012 172.18.0.5:7013 172.18.0.6:7014 172.18.0.7:7015 	//开始执行 cluster 集群
+		不过遇到了问题:
+		WARNING: redis-trib.rb is not longer available!
+		You should use redis-cli instead.
+		
+		All commands and features belonging to redis-trib.rb have been moved
+		to redis-cli.
+		In order to use them you should call redis-cli with the --cluster
+		option followed by the subcommand name, arguments and options.
+		
+		Use the following syntax:
+		redis-cli --cluster SUBCOMMAND [ARGUMENTS] [OPTIONS]
+		
+		Example:
+		redis-cli --cluster create 172.18.0.2:7010 172.18.0.3:7011 172.18.0.4:7012 172.18.0.5:7013 172.18.0.6:7014 172.18.0.7:7015 --cluster-replicas 1
+
+		To get help about all subcommands, type:
+		redis-cli --cluster help
+		问题表示, redis-trib.rb 不再提供cluster 服务, redis 本身redis-cli 已经可以实现:
+		也就说 这个ruby 容器白建立的!! 删掉
+	建立一个新 redis 容器,用来实现 redis-cluster
+		docker run -it --name redls-cluster --net redis-net ruby /bin/bash
+		cd /usr/local/bin
+		redis-cli --cluster create 172.18.0.2:7010 172.18.0.3:7011 172.18.0.4:7012 172.18.0.5:7013 172.18.0.6:7014 172.18.0.7:7015 --cluster-replicas 1		//执行 cluster, --cluster-replicas 1 的 1 表示 1主1从
+			>>> Performing hash slots allocation on 6 nodes...
+			Master[0] -> Slots 0 - 5460
+			Master[1] -> Slots 5461 - 10922
+			Master[2] -> Slots 10923 - 16383
+			Adding replica 172.18.0.5:7013 to 172.18.0.2:7010
+			Adding replica 172.18.0.6:7014 to 172.18.0.3:7011
+			Adding replica 172.18.0.7:7015 to 172.18.0.4:7012
+			M: 5d9495381e8ca8a72cd62009053f79745dc485b3 172.18.0.2:7010
+			   slots:[0-5460] (5461 slots) master
+			M: 7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 172.18.0.3:7011
+			   slots:[5461-10922] (5462 slots) master
+			M: e5cee718cb7a59db06d86255d45714218518e2ba 172.18.0.4:7012
+			   slots:[10923-16383] (5461 slots) master
+			S: b8c6b07b61c1227b97d8d0f4aecf50a7cfda710b 172.18.0.5:7013
+			   replicates 5d9495381e8ca8a72cd62009053f79745dc485b3
+			S: 77d98daae2683f1325a6aeb149ca4e74839f9d69 172.18.0.6:7014
+			   replicates 7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23
+			S: 25e6971b5603eb6c199b8e88ae46dcb51822f0f0 172.18.0.7:7015
+			   replicates e5cee718cb7a59db06d86255d45714218518e2ba
+			Can I set the above configuration? (type 'yes' to accept): yes
+			>>> Nodes configuration updated
+			>>> Assign a different config epoch to each node
+			>>> Sending CLUSTER MEET messages to join the cluster
+			Waiting for the cluster to join
+			..
+			>>> Performing Cluster Check (using node 172.18.0.2:7010)
+			M: 5d9495381e8ca8a72cd62009053f79745dc485b3 172.18.0.2:7010
+			   slots:[0-5460] (5461 slots) master
+			   1 additional replica(s)
+			M: e5cee718cb7a59db06d86255d45714218518e2ba 172.18.0.4:7012
+			   slots:[10923-16383] (5461 slots) master
+			   1 additional replica(s)
+			S: 25e6971b5603eb6c199b8e88ae46dcb51822f0f0 172.18.0.7:7015
+			   slots: (0 slots) slave
+			   replicates e5cee718cb7a59db06d86255d45714218518e2ba
+			S: 77d98daae2683f1325a6aeb149ca4e74839f9d69 172.18.0.6:7014
+			   slots: (0 slots) slave
+			   replicates 7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23
+			S: b8c6b07b61c1227b97d8d0f4aecf50a7cfda710b 172.18.0.5:7013
+			   slots: (0 slots) slave
+			   replicates 5d9495381e8ca8a72cd62009053f79745dc485b3
+			M: 7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 172.18.0.3:7011
+			   slots:[5461-10922] (5462 slots) master
+			   1 additional replica(s)
+			[OK] All nodes agree about slots configuration.
+			>>> Check for open slots...
+			>>> Check slots coverage...
+			[OK] All 16384 slots covered.
+	貌似成功cluster了, 接下来就是测试 !!!
+		在任一节点/宿主容器上查看信息:
+root@88459f13cf11:/usr/local/bin# redis-cli -c -h 172.18.0.2 -p 7010 cluster nodes
+e5cee718cb7a59db06d86255d45714218518e2ba 172.18.0.4:7012@17012 master - 0 1548522635159 3 connected 10923-16383
+25e6971b5603eb6c199b8e88ae46dcb51822f0f0 172.18.0.7:7015@17015 slave e5cee718cb7a59db06d86255d45714218518e2ba 0 1548522634000 6 connected
+77d98daae2683f1325a6aeb149ca4e74839f9d69 172.18.0.6:7014@17014 slave 7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 0 1548522634156 5 connected
+5d9495381e8ca8a72cd62009053f79745dc485b3 172.18.0.2:7010@17010 myself,master - 0 1548522634000 1 connected 0-5460
+b8c6b07b61c1227b97d8d0f4aecf50a7cfda710b 172.18.0.5:7013@17013 slave 5d9495381e8ca8a72cd62009053f79745dc485b3 0 1548522634557 4 connected
+7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 172.18.0.3:7011@17011 master - 0 1548522633000 2 connected 5461-10922
+		
+		redis-cli -c -h 172.18.0.2 -p 7010	//集群模式登录 节点  get set 实验
+		172.18.0.2:7010> get foo
+		-> Redirected to slot [12182] located at 172.18.0.4:7012
+		(nil)
+		172.18.0.4:7012> keys *
+		(empty list or set)
+		172.18.0.4:7012> get Tom
+		-> Redirected to slot [9233] located at 172.18.0.3:7011
+		(nil)
+		172.18.0.3:7011> keys *
+		1) "tom"
+		172.18.0.3:7011> set jim age11
+		-> Redirected to slot [4115] located at 172.18.0.2:7010
+		OK
+		172.18.0.2:7010> key *
+		(error) ERR unknown command `key`, with args beginning with: `*`, 
+		172.18.0.2:7010> keys *
+		1) "jim"
+		2) "kate"
+		172.18.0.2:7010> set bob age15
+		-> Redirected to slot [8955] located at 172.18.0.3:7011
+		OK
+		172.18.0.3:7011> set zeta age10
+		OK
+		172.18.0.3:7011> set anna age5
+		-> Redirected to slot [15278] located at 172.18.0.4:7012
+		OK
+		172.18.0.4:7012> keys *
+		1) "anna"
+		172.18.0.4:7012> set fuli age7
+		OK
+		172.18.0.4:7012> keys *
+		1) "anna"
+		2) "fuli"
+		172.18.0.4:7012> get tom
+		-> Redirected to slot [8919] located at 172.18.0.3:7011
+		"age12"
+		172.18.0.3:7011> 
+		可以看到 set get 数据 会自动跳到 所属 hash slot 的节点 进行数据保存!!!
+	模拟故障1: 当master挂了, slave 会变成 master!!!
+		比如直接 docker stop redis-7010 
+		检查 网络 :
+			redis-cli -c -h 172.18.0.3 -p 7011 cluster nodes   //先接入  172.18.0.3:7011 然后检查所有节点网络         
+7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 172.18.0.3:7011@17011 myself,master - 0 1548524513000 2 connected 5461-10922
+25e6971b5603eb6c199b8e88ae46dcb51822f0f0 172.18.0.7:7015@17015 slave e5cee718cb7a59db06d86255d45714218518e2ba 0 1548524513817 3 connected
+5d9495381e8ca8a72cd62009053f79745dc485b3 172.18.0.2:7010@17010 master,fail - 1548524310644 1548524309000 1 connected
+b8c6b07b61c1227b97d8d0f4aecf50a7cfda710b 172.18.0.5:7013@17013 master - 0 1548524513516 7 connected 0-5460
+77d98daae2683f1325a6aeb149ca4e74839f9d69 172.18.0.6:7014@17014 slave 7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 0 1548524512513 5 connected
+e5cee718cb7a59db06d86255d45714218518e2ba 172.18.0.4:7012@17012 master - 0 1548524512814 3 connected 10923-16383
+			注意, 看到了 172.18.0.2:7010@17010 master,fail  172.18.0.5:7013@17013 master
+			hash-solt:0-5460 的 master节点挂了, 172.18.0.5:7013 作为 slave 节点 变成了 master 继续工作
+			注意 redis-cli -c -h 172.18.0.2 -p 7010 cluster nodes //这是先接入 172.18.0.2:7010 然后检查所有节点网络 
+			但是,由于这时, 172.18.0.2:7010不能接入,所以 这条指令也就失败了
+		操作:redis-cli -c -h 172.18.0.3 -p 7011
+			172.18.0.3:7011> get jim	//获取 存于   hash-slot:0-5460 的数据
+			-> Redirected to slot [4115] located at 172.18.0.5:7013
+			"age11"
+			172.18.0.5:7013>  			
+			// 换到了 172.18.0.5:7013 节点了!!!
+		重新打开 172.18.0.2:7010 , 这个本来的master节点变成了slave节点
+			docker start redis-7010 (注意 创建redis-701*的容器,设置了自动运行redis-server, 所以不用额外打开服务)
+						(另外,创建容器时的设置,也不能通过 kill -9 来杀掉这个进程,所以只能通过 docker stop来模拟故障)
+			redis-cli -c -h 172.18.0.3 -p 7011 cluster nodes
+7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 172.18.0.3:7011@17011 myself,master - 0 1548524688000 2 connected 5461-10922
+25e6971b5603eb6c199b8e88ae46dcb51822f0f0 172.18.0.7:7015@17015 slave e5cee718cb7a59db06d86255d45714218518e2ba 0 1548524690000 3 connected
+5d9495381e8ca8a72cd62009053f79745dc485b3 172.18.0.2:7010@17010 slave b8c6b07b61c1227b97d8d0f4aecf50a7cfda710b 0 1548524690000 7 connected
+b8c6b07b61c1227b97d8d0f4aecf50a7cfda710b 172.18.0.5:7013@17013 master - 0 1548524691313 7 connected 0-5460
+77d98daae2683f1325a6aeb149ca4e74839f9d69 172.18.0.6:7014@17014 slave 7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 0 1548524690311 5 connected
+e5cee718cb7a59db06d86255d45714218518e2ba 172.18.0.4:7012@17012 master - 0 1548524689307 3 connected 10923-16383
+			可以看到  172.18.0.2:7010 变成 slave
+
+	模拟故障2: 某 hash-slot 集群的 master slave 节点都挂了,redis 数据库阻塞停摆
+		docker stop redis-7010 redis-7013
+		检查 网络 :
+			redis-cli -c -h 172.18.0.3 -p 7011 cluster nodes
+7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 172.18.0.3:7011@17011 myself,master - 0 1548525099000 2 connected 5461-10922
+25e6971b5603eb6c199b8e88ae46dcb51822f0f0 172.18.0.7:7015@17015 slave e5cee718cb7a59db06d86255d45714218518e2ba 0 1548525100000 3 connected
+5d9495381e8ca8a72cd62009053f79745dc485b3 172.18.0.2:7010@17010 master,fail - 1548525051488 1548525050000 8 connected 0-5460
+b8c6b07b61c1227b97d8d0f4aecf50a7cfda710b 172.18.0.5:7013@17013 master,fail - 1548524979292 1548524978591 7 connected
+77d98daae2683f1325a6aeb149ca4e74839f9d69 172.18.0.6:7014@17014 slave 7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 0 1548525100428 5 connected
+e5cee718cb7a59db06d86255d45714218518e2ba 172.18.0.4:7012@17012 master - 0 1548525099425 3 connected 10923-16383
+			可见:
+			172.18.0.5:7013@17013 master,fail
+			172.18.0.2:7010@17010 master,fail
+		操作:redis-cli -c -h 172.18.0.3 -p 7011
+			172.18.0.3:7011> get jim	//获取 存于   hash-slot:0-5460 的数据 失败 (即故障的hash-solt集群 )
+			(error) CLUSTERDOWN The cluster is down	
+			172.18.0.3:7011> get tom	//获取 存于   hash-slott:5461-10922  的数据 (即自己本身 也失败)
+			(error) CLUSTERDOWN The cluster is down
+			172.18.0.5:7013> 
+		重新打开 172.18.0.2:7010, 172.18.0.5:7013 , 
+			docker start redis-7010 redis-7013  
+				(注意,先打开redis-7010, 因为创建容器时,没有使用静态地址)
+				(如果先创建 redis-7013 ,redis-7013会继承172.18.0.2,redis-7010会继承172.18.0.5)
+				(跟他们 redis-conf 设置的 不匹配,redis-server启动失败)
+			当然只 docker start redis-7010 也可以,
+			但是只 docker start redis-7010 就不行,也是因为ip冲突,redis-server启动失败)
+			然后
+			redis-cli -c -h 172.18.0.3 -p 7011 cluster nodes   //先接入  172.18.0.3:7011 然后检查所有节点网络         
+7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 172.18.0.3:7011@17011 myself,master - 0 1548524513000 2 connected 5461-10922
+25e6971b5603eb6c199b8e88ae46dcb51822f0f0 172.18.0.7:7015@17015 slave e5cee718cb7a59db06d86255d45714218518e2ba 0 1548524513817 3 connected
+5d9495381e8ca8a72cd62009053f79745dc485b3 172.18.0.2:7010@17010 master,fail - 1548524310644 1548524309000 1 connected
+b8c6b07b61c1227b97d8d0f4aecf50a7cfda710b 172.18.0.5:7013@17013 master - 0 1548524513516 7 connected 0-5460
+77d98daae2683f1325a6aeb149ca4e74839f9d69 172.18.0.6:7014@17014 slave 7f9f0b84095c2fd77ff4fb896f7cbd9e943cde23 0 1548524512513 5 connected
+e5cee718cb7a59db06d86255d45714218518e2ba 172.18.0.4:7012@17012 master - 0 1548524512814 3 connected 10923-16383				
+			cluster网络又好了!! redis数据可以重新工作!!!
+	模拟故障3: 上面的cluster 是通过 redis-cluster容器节点 创建集群的,那么, redis-cluster容器节点挂了呢?
+		结果没有影响,  redis-cluster容器节点 创建了集群后,就没有 redis-cluster容器节点 的事情了
+		即使所有节点都挂了!!
+			docker stop redis-7010 redis-7011 redis-7012 redis-7013 redis-7014 redis-7015 redis-cluster
+		重新,启动所有 数据库节点:
+			docker start redis-7010 redis-7011 redis-7012 redis-7013 redis-7014 redis-7015
+			redis数据库,照样如常工作,不需要重新创建集群
+		就是说, redis数据节点 一旦创建好分片集群,就能自我管理并工作, 不需要其他管理节点介入
+	尝试加入 sentinel (虽然感觉没有加入的意义!!! 因为cluster本身实现了 故障主从切换!!)
+		sentinel 配置文件: sentinel-forcluster.conf
+//////////
+protected-mode no 
+port 10011
+daemonize yes
+logfile "/var/log/sentinel.log"
+sentinel monitor mymaster1 172.18.0.2:7010 1
+sentinel monitor mymaster2 172.18.0.3:7011 1
+sentinel monitor mymaster3 172.18.0.4:7012 1
+sentinel down-after-milliseconds mymaster1 10000
+sentinel down-after-milliseconds mymaster2 10000
+sentinel down-after-milliseconds mymaster3 10000
+sentinel parallel-syncs mymaster1 1
+sentinel parallel-syncs mymaster2 1
+sentinel parallel-syncs mymaster3 1
+sentinel failover-timeout mymaster1 15000
+sentinel failover-timeout mymaster2 15000
+sentinel failover-timeout mymaster3 15000
+//////////
+		// 这才是 正确的 宿主机拷贝数据到 容器的 方法!!
+		docker cp sentinel-forcluster.conf redis-7010:/usr/local/bin/sentinel.conf
+		docker cp sentinel-forcluster.conf redis-7011:/usr/local/bin/sentinel.conf
+		docker cp sentinel-forcluster.conf redis-7012:/usr/local/bin/sentinel.conf
+		docker cp sentinel-forcluster.conf redis-7013:/usr/local/bin/sentinel.conf
+		docker cp sentinel-forcluster.conf redis-7014:/usr/local/bin/sentinel.conf
+		docker cp sentinel-forcluster.conf redis-7015:/usr/local/bin/sentinel.conf
+		然后在容器开启 sentinel 节点,这里 我们在数据库本身开启打开sentinel服务,就懒得用新的容器实现了!!!
+		在 6 个容器里分别执行sentinel  : cd /usr/local/bin/ && redis-sentinel sentinel.conf &
+		然后出错:
+			*** FATAL CONFIG FILE ERROR ***
+			Reading the configuration file, at line 5
+			>>> 'sentinel monitor mymaster1 172.18.0.2:7010 1'
+			Unrecognized sentinel configuration statement.
+		发现不能执行, 然后 我换了 3个独立节点 执行 sentinel
+		出现同样错误!!
+		看来 sentinel 和 cluster 是冲突的 !!!,cluster本身也实现了 故障主从切换, 
+		所以sentinel不知道载在这个基础上如何工作了!!
+	接入django 测试：
+		修改之前 APP1 APP2 的内容： vim helloworld/views.py 添加
+//////////////////////
+from rediscluster import StrictRedisCluster
+
+def hello (requset):
+    redis_nodes = [
+        {'host':'172.18.0.2','port':7010},
+        {'host':'172.18.0.3','port':7011},
+        {'host':'172.18.0.4','port':7012},
+        {'host':'172.18.0.5','port':7013},
+        {'host':'172.18.0.6','port':7014},
+        {'host':'172.18.0.7','port':7015},
+    ]
+    try:
+        redisconn = StrictRedisCluster(startup_nodes=redis_nodes)
+    except Exception:
+        print('connect Error')
+        return HttpResponse('Connect Error!')
+
+    print(redisconn.get('jim'))
+    print(redisconn.get('tom'))
+    print(redisconn.get('anna'))
+    print(redisconn.get('fuji'))
+    redisconn.set('app_info', 'HelloWorld-APP1')	# APP2 改为 APP2
+    app_info = bytes.decode(redisconn.get('app_info'))
+    stu_num_info = int(redisconn.get('stu_num'))
+    info = "Hello, everyone!<br/>Get Hi: {0}<br/>Get stu_num: {1}<br/>".format(app_info, stu_num_info)
+    return HttpResponse(info) 
+/////////////////////
+		由于 APP1 APP2 跟 redis-7010 不是一个网段，所以需要建立连接到 redis-net network
+			docker network connect redis-net  APP2
+			docker network connect redis-net  APP1
+		最后成功启动！！		
+	
+	putty 下载上传远程文件
+		pscp E:\dukto\20190128 root@149.28.1xx.1xx:/root          //上传
+		pscp root@149.28.1xx.1xx:root/note2 E:\dukto\      //下载
+	
+
+	最后,需要深入处理的有:
+		如何操作实现读写分离,貌似所有操作都在master节点上,无法把读任务分摊到slave节点? 
+		接入django 测试!!
+
+
+mysql 集群 PXC (pxc是用于高一致集群的 Mysql 软件版本):
+	参考: 
+	https://blog.csdn.net/weixin_41141219/article/details/82767832  ///Docker 搭建pxc集群 + haproxy + keepalived 高可用（一）
+	https://blog.csdn.net/qq_39409110/article/details/82288953     ////Docker 搭建pxc集群 + haproxy + keepalived 高可用（二）
+	https://blog.csdn.net/qq_39409110/article/details/82289621     ////Docker 搭建pxc集群 + haproxy + keepalived 高可用（三）
+	https://blog.csdn.net/qq_21108311/article/details/82223269   ////直接使用docker 的pxc 镜像,外挂docker volume备份数据库内容
+	https://blog.csdn.net/fuckluy/article/details/80450868	////centos安装pxc, 主要讲解 my.cnf 配置参数!!!
+	http://www.cnblogs.com/lyhabc/archive/2017/05/05/6812284.html	///// MySQL集群PXC的搭建   版本旧
+	https://www.cnblogs.com/zejin2008/p/5475285.html	/////MySQL PXC 高可用集群搭建     版本旧
+	http://www.cnblogs.com/kevingrace/p/5685371.html	/////  MySQL高可用方案－PXC环境部署记录   背景知识丰富    版本旧
+				//// 模拟故障 和 恢复   重要
+	https://www.percona.com/doc/percona-xtradb-cluster/5.5/howtos/centos_howto.html   ////官网部署教程   版本旧
+	https://www.biaodianfu.com/centos-7-2-install-percona.html     //yum源 安装冲突问题,    没什么参考价值
+	https://blog.csdn.net/wzhwho/article/details/4179154  //关selinux
+	https://www.linuxidc.com/Linux/2017-05/143930.htm      ///PXC5.7(Percona XtraDB Cluster)集群部署	tar安装,参考有限
+	https://hacpai.com/article/1536650134710	///centos7安装pxc5.7,  使用xtrabackup-v2数据同步     参考最多!!!!!
+	https://www.clevernetsystems.com/running-percona-xtradb-cluster-rhel7/      ///pxc 常用指令
+	https://www.cnblogs.com/ivictor/p/4837750.html		/////Docker官方CentOS镜像无法启动mysqld的总结
+	https://www.jianshu.com/p/7cccdaa2d177   ///centos7 安装 mysql5.7
+	http://blog.51cto.com/11819159/1933718	 /// 认识到 yum 安装的一些细节, 认识 basedir和datadir,本来想解决:
+						 /// [ERROR] Can't find error-message file '/usr/local/mysql/share/mysql/errmsg.sys'.
+						 /// 最后这个问题通过 清除已生成文件,重新初始化 mysald 解决!!!!
+	/// yum 安装的一些细节: 作者的 basedir指定的是/usr/local/mysql/；后面突然想到了basedir指定是数据库的bin，lib之列的文件，
+	///但是因为是yum安装的，所有这些文件默认的路径是在/usr/share/mysql下面，所以basedir这个参数可以并不需要指定，
+	///或者直接指定到/usr/share/mysql/这个目录下面。
+	
+	
+	知识点				
+		PXC+Replication多主多从MySQL集群搭建
+		MYCAT轻松实现mysql读写分离
+		MySQL5.7.18已经支持基于事务的主从复制和读写分离
+		而 pxc 做得更远!! 保持数据库高一致性,和每个节点数据保持相同,均可读写
+		通过 docker 提供的傻瓜包镜像不好 参透,还是个实战好理解!
+		为了锻炼 部署数据库集群到多个服务器的操作, 不直接使用 docker 提供 预装pxc镜像,
+		需要实践 在 centos 部署 pxc57 的经验!!!
+		需要本机 docker 实验了!!  远程机器资源严重不足 !!! 主要怀疑 pxc 最小的InnoDB_bffer_pool 为 128MB
+		而对于 512 mb 内存的远程服务器机子来说就无法玩下去!!
+	准备:
+		首先在自己的 pc上 安装 docker:  https://blog.csdn.net/bingzhongdehuoyan/article/details/79411479
+		docker pull centos  //下载docker上的centos镜像,默认最新最简centos7 镜像
+		建立模拟局域网络:
+			sudo docker network create pxc-net --subnet=172.22.0.0/16 --ip-range=172.22.0.0/16 --gateway=172.22.0.1      
+			//16 是掩码范围的意思即：255.255.0.0
+			网络查看: sudo docker network inspect pxc-net
+		新建启动5个容器点 指定 pxc-net网络里的静态IP
+			sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.2 -itd --name=pxc-node1 centos /usr/sbin/init
+			sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.3 -itd --name=pxc-node2 centos /usr/sbin/init
+			sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.4 -itd --name=pxc-node3 centos /usr/sbin/init
+			sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.5 -itd --name=pxc-node4 centos /usr/sbin/init
+			sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.6 -itd --name=pxc-node5 centos /usr/sbin/init
+			(由于 docker 使用 centos建立的容器 执行 systemctl 会出错：Failed to get D-Bus connection: Operation not permitted
+			 所以 docker run 的时候 加上 --privileged=true /usr/sbin/init)
+			容器内查看centos 版本信息
+				cat /etc/redhat-release
+				CentOS Linux release 7.6.1810 (Core)	
+		容器内centos 关闭 防火墙 和 行为监督 selinux！
+			iptable： https://blog.csdn.net/wailaizhu/article/details/53488954
+			selinux： https://www.cnblogs.com/activiti/p/7552677.html
+			然而 精简 centos 镜像 并没有安装 iptable 和 selinux可以不理会！！
+		登陆 5个node 准备 安装同样内容
+			docker exec -it pxc-node_XXX bash		//登陆 node1/2/3/4/5	
+	部署安装 pxc57( 也叫 pxc5.7)
+		目前最通用的是 pxc57 版本, 网上很多使用参考都太旧了,参考价值有限, 
+		旧版本 pxc 都需要自己手动安装必要的依赖包,比如:
+			yum -y groupinstall Base Compatibility libraries Debugging Tools Dial-up Networking suppport Hardware monitoring utilities Performance Tools Development tools
+		或者: 		
+			rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+			yum install perl-IO-Socket-SSL perl-DBD-MySQL perl-Time-HiRes socat nc -y
+		或者:
+			yum install -y git scons gcc gcc-c++ openssl check cmake bison boost-devel asio-devel libaio-devel ncurses-devel readline-devel pam-devel socat
+		实际上,虽然我的centos精简,缺少很多东西,但是如果是安装最新的的 pxc 不需要自己主动去添加依赖包!!
+		pxc57 安装过程自我添加 依赖包!!!!
+		所以以上安装依赖包的操作  不需要 !!!
+		主要部署安装参考:  https://hacpai.com/article/1536650134710   //////centos7 部署安装 pxc57
+	完整已经填好所有坑的部署安装方法:  假设我们部署5个节点 pxc-node1/2/3/4/5
+		所有容器机子都安装:
+			yum install http://www.percona.com/downloads/percona-release/redhat/0.1-4/percona-release-0.1-4.noarch.rpm //安装源
+			yum install Percona-XtraDB-Cluster-57 -y	//直接安装 pxc57
+		pxc的配置文件除了 传统的 my.cnf 还有他所包含的子文件,
+		所有机子的 my.cnf都添加以下配置内容:
+	[client]
+	default-character-set = utf8mb4
+	[mysqld]
+	user=mysql
+	skip_ssl
+	sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+	slow_query_log=ON
+	slow_query_log_file=/var/lib/mysql/mysql-slow.log
+	general_log=ON
+	general_log_file=/var/lib/mysql/log-mysql.log
+	long_query_time = 1
+	explicit_defaults_for_timestamp = 1
+	innodb_buffer_pool_instances = 1		//教程说8 不合适,因为注意>1  表示缓存大于1G  ?? 不知道那看到的  
+	innodb_buffer_pool_dump_at_shutdown = 1
+	log_timestamps=system
+	character-set-server = utf8mb4
+	collation-server = utf8mb4_unicode_ci
+	max_connections=10000
+
+		然后 第一台机子的 /etc/percona-xtradb-cluster.conf.d/wsrep.cnf 如下
+	# Path to Galera library
+	wsrep_provider=/usr/lib64/galera3/libgalera_smm.so		//不用改
+	
+	# Cluster connection URL contains IPs of nodes
+	#If no IP is found, this implies that a new cluster needs to be created,
+	#in order to do that you need to bootstrap this node
+	wsrep_cluster_address=gcomm://					//wsrep已有,不用写上
+	
+	# In order for Galera to work correctly binlog format should be ROW
+	binlog_format=ROW						//wsrep已有,不用写上
+	
+	# MyISAM storage engine has only experimental support
+	default_storage_engine=InnoDB					//wsrep已有,不用写上
+	
+	# Slave thread to use
+	wsrep_slave_threads= 8						//wsrep已有,不用写上
+	
+	wsrep_log_conflicts						//wsrep已有,不用写上
+	
+	# This changes how InnoDB autoincrement locks are managed and is a requirement for Galera
+	innodb_autoinc_lock_mode=2					//wsrep已有,不用写上
+	
+	# Node IP address
+	wsrep_node_address=172.22.0.2				//第一台机子的 ip
+	# Cluster name
+	wsrep_cluster_name=pxc-cluster
+	
+	#If wsrep_node_name is not specified,  then system hostname will be used
+	wsrep_node_name=pxc1					//需要修改!!
+	
+	#pxc_strict_mode allowed values: DISABLED,PERMISSIVE,ENFORCING,MASTER
+	pxc_strict_mode=DISABLED				//需要修改!!
+	
+	# SST method
+	wsrep_sst_method=xtrabackup-v2
+	
+	#Authentication for SST method
+	wsrep_sst_auth="pxc_user:123456"			//需要修改!!
+
+		其他机子的 /etc/percona-xtradb-cluster.conf.d/wsrep.cnf 如下
+	# Path to Galera library
+	wsrep_provider=/usr/lib64/galera3/libgalera_smm.so		//不用改
+		
+	# Cluster connection URL contains IPs of nodes
+	#If no IP is found, this implies that a new cluster needs to be created,
+	#in order to do that you need to bootstrap this node
+	wsrep_cluster_address=gcomm://172.22.0.2,172.22.0.3,172.22.0.4,172.22.0.5,172.22.0.6	//需要改
+	
+	# In order for Galera to work correctly binlog format should be ROW
+	binlog_format=ROW						//wsrep已有,不用写上
+	
+	# MyISAM storage engine has only experimental support
+	default_storage_engine=InnoDB					//wsrep已有,不用写上
+	
+	# Slave thread to use
+	wsrep_slave_threads= 8						//wsrep已有,不用写上
+	
+	wsrep_log_conflicts						//wsrep已有,不用写上
+	
+	# This changes how InnoDB autoincrement locks are managed and is a requirement for Galera
+	innodb_autoinc_lock_mode=2					//wsrep已有,不用写上
+	
+	# Node IP address
+	wsrep_node_address=172.22.0.2/3/4/5/6				//node2,3,4,5 各自 ip地址
+	# Cluster name
+	wsrep_cluster_name=pxc-cluster
+	
+	#If wsrep_node_name is not specified,  then system hostname will be used
+	wsrep_node_name=pxc2/3/4/5					//需要修改!!node2,3,4,5 各自定义
+	
+	#pxc_strict_mode allowed values: DISABLED,PERMISSIVE,ENFORCING,MASTER
+	pxc_strict_mode=DISABLED				//需要修改!!
+	
+	# SST method
+	wsrep_sst_method=xtrabackup-v2
+	
+	#Authentication for SST method
+	wsrep_sst_auth="pxc_user:123456"			//需要修改!!
+		然后 首次启动第一台机子 node1:
+			systemctl start mysql@bootstrap.service
+			grep 'temporary password' /var/log/mysqld.log	//获得暂时密码
+			mysql -uroot -p		//登录 输入 暂时密码
+			ALTER USER 'root'@'localhost' IDENTIFIED BY '123456';  //修改root 密码
+			CREATE USER 'pxc_user'@'localhost' IDENTIFIED BY '123456';	//创建热备份账户!!
+			GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '123456';	//提权!!!!
+			GRANT ALL PRIVILEGES ON *.* TO 'pxc_user'@'%' IDENTIFIED BY '123456';
+			GRANT ALL PRIVILEGES ON *.* TO 'pxc_user'@'localhost' IDENTIFIED BY '123456';
+			至此 第一台机子就部署好了,
+		然后第二台机子 node2:
+			直接 systemctl start mysql 就好了, 机子会加入到集群里,如果加入集群失败,会直接初始化失败
+			成功后 mysql -uroot -p  输入同步过来的密码 123456 就可以登录!!
+			这里 添加的表单,数据, 直接就开始同步到 第一台机子了!!!,
+			可以直接在第一机子登录查看
+		然后的三四五台机子.
+			跟第二台操作一样,  systemctl start mysql 便可自动加入集群!!
+		然后数据库关闭操作:
+			一般: 其他节点 systemctl stop mysql 直接关闭!!!
+			      第一节点 最后,且 通过 systemctl stop mysql@bootstrap.service 关闭!!!!!
+			重新启动的话, 第一节点 先打开systemctl start mysql@bootstrap.service 
+				其他节点 陆续打开 systemctl start mysql
+
+	模拟故障分析!!
+		假设只加入了 node2
+			node1 无法  systemctl stop mysql , 我们尝试直接 kill -9 强制删除
+			结果 只剩下 node2, 突然的故障无法让剩下的node2, 自举为首节点, 所以不能读写数据库,数据库直接崩溃!!!
+			node2 systemctl stop mysql 常规关掉.
+			这时 node1 因为是kill 强制删除的, 重新 systemctl stop mysql@bootstrap.service ,错误!!! 
+			查看 /var/log/mysqld.log,说不是最后关闭节点,所以丧失首节点地位!!!
+			降级为子节点: 这样子整个集群就没了首节点!!了,都是子节点
+			
+			node1重新强制成为首节点: 
+				vi /var/lib/mysql/grastate.dat , safe_to_bootstrap: 1	//置1
+				systemctl start mysql@bootstrap.service
+		假如加入了 node2 node3
+			1,直接 kill -9 强制 关闭 node1
+			  突发故障,却剩下了 node2, node3, 两者很快自举出一个首节点(可能是node2,也可能node3)!!
+			  这时数据库仍可以正常读写和同步!!
+			2,这时 node3  systemctl stop mysql 正常关闭, 程序上推举node2最后节点,成为首节点
+			  这时,数据库仍然正常读写.
+			  node2虽然作为最后节点,也是首节点,但是关闭时还是 systemctl stop mysql 指令
+			  就是说, node2 当初什么指令打开,最后也什么指令关闭	
+			3,node2作为新的首节点, 数据库重新打开时,先打开 node2 而且换成指令 systemctl start mysql@bootstrap.service 打开!
+			  然后 node1 node3 作为子节点, 需要 systemctl start mysql 打开!
+			  这时 node1出错, cat /var/log/mysqld.log 查看日志发现
+			  原来node1被创建人默认为永远的首节点, 所以 wsrep_cluster_address=gcomm:// 可以什么都不写
+			  如今沦为子节点 wsrep_cluster_address=gcomm:// 如果没有ip 就不可能找到属于自己集群的首节点,加入集群!!
+			  所以需要 vi /etc/percona-xtradb-cluster.conf.d/wsrep.cnf:
+				wsrep_cluster_address=gcomm://   改回:
+				wsrep_cluster_address=gcomm://172.22.0.2,172.22.0.3,172.22.0.4,172.22.0.5,172.22.0.6	
+				就是说 作为首节点 wsrep_cluster_address=gcomm:// 填不填ip 都没有关系.
+				但是首节点也有可能沦为子节点 ,所以统一填上更合理!!
+			  然后 通过 systemctl start mysql 假如集群
+			4,这时 node2 第一个想正常关闭,通过指令 systemctl stop mysql@bootstrap.service
+			  而不是 systemctl stop mysql,
+			  因为 node2 是 systemctl start mysql@bootstrap.service 打开的, 
+			  不管他是不是最后正常关闭都要通过指令 systemctl stop mysql@bootstrap.service
+			  首节点变成 node1 node3 其中一个,
+			5,如果想 node1 变回 首节点, node3就得先正常关闭 systemctl stop mysql
+			  最后 node1 也 通过 systemctl stop mysql 正常关闭
+			6,总结的 重点就是说,数据库不完全崩溃的情况下!!!!!, 最后正常关闭的节点,就是下次数据开启的首节点
+			  (像第一种讨论的情况只有两个节点, 一个不正常关闭,整个数据库就完全崩溃!!,
+			   最后一个节点正常关闭也不会成为下次数据库开启的首节点)
+			  节点当初是什么指令打开,就同样指令关闭!!!
+		三个节点以上情况,参考3个节点情况同样讨论!!!
+
+	部署安装集群 填坑 分析 :
+		不管安装 旧pxc,还是新的pxc57 第一次启动时时都会遇到这个大坑,这个坑问题并不在于漏装依赖包的问题!!
+		我们从分析入手:
+			第一次启动直接出错: Job for mysqld.service failed because the control process exited with error code. See "systemctl status mysqld.service" and "journalctl -xe" for details.
+			我们可以透过 systemctl status mysqld.service  或者 journalctl -xe 查看日志,发现爱呢问题:
+			systemctl status mysqld.service 是针对 mysql 第一次启动的日志,
+			journalctl -xe 却是 容器启动到此刻系统发布的所有记录的日志
+		我们从中查看 ERROR 问题
+			发现什么mysql: Can't create directory '/var/lib/mysql/' (Errcode: 17 - File exists) 
+			但似乎不是重点.继续发现 [ERROR] InnoDB: Operating system error number 13 in a file operation.			
+			错误 !!!! 即访问拒绝错误!!
+			网上都没有关闭 seliunx ,但是本来就是没有安装 selinux
+			然而,已经是root权限运行centos 了,  针对 pxc 出现的这个问题, 我们可以验证仅仅安装mysql也出现
+			pxc是高级版本的mysql, 如果安装启动mysql出现问题,那么就不是pxc 高级模块部分初始化引起的问题!!
+		所以先 关闭,重装 再打开 pxc-node1 容器, 安装测试 mysql5.7:
+			参考 https://www.jianshu.com/p/7cccdaa2d177   ///centos7 安装 mysql5.7
+			果然,安装了,也发现同样的问题 InnoDB 权限问题!!!
+		一开始 怀疑是 用户权限问题!! 经学习mysql 不能从属 root 用户下工作,不然会出现很多问题
+			mysal初始化启动时,应该添加 --user=mysql,即 msqld --uer=mysql
+			就是说 使 mysql 的工作文件从属到 一个 mysql 的用户名下,
+			虽然假定永远处于 root 下操作,不明白为啥还要分到 mysql 下,
+			问题仍然处在
+		尝试dmesg,会发现最新的像这样子的错误!!
+			audit: type=1400 audit(1548838487.195:1022): apparmor="DENIED" operation="open" profile="/usr/sbin/mysqld" name="/proc/2821/status" pid=12504 comm="mysqld" requested_mask="r" denied_mask="r" fsuid=0 ouid=0
+			谷歌 发现是是一个 apparmor 的程序引起
+			然而,渐渐精简的centos 并没有,原来是 宿主的,虽然在容器里执行dmesg, 但是得到的却是宿主机开机到现在的日志记录!!!
+			怀疑 宿主的 apparmor 阻碍了 容器 的 mysqld 初始化
+			apparmor(监督强制软件访问行为的软件,跟 selinux 一样作用) 阻碍的 docker
+			apparmor监督注册程序的访问内容, 当程序访问管辖外的内容时,会禁止行为
+			主要指通过 路径分析实现监督:
+			宿主机 安装了 mysql, 执行程序路径 /usr/sbin/mysqld
+			容器 也安装了 mysql, 执行程序路径也是 /usr/sbin/mysqld
+			一个是宿主机里的路径,一个数容器里的路径,但是apparmor只辨认 /usr/sbin/mysqld 不管实际位置
+			这里 apparmor 只允许 /usr/sbin/mysqld 这个路径执行文件,访问指定的文件目录,
+			但是 挂在 docker里的目录的路径显然超出了管辖范围外,所以禁止操作,
+			变相 导致 容器 的InnoDB 没有访问权限
+			所以禁用apparmor 关于mysql配置文件,参考: https://www.helplib.com/MySQL/article_176
+			//查看监督
+			sudo aa-status
+			//取消监督某某
+			sudo ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable
+			sudo apparmor_parser -R  /etc/apparmor.d/usr.sbin.mysqld
+			sudo /etc/init.d/apparmor   ///重新启动
+			//恢复监督某某
+			sudo rm /etc/apparmor.d/disable/usr.sbin.mysqld
+			sudo /etc/init.d/apparmor   ///重新启动
+			删除各种冲突内容!! 最后重新 start mysqld 注意 不是 mysql
+			service mysqld start  
+			成功!!!!
+		查到是宿主 apparmor 的行为, 与mysql无关,我们重新开始部署安装 pxc57
+			不需要 依赖包,!!
+			直接安装源,然后安装pxc57,
+			配置 my.cnf 加上
+			[mysqld]
+			user=mysql
+			然后第一次运行:service mysql start
+			也没问题了!!
+		然后开始部署: 
+			部署开始,启动第一台机子的时候需要  systemctl start mysql@bootstrap.service
+			出错!! 分析,由于 机子已经经历了首次启动,所以 使用这个部署启动的时候会出现莫名奇妙的错误
+			其实就是初始化冲突问题, 一般
+			重装, 配置好 my.cnf 所有内容后 才 systemctl start mysql@bootstrap.service 执行第一次启动
+			也可以,删除以下文件夹后 重新执行 systemctl start mysql@bootstrap.service
+			rm -rf /var/run/mysqld/ && rm -rf /var/lib/mysql/ && rm -rf /var/log/mysqld.log
+			其实就是 删除 .cnf 配置的: pid-file,  datadir,  log-error 
+			然后再就可以相当于重新执行 首启动
+			成功!!!
+		然后加入节点 出错:
+			出现了 xtrabackup 运行失败的 信息
+			既然 xtrabackup 也开始工作,就是说集群开始了,那么寻找错误就不能只从子节点分析
+			子节点 只是 说 xtrabackup 运行错误, 怎样错误,并没有说!!
+			而且也会出现:
+			Can't connect to local MySQL server through socket '/var/lib/mysql/mysql.sock'
+			ERROR! mysqld_safe with PID 5737 has already exited: FAILURE
+			这样的迷惑信息!! 
+			实际上,因为 xtrabackup 工作失败后,一系列初始化就停了,于是会出现很多后续错误迷惑而找不到真正的出错点!!
+			热备份 高可用关键 xtrabackup
+			xtrabackup 出错,可能不仅仅是子节点的问题,也有可能是第一节点的问题!!
+			xtrabackup 是节点之间实现热备份同步的程序!! 其实就是共同使用一个统一用户帐号实现,
+			节点间自动使用嗯这个帐号登录更新数据!
+			然后从 第一节点发现, 原来并第一节点还没有建立这个 统一账户,grant没有建立新帐号,只是给帐号提权
+		建立帐号后,继续出错!!
+			Error: failed to execute query LOCK TABLES FOR BACKUP: Access denied; you need (at least one of) the RELOAD privilege(s) for this operation
+			这个是 帐号建立了,但还没有提权,,,,提权后
+			就成功了
+
+	pxc/mysql填坑思路:
+		https://www.cnblogs.com/ivictor/p/5146247.html		//填坑思路
+		先尝试发现问题!!
+		systemctl status mysqld.service
+		journalctl -xe
+		demesg
+		vi /var/log/mysqld.log
+		一般mysql 启动时第一时间启动日志系统,即 生成并输出/var/log/mysqld.log
+		如果出错在于 生成mysqld.log 之前,就系统问题,重要关注systemctl status mysqld.service,journalctl -xe 内容
+		特别关注 dmesg 内容!! 
+		这里注意 dmesg 从来是是宿主开机以来的日志记录, 不管这条指令是在容器还是宿主机运行!!
+		如果生成了 mysqld.log ,一般就是 my.cnf 即文件配置配置问题,
+			或者没有进入 mysql 初始化某些指令的问题, 当然也有可能还是系统问题!!
+		重点,不要先考虑 是 安装出撮问题,因为安装时 complete 表示成功安装,一般是内部外部的配置问题导致不能启动!!
+		journalctl -xe 把日志从开始位置开始列出, 并不合适,应该 journalctl -n 直接从最后的日志显示内容!!!!
+ 
+		
+	附加----使用过的指令:
+		yum provide ls		//缺 所以安装 ls 工具
+		yum install initscripts		//centos 没有 service 命令 只有 systemctl,如果要使用需要自己添加 
+		yum install wget	//添加 wget
+		vi /var/log/mysqld.log   或者  cat /var/log/mysqld.log      //查看 运行日志文件
+		mysqld --initialize && mysqld install	// mysql 的初始化!! (pxc不建议使用!!)
+	 	////  关闭,重装 再打开 pxc-node1/2/3/4/5 容器  ////
+		sudo docker stop pxc-node1 && sudo docker rm pxc-node1 && sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.2 -itd --name=pxc-node1 centos /usr/sbin/init && sudo docker exec -it pxc-node1 bash
+
+		sudo docker stop pxc-node2 && sudo docker rm pxc-node2 && sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.3 -itd --name=pxc-node2 centos /usr/sbin/init && sudo docker exec -it pxc-node2 bash
+
+		sudo docker stop pxc-node3 && sudo docker rm pxc-node3 && sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.4 -itd --name=pxc-node3 centos /usr/sbin/init && sudo docker exec -it pxc-node3 bash
+
+		sudo docker stop pxc-node4 && sudo docker rm pxc-node4 && sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.5 -itd --name=pxc-node4 centos /usr/sbin/init && sudo docker exec -it pxc-node4 bash
+
+		sudo docker stop pxc-node5 && sudo docker rm pxc-node5 && sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.6 -itd --name=pxc-node5 centos /usr/sbin/init && sudo docker exec -it pxc-node5 bash
+		
+		yum install https://repo.percona.com/yum/percona-release-latest.noarch.rpm	///安装最新的pxc 官方源
+		////// pxc 常用指令
+		service mysql start to start this cluster’s node
+		service mysql bootstrap-pxc to start this node as the first node of the cluster
+		service mysql status to check the status of this cluster’s node
+		service mysql stop to stop this cluster’s node
+ 		///// selinux 常用指令
+		查看SELinux状态：1、
+		/usr/sbin/sestatus -v      ##如果SELinux status参数为enabled即为开启状态
+			SELinux status:                 enabled
+		getenforce                 ##也可以用这个命令检查
+		关闭SELinux：
+			临时关闭（不用重启机器）：
+			setenforce 0                  ##设置SELinux 成为permissive模式
+                        setenforce 1 			设置SELinux 成为enforcing模式
+		修改配置文件需要重启机器：
+			修改/etc/selinux/config 文件
+			将SELINUX=enforcing改为SELINUX=disabled
+			重启机器即可
+
+实现 Mycat + pcx 的 分片集群
+再建立一个 pxc 集群
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.12 -itd --name=pxc2-node1 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.13 -itd --name=pxc2-node2 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.14 -itd --name=pxc2-node3 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.15 -itd --name=pxc2-node4 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.16 -itd --name=pxc2-node5 centos /usr/sbin/init
+		
+		sudo docker exec -it pxc2-node1 /bin/bash 	//pxc2-node1/2/3/4/5
+		//都按装 pxc57
+		yum install http://www.percona.com/downloads/percona-release/redhat/0.1-4/percona-release-0.1-4.noarch.rpm //安装源
+		yum install Percona-XtraDB-Cluster-57 -y	//直接安装 pxc57
+	所有机子的 /etc/my.cnf
+	[client]
+	default-character-set = utf8mb4
+	[mysqld]
+	user=mysql
+	skip_ssl
+	sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+	slow_query_log=ON
+	slow_query_log_file=/var/lib/mysql/mysql-slow.log
+	general_log=ON
+	general_log_file=/var/lib/mysql/log-mysql.log
+	long_query_time = 1
+	explicit_defaults_for_timestamp = 1
+	innodb_buffer_pool_instances = 1		//教程说8 不合适,因为注意>1  表示缓存大于1G  ?? 不知道那看到的  
+	innodb_buffer_pool_dump_at_shutdown = 1
+	log_timestamps=system
+	character-set-server = utf8mb4
+	collation-server = utf8mb4_unicode_ci
+	max_connections=10000
+
+	然后 所有机子的 /etc/percona-xtradb-cluster.conf.d/wsrep.cnf 如下
+	# Path to Galera library
+	wsrep_provider=/usr/lib64/galera3/libgalera_smm.so		//不用改
+	
+	# Cluster connection URL contains IPs of nodes
+	#If no IP is found, this implies that a new cluster needs to be created,
+	#in order to do that you need to bootstrap this node
+	wsrep_cluster_address=gcomm://172.22.0.12,172.22.0.13,172.22.0.14,172.22.0.15,172.22.0.16	//需要改
+	
+	# In order for Galera to work correctly binlog format should be ROW
+	binlog_format=ROW						//wsrep已有,不用写上
+	
+	# MyISAM storage engine has only experimental support
+	default_storage_engine=InnoDB					//wsrep已有,不用写上
+	
+	# Slave thread to use
+	wsrep_slave_threads= 8						//wsrep已有,不用写上
+	
+	wsrep_log_conflicts						//wsrep已有,不用写上
+	
+	# This changes how InnoDB autoincrement locks are managed and is a requirement for Galera
+	innodb_autoinc_lock_mode=2					//wsrep已有,不用写上
+	
+	# Node IP address
+	wsrep_node_address=172.22.0.12/13/14/15/16				//每一台机子的 ip
+	# Cluster name
+	wsrep_cluster_name=pxc2-cluster					//第二个独立的 pxc 集群
+	
+	#If wsrep_node_name is not specified,  then system hostname will be used
+	wsrep_node_name=pxc2-1/2/3/4/5					//每一台机子的名字 需要修改!!
+	
+	#pxc_strict_mode allowed values: DISABLED,PERMISSIVE,ENFORCING,MASTER
+	pxc_strict_mode=DISABLED				//需要修改!!
+	
+	# SST method
+	wsrep_sst_method=xtrabackup-v2
+	
+	#Authentication for SST method
+	wsrep_sst_auth="pxc2_user:123456"			//需要修改!!
+
+		然后 首次启动第一台机子 node1:
+			systemctl start mysql@bootstrap.service
+			grep 'temporary password' /var/log/mysqld.log	//获得暂时密码
+			mysql -uroot -p		//登录 输入 暂时密码
+			ALTER USER 'root'@'localhost' IDENTIFIED BY '123456';  //修改root 密码
+			CREATE USER 'pxc2_user'@'localhost' IDENTIFIED BY '123456';	//创建热备份账户!!
+			GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '123456';	//提权!!!!
+			GRANT ALL PRIVILEGES ON *.* TO 'pxc2_user'@'%' IDENTIFIED BY '123456';
+			GRANT ALL PRIVILEGES ON *.* TO 'pxc2_user'@'localhost' IDENTIFIED BY '123456';
+			至此 第一台机子就部署好了,
+		然后第二台机子 node2:
+			直接 systemctl start mysql 就好了, 机子会加入到集群里,如果加入集群失败,会直接初始化失败
+			成功后 mysql -uroot -p  输入同步过来的密码 123456 就可以登录!!
+			这里 添加的表单,数据, 直接就开始同步到 第一台机子了!!!,
+			可以直接在第一机子登录查看
+		然后的三四五台机子.
+			跟第二台操作一样,  systemctl start mysql 便可自动加入集群!!
+		然后数据库关闭操作:
+			一般: 其他节点 systemctl stop mysql 直接关闭!!!
+			      第一节点 最后,且 通过 systemctl stop mysql@bootstrap.service 关闭!!!!!
+			重新启动的话, 第一节点 先打开systemctl start mysql@bootstrap.service 
+				其他节点 陆续打开 systemctl start mysql
+	最后,注意关机后若重新启动数据库, 需要查看上次关闭最后关闭的节点,所以要
+	cat /var/lib/mysql/grastate.dat	1
+	查看 safe_to_bootstrap: 1 则是最后关闭的节点,必须第一打开这个节点!! systemctl start mysql@bootstrap.service 
+ 	然后, 这个pxc2 集群和 之前的pxc集群 成功相互独立共存!!
+	后面为 建立 mycat 分片集群准备!!
+
+ 
+
+maycat 分片 集群 部署:
+	
 
 
 
@@ -4262,6 +7448,577 @@ python 读文件片段
 
 
 	
+	建立在 pxc 集群之上的 分片集群!!! (待续) (即分布式集群)
+		mycat :https://www.cnblogs.com/reblue520/p/10338496.html	
+		mycat :https://blog.csdn.net/qq_36762677/article/details/83830154
+	建立
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+
+
+
+
+
+
+20190201
+
+	Hadoop spark
+	分布式计算
+
+	docker:
+		不需要他深入,上述已经够用
+	mangoDB:
+		https://www.cnblogs.com/nulige/p/7613721.html		//副本集 和 sharding cluster 两种集群
+
+	压力测试:
+		https://blog.csdn.net/a13124837937/article/details/79628838    /// jmeter
+		https://www.cnblogs.com/kazihuo/p/7986681.html  ///压力测试 Nxginl 例子
+	HAProxy
+		
+	Nginx:
+
+
+
+centos7 mongoDB4 sahrding cluster集群
+	就是 外围客户 通过 路由器集任意一个节点, 访问 config 集群,获得数据的位置信息,然后访问 shard 集群 获得数据信息
+	停止所有容器:
+		sudo docker stop $(sudo docker ps -a -q) //  stop停止所有容器
+		sudo docker restart $(sudo docker ps -a -q) //  restart所有容器,但是是逐个restart,,, 不是全关再全开
+		sudo docker rm $(sudo docker ps -a -q) //补充   remove删除所有容器
+	先建立新局域网络!!!
+		sudo docker network create mongodb-net --subnet=172.23.0.0/16 --ip-range=172.23.0.0/16 --gateway=172.23.0.1
+	网络查看: sudo docker network inspect pxc-net
+	新建启动5个容器点 指定 pxc-net网络里的静态IP
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.2 -itd --name=mgdb-shd11 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.3 -itd --name=mgdb-shd12 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.4 -itd --name=mgdb-shd13 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.5 -itd --name=mgdb-shd21 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.6 -itd --name=mgdb-shd22 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.7 -itd --name=mgdb-shd23 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.8 -itd --name=mgdb-shd31 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.9 -itd --name=mgdb-shd32 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.10 -itd --name=mgdb-shd33 centos /usr/sbin/init
+
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.11 -itd --name=mgdb-cofg1 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.12 -itd --name=mgdb-cofg2 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.13 -itd --name=mgdb-cofg3 centos /usr/sbin/init
+
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.14 -itd --name=mgdb-mogs1 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.15 -itd --name=mgdb-mogs2 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=mongodb-net --ip=172.23.0.16 -itd --name=mgdb-mogs3 centos /usr/sbin/init
+		(由于 docker 使用 centos建立的容器 执行 systemctl 会出错：Failed to get D-Bus connection: Operation not permitted
+		所以 docker run 的时候 加上 --privileged=true /usr/sbin/init)
+		附加,开启所有 节点:
+			sudo docker start mgdb-shd11 mgdb-shd12 mgdb-shd13 mgdb-shd21 mgdb-shd22 mgdb-shd23 mgdb-shd31 mgdb-shd32 mgdb-shd33 mgdb-cofg1 mgdb-cofg2 mgdb-cofg3 mgdb-mogs1 mgdb-mogs2 mgdb-mogs3
+	容器内查看centos 版本信息
+		cat /etc/redhat-release
+		CentOS Linux release 7.6.1810 (Core)		      
+	每个 centos7 节点都先 yum 安装 mongodb4:
+		参考: https://blog.csdn.net/bigtree_3721/article/details/82768056
+	vi /etc/yum.repos.d/mongodb-org-4.0.repo	//添加:
+		[mongodb-org-4.0]
+		name=MongoDB Repository
+		baseurl=https://repo.mongodb.org/yum/redhat/7Server/mongodb-org/4.0/x86_64/
+		gpgcheck=1
+		enabled=1
+		gpgkey=https://www.mongodb.org/static/pgp/server-4.0.asc
+	yum makecache 
+	yum install -y mongodb-org	//安装 mongodb
+	rpm -ql mongodb-org-server	//查看安装的路径!!
+		/etc/mongod.conf
+		/lib/systemd/system/mongod.service
+		/usr/bin/mongod
+		/usr/share/doc/mongodb-org-server-4.0.5
+		/usr/share/doc/mongodb-org-server-4.0.5/LICENSE-Community.txt
+		/usr/share/doc/mongodb-org-server-4.0.5/MPL-2
+		/usr/share/doc/mongodb-org-server-4.0.5/README
+		/usr/share/doc/mongodb-org-server-4.0.5/THIRD-PARTY-NOTICES
+		/usr/share/man/man1/mongod.1
+		/var/lib/mongo
+		/var/log/mongodb
+		/var/log/mongodb/mongod.log
+		/var/run/mongodb
+	其他:
+		8.MongoDB操作：
+		8.1关闭、启动、重启MongoDB
+		# service mongod restart
+		Redirecting to /bin/systemctl restart mongod.service
+		8.2 设置开启启动：
+		# service mongod restart
+		Redirecting to /bin/systemctl restart mongod.service
+		9.删除mongoDB：
+		#sudo service mongod stop
+		#sudo yum erase $(rpm -qa | grep mongodb-org)
+		#sudo rm -r /var/log/mongodb
+		#sudo rm -r /var/lib/mongo
+	开始集群配置: 参考:
+		https://www.cnblogs.com/hehexiaoxia/p/6061043.html
+		http://www.lanceyan.com/tech/arch/mongodb_shard1.html
+		http://feed.askmaclean.com/archives/mongdb%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0.html
+	分片集群组合:
+		mongs : 172.23.0.14:20000, 172.23.0.15:20000, 172.23.0.16:20000
+		cnfig : 172.23.0.11:20000, 172.23.0.12:20000, 172.23.0.13:20000
+		shrd1 : 172.23.0.2:20000, 172.23.0.3:20000, 172.23.0.4:20000
+		shrd2 : 172.23.0.5:20000, 172.23.0.6:20000, 172.23.0.7:20000
+		shrd3 : 172.23.0.8:20000, 172.23.0.9:20000, 172.23.0.10:20000
+	shard1 节点 都这样 启动节点服务!!!
+		mkdir -p /data/shard1/data
+		mkdir -p /data/shard1/log
+		/usr/bin/mongod --shardsvr --replSet shard1 --port 20000 --dbpath /data/shard1/data  --logpath /data/shard1/log/shard1.log  --oplogSize 10 --fork --bind_ip_all
+			--shardsvr 指定作为  分片集群的节点
+			--replSet  指定集群名字
+			--port     端口是 20000
+			--dbpath   数据放置路径
+			--logpath  记录日志位置
+			--oplogSize 把整体缓存设置变小, 因为只是测试,没有必要用大缓存
+			--fork     以新的进程运作
+			必须加上--bind_ip_all 不然其他节点不能访问,经踩坑,发现 不加, mongo服务不能 通过 ip 地址登录,只能本地登录
+			即, 不能 mongo 172.23.0.xx:20000 登录,只能 mongo 127.0.0.1:20000登录	
+	shard2 节点 启动节点服务
+		mkdir -p /data/shard2/data
+		mkdir -p /data/shard2/log
+		/usr/bin/mongod --shardsvr --replSet shard2 --port 20000 --dbpath /data/shard2/data  --logpath /data/shard2/log/shard2.log  --oplogSize 10 --fork --bind_ip_all	
+	shard3 节点 启动节点服务
+		mkdir -p /data/shard3/data
+		mkdir -p /data/shard3/log
+		/usr/bin/mongod --shardsvr --replSet shard3 --port 20000 --dbpath /data/shard3/data  --logpath /data/shard3/log/shard3.log  --oplogSize 10 --fork --bind_ip_all
+	config 节点 启动节点服务
+		mkdir -p /data/config/data
+		mkdir -p /data/config/log
+		/usr/bin/mongod --configsvr --replSet cfgReplSet --dbpath /data/config/data --port 20000 --logpath /data/config/log/config.log --fork --bind_ip_all
+			--configsvr 指定作为  config集群的节点
+ 	然后开始配置 shard 和 config 集群 !!
+	选择 config 集群的 其中一个节点执行配置即可,配置自动贯穿整个集群:
+	比如 cofg1 节点,登录 cofg1 节点再登录 172.23.0.11:20000 mongo命令端
+	当然从其他 容器节点 登录 172.23.0.11:20000 mongo命令端 也是可以的, 172.23.0.11:20000,
+		mongo 172.23.0.11:20000
+		> use admin
+		switched to db admin
+		> config = { _id:"cfgReplSet", configsvr:true, members:[
+		... {_id:0,host:"172.23.0.11:20000"},
+		... {_id:1,host:"172.23.0.12:20000"},
+		... {_id:2,host:"172.23.0.13:20000"}
+		... ]}
+		> rs.initiate(config);
+		{
+		        "ok" : 1,
+			.....
+		}
+
+		配置插曲: (出错,无法 连接  172.23.0.13:20000  等等!!)
+		> rs.initiate(config);		
+		{
+		        "operationTime" : Timestamp(0, 0),
+		        "ok" : 0,
+		        "errmsg" : "replSetInitiate quorum check failed because not all proposed set members responded affirmatively: 172.23.0.12:20000 failed with Error connecting to 172.23.0.12:20000 :: caused by :: Connection refused, 172.23.0.13:20000 failed with Error connecting to 172.23.0.13:20000 :: caused by :: Connection refused",
+		        "code" : 74,
+		        "codeName" : "NodeNotFound",
+		        "$gleStats" : {
+		                "lastOpTime" : Timestamp(0, 0),
+		                "electionId" : ObjectId("000000000000000000000000")
+		        },
+		        "lastCommittedOpTime" : Timestamp(0, 0),
+		        "$clusterTime" : {
+		                "clusterTime" : Timestamp(0, 0),
+		                "signature" : {
+		                        "hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+		                        "keyId" : NumberLong(0)
+		                }
+		        }
+		}
+		查看log 发现!!!!!!
+		2019-02-04T15:23:37.982+0000 I CONTROL  [initandlisten] ** WARNING: This server is bound to localhost.
+		2019-02-04T15:23:37.982+0000 I CONTROL  [initandlisten] **          Remote systems will be unable to connect to this server.
+		2019-02-04T15:23:37.982+0000 I CONTROL  [initandlisten] **          Start the server with --bind_ip <address> to specify	which IP
+		2019-02-04T15:23:37.982+0000 I CONTROL  [initandlisten] **          addresses it should serve responses from, or with --bind_ip_all to
+		2019-02-04T15:23:37.982+0000 I CONTROL  [initandlisten] **          bind to all interfaces. If this behavior is desired, start the
+		2019-02-04T15:23:37.982+0000 I CONTROL  [initandlisten] **          server with --bind_ip 127.0.0.1 to disable this warning.
+
+		/usr/bin/mongod --configsvr --replSet cfgReplSet --dbpath /data/config/data --port 20000 --logpath /data/config/log/config.log --fork 
+		不够,需要添加 --bind_ip_all (就是这里发现需要补上 --bind_ip_all 的 坑)
+		所有节点服务重新加上这个启动!!
+		然后重新设置 成功
+		
+	shard1集群,其中一个节点执行配置即可,配置自动贯穿整个集群 同样 添加 --bind_ip_all 重新启动服务!!
+		在 mgdb-shd11 节点配置:
+		mongo 172.23.0.2:20000
+		> use admin
+		switched to db admin
+		> config = { _id:"shard1", members:[
+		... {_id:0,host:"172.23.0.2:20000"},
+		... {_id:1,host:"172.23.0.3:20000"},
+		... {_id:2,host:"172.23.0.4:20000",arbiterOnly:true}
+		... ]}
+			//arbiter 是仲裁的意思,这里的分片集群使用 副本集 的方式
+		> rs.initiate(config);
+		{
+		        "ok" : 1,
+		        "operationTime" : Timestamp(1549301987, 1),
+		        "$clusterTime" : {
+		                "clusterTime" : Timestamp(1549301987, 1),
+		                "signature" : {
+		                        "hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+		                        "keyId" : NumberLong(0)
+		                }
+		        }
+		}
+		shard1:SECONDARY>
+		配置插曲:
+		配置错{_id:2,host:"172.23.0.4:20000"},应该是 {_id:2,host:"172.23.0.4:20000",arbiterOnly:true}才对,
+		需要重新配置,通过指令重新配置  Replica set 相当麻烦, 
+		还不如节点重新处理安装mongo 服务 !!,然后重新 rs.initiate()
+
+	shard2集群,其中一个节点执行配置即可,配置自动贯穿整个集群 同样添加 --bind_ip_all 重新启动服务!!
+		在 mgdb-shd21 节点配置:
+		mongo 172.23.0.5:20000
+		> use admin
+		switched to db admin
+		> config = { _id:"shard2", members:[
+		... {_id:0,host:"172.23.0.5:20000"},
+		... {_id:1,host:"172.23.0.6:20000"},
+		... {_id:2,host:"172.23.0.7:20000",arbiterOnly:true}
+		... ]}
+		> rs.initiate(config);
+		{
+		        "ok" : 1,
+		        "operationTime" : Timestamp(1549299260, 1),
+		        "$clusterTime" : {
+		                "clusterTime" : Timestamp(1549299260, 1),
+		                "signature" : {
+		                        "hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+		                        "keyId" : NumberLong(0)
+		                }
+		        }
+		}
+		shard2:SECONDARY>	
+	shard3集群,其中一个节点执行配置即可,配置自动贯穿整个集群 同样添加 --bind_ip_all 重新启动服务!!
+		在 mgdb-shd31 节点配置:
+		mongo 172.23.0.8:20000
+		> use admin
+		switched to db admin
+		> config = { _id:"shard3", members:[
+		... {_id:0,host:"172.23.0.8:20000"},
+		... {_id:1,host:"172.23.0.9:20000"},
+		... {_id:2,host:"172.23.0.10:20000",arbiterOnly:true}
+		... ]}
+		> rs.initiate(config);
+		{
+		        "ok" : 1,
+		        "operationTime" : Timestamp(1549302444, 1),
+		        "$clusterTime" : {
+		                "clusterTime" : Timestamp(1549302444, 1),
+		                "signature" : {
+		                        "hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+		                        "keyId" : NumberLong(0)
+		                }
+		        }
+		}
+		shard3:SECONDARY> 
+
+	然后 开始 创建和匹配 mongos 节点 (路由器节点)
+	mongos 所有节点 启动节点服务
+		mkdir -p /data/mongos/data
+		mkdir -p /data/mongos/log
+		/usr/bin/mongos --configdb cfgReplSet/172.23.0.11:20000,172.23.0.12:20000,172.23.0.13:20000 --port 20000  --logpath /data/mongos/log/mongos.log --fork --bind_ip_all
+	这时 shard1/2/3  副本集方式做好集群, config 以主从方式也做了集群!! mongs 都各自地挂上了 config集群		
+	mongos 之间不分主从,各自独立工作,就是像是并联的节点,充当路由作用
+	这时配置路由器,添加分片配置,其实就是 链接 config集群 和 shard1/2/3 集群,实现分片集群
+	选择其中一个mongos节点 配置即可,配置自动贯穿整个集群
+		mongo 172.23.0.14:20000
+		mong0s> use admin
+		mong0s> sh.addShard("shard1/172.23.0.2:20000,172.23.0.3:20000,172.23.0.4:20000");
+		mong0s> sh.addShard("shard2/172.23.0.5:20000,172.23.0.6:20000,172.23.0.7:20000");
+		mong0s> sh.addShard("shard3/172.23.0.8:20000,172.23.0.9:20000,172.23.0.10:20000");
+		mong0s> sh.status();	//查看mongs 的状态
+		--- Sharding Status --- 
+		  sharding version: {
+		        "_id" : 1,
+		        "minCompatibleVersion" : 5,
+		        "currentVersion" : 6,
+		        "clusterId" : ObjectId("5c586218e6d1cfea52eda72a")
+		  }
+		  shards:
+		        {  "_id" : "shard1",  "host" : "shard1/172.23.0.2:20000,172.23.0.3:20000",  "state" : 1 }
+		        {  "_id" : "shard2",  "host" : "shard2/172.23.0.5:20000,172.23.0.6:20000",  "state" : 1 }
+		        {  "_id" : "shard3",  "host" : "shard3/172.23.0.8:20000,172.23.0.9:20000",  "state" : 1 }
+		  active mongoses:
+		        "4.0.5" : 3
+		  autosplit:
+		        Currently enabled: yes
+		  balancer:
+		        Currently enabled:  yes
+		        Currently running:  no
+		        Failed balancer rounds in last 5 attempts:  0
+		        Migration Results for the last 24 hours: 
+		                No recent migrations
+		  databases:
+		        {  "_id" : "config",  "primary" : "config",  "partitioned" : true }
+		                config.system.sessions
+		                        shard key: { "_id" : 1 }
+		                        unique: false
+		                        balancing: true
+		                        chunks:
+		                                shard1  1
+		                        { "_id" : { "$minKey" : 1 } } -->> { "_id" : { "$maxKey" : 1 } } on : shard1 Timestamp(1, 0) 
+		mong0s> db.runCommand({listShards:1});	//检查，显示shard配置：
+		{
+		        "shards" : [
+		                {
+		                        "_id" : "shard1",
+		                        "host" : "shard1/172.23.0.2:20000,172.23.0.3:20000",
+		                        "state" : 1
+		                },
+		                {
+		                        "_id" : "shard2",
+		                        "host" : "shard2/172.23.0.5:20000,172.23.0.6:20000",
+		                        "state" : 1
+		                },
+		                {
+		                        "_id" : "shard3",
+		                        "host" : "shard3/172.23.0.8:20000,172.23.0.9:20000",
+		                        "state" : 1
+		                }
+		        ],
+		        "ok" : 1,
+		        "operationTime" : Timestamp(1549381266, 2),
+		        "$clusterTime" : {
+		                "clusterTime" : Timestamp(1549381266, 2),
+		                "signature" : {
+		                        "hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+		                        "keyId" : NumberLong(0)
+		                }
+		        }
+		}
+		登出 172.23.0.14 mongos容器节点, 然后登入172.23.0.15 mongos容器节点, 然后登录172.23.0.15 的命令界面
+		mongos> sh.status();	//查看mongs 的状态
+		mongos> db.runCommand({listShards:1});	//检查，显示shard配置：
+		发现 其实  172.23.0.15 的 mongs节点也关联上, 也就说 一个mongos节点 添加分片配置后,所有mongos节点都好了!!
+		实质是透过, mongos 配置了 config 节点集群的shard1/2/3数据分片信息,而不是配置 mongos 节点本身!!!!!
+	至此所有配置 完毕!!!
+	数据库可实现 分片集群!!
+	实现开机自启动:(集群的节点在这已经配置好了,以后集群节点直接打开后,集群数据库就可以直接工作)
+	首先 centos7 支持两种 自启动方式:
+		systemctl 和 chkconfig
+	参考:
+		https://blog.csdn.net/lfgxiaogang/article/details/78924308	//cent7,systemctl方式自启动!!	
+		https://www.cnblogs.com/dongling/p/6232730.html		// chkconfig 开机启动!!
+		https://www.cnblogs.com/niocai/archive/2012/07/12/2587780.html // chkconfig 开机启动追加问题
+	yum 安装 mongodb 时候,都默认设置了 systemctl的自启动,所以要所有节点都要先关闭!!
+		systemctl disable mongod.service 
+	然后,我选择并开始使用  chkconfig 实现自定义的开机自启动
+	shard1 集群的节点:
+		vi /etc/rc.d/init.d/mongod_shard1	//添加
+			#!/bin/bash
+			# chkconfig: 2345 90 10 
+			# description: mongodb_shard1 node1/2/3 start on 
+			/usr/bin/mongod --shardsvr --replSet shard1 --port 20000 --dbpath /data/shard1/data  --logpath /data/shard1/log/shard1.log  --oplogSize 10 --fork --bind_ip_all
+		
+		chown root.root /etc/rc.d/init.d/mongod_shard1 && chmod 755 /etc/rc.d/init.d/mongod_shard1 && chkconfig --add mongod_shard1 && chkconfig --levels 245 mongod_shard1 off
+		插曲:附加笔记:
+		# chkconfig: 2345 90 10   中:
+			其中2345是默认启动级别，级别有0-6共7个级别。
+				等级0表示：表示关机 　　
+				等级1表示：单用户模式 　　
+				等级2表示：无网络连接的多用户命令行模式 　　
+				等级3表示：有网络连接的多用户命令行模式 　　
+				等级4表示：不可用 　　
+				等级5表示：带图形界面的多用户模式 　　
+				等级6表示：重新启动
+			90指启动优先级别 级别分0-100,数字越大,优先级别越低
+			10指关闭优先级别 级别分0-100,数字越大,优先级别越低
+		# description:    就是随意的自己写的描述信息!!
+			如果出现 service myservice does not support chkconfig 的错误
+			是因为脚本文件没有 # chkconfig和 # description 这些项
+		chown root.root /etc/rc.d/init.d/mongod_shard1		//改变权限
+		chmod 755 /etc/rc.d/init.d/mongod_shard1		//所有用户都可以执行，单只有root可以修改
+		chkconfig --add mongod_shard1				//将mysqld 放入linux启动管理体系中
+		chkconfig --list mongod_shard1				//查看全部服务在各运行级状态
+		chkconfig --levels 245 mongod_shard1 off		//只要运行级别3启动，其他都关闭,并不改变 mongod_shard1内容!!
+	shard2 集群的节点:
+		vi /etc/rc.d/init.d/mongod_shard2	//添加
+			#!/bin/bash
+			# chkconfig: 2345 90 10 
+			# description: mongodb_shard2 node1/2/3 start on 
+			/usr/bin/mongod --shardsvr --replSet shard2 --port 20000 --dbpath /data/shard2/data  --logpath /data/shard2/log/shard2.log  --oplogSize 10 --fork --bind_ip_all
+
+		chown root.root /etc/rc.d/init.d/mongod_shard2 && chmod 755 /etc/rc.d/init.d/mongod_shard2 && chkconfig --add mongod_shard2 && chkconfig --levels 245 mongod_shard2 off
+	shard3 集群的节点:
+		vi /etc/rc.d/init.d/mongod_shard3	//添加
+			#!/bin/bash
+			# chkconfig: 2345 90 10 
+			# description: mongodb_shard3 node1/2/3 start on 
+			/usr/bin/mongod --shardsvr --replSet shard3 --port 20000 --dbpath /data/shard3/data  --logpath /data/shard3/log/shard3.log  --oplogSize 10 --fork --bind_ip_all
+
+		chown root.root /etc/rc.d/init.d/mongod_shard3 && chmod 755 /etc/rc.d/init.d/mongod_shard3 && chkconfig --add mongod_shard3 && chkconfig --levels 245 mongod_shard3 off
+	config集群的节点:
+		vi /etc/rc.d/init.d/mongod_cofg	//添加
+			#!/bin/bash
+			# chkconfig: 2345 90 10 
+			# description: mongodb_confg node1 start on 
+			/usr/bin/mongod --configsvr --replSet cfgReplSet --dbpath /data/config/data --port 20000 --logpath /data/config/log/config.log --fork --bind_ip_all
+
+		chown root.root /etc/rc.d/init.d/mongod_cofg && chmod 755 /etc/rc.d/init.d/mongod_cofg && chkconfig --add mongod_cofg && chkconfig --levels 245 mongod_cofg off
+	mongos 集群的节点:
+		vi /etc/rc.d/init.d/mongod_mogs	//添加
+			#!/bin/bash
+			# chkconfig: 2345 90 10 
+			# description: mongodb_confg node1/2/3 start on 
+			/usr/bin/mongos --configdb cfgReplSet/172.23.0.11:20000,172.23.0.12:20000,172.23.0.13:20000 --port 20000  --logpath /data/mongos/log/mongos.log --fork --bind_ip_all
+
+		chown root.root /etc/rc.d/init.d/mongod_mogs && chmod 755 /etc/rc.d/init.d/mongod_mogs && chkconfig --add mongod_mogs && chkconfig --levels 245 mongod_mogs off
+
+	至此,自启动的配置也做好了,
+	最后便是读写测试:
+	mongo 数据库基本操作:
+		==> 数据操作：
+			插入数据：db.collection.insert
+			查询数据：db.collection.find()
+			更新数据：db.collection.update()
+			删除数据：db.collection.remove()
+		==> collection操作：
+			新建collection：
+			sh.shardCollection("xxx.yyy",{col1: 1, col2: 1})
+			删除collection：
+			db.yyy.drop()
+		==> db操作：
+			新建db
+				sh.enableSharding("xxx")
+			删除db：
+				use xxx
+				db.dropDatabase();
+
+	批量数据测试:
+	登录任意 一个mongos节点命令窗:
+	新建数据库 williamblog 并设置允许使用分片均衡
+	mongos>sh.enableSharding("williamblog");
+	{
+	        "ok" : 1,
+	        "operationTime" : Timestamp(1549383200, 2),
+	        "$clusterTime" : {
+	                "clusterTime" : Timestamp(1549383200, 2),
+	                "signature" : {
+	                        "hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+	                        "keyId" : NumberLong(0)
+	                }
+	        }
+	}
+	在 williamblog 数据库 声明一个数据表 testtab,他的 age name项都是 这个表的数据实现分片均衡的 处理标识
+	mongos>sh.shardCollection("williamblog.testtab2",{age: 1, name: 1});	
+	{
+	        "collectionsharded" : "williamblog.testtab",
+	        "collectionUUID" : UUID("967dab62-2d2f-4e44-b121-6b79ba425eb7"),
+	        "ok" : 1,
+	        "operationTime" : Timestamp(1549383349, 8),
+	        "$clusterTime" : {
+	                "clusterTime" : Timestamp(1549383349, 8),
+	                "signature" : {
+	                        "hash" : BinData(0,"AAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+	                        "keyId" : NumberLong(0)
+	                }
+	        }
+	}
+	批量写入一段数据
+	mongos>use williamblog	//必须!!! 不然不是在 williamblog.testtab 添加内容!!
+				//而是在其他不知道是什么地方新建一个不分片均衡数据表 testtab的添加数据!!
+	mongos>for (i=1;i<=10000;i++) db.testtab.insert({name: "user"+i, age: (i%150)});   
+	WriteResult({ "nInserted" : 1 })
+	检查状态
+	mongos> sh.status();
+	--- Sharding Status --- 
+	  sharding version: {
+	        "_id" : 1,
+	        "minCompatibleVersion" : 5,
+	        "currentVersion" : 6,
+	        "clusterId" : ObjectId("5c586218e6d1cfea52eda72a")
+	  }
+	  shards:
+	        {  "_id" : "shard1",  "host" : "shard1/172.23.0.2:20000,172.23.0.3:20000",  "state" : 1 }
+	        {  "_id" : "shard2",  "host" : "shard2/172.23.0.5:20000,172.23.0.6:20000",  "state" : 1 }
+	        {  "_id" : "shard3",  "host" : "shard3/172.23.0.8:20000,172.23.0.9:20000",  "state" : 1 }
+	  active mongoses:
+	        "4.0.5" : 3
+	  autosplit:
+	        Currently enabled: yes
+	  balancer:
+	        Currently enabled:  yes
+	        Currently running:  no
+	        Failed balancer rounds in last 5 attempts:  0
+	        Migration Results for the last 24 hours: 
+	                No recent migrations
+	  databases:
+	        {  "_id" : "config",  "primary" : "config",  "partitioned" : true }
+	                config.system.sessions
+	                        shard key: { "_id" : 1 }
+	                        unique: false
+	                        balancing: true
+	                        chunks:
+	                                shard1  1
+	                        { "_id" : { "$minKey" : 1 } } -->> { "_id" : { "$maxKey" : 1 } } on : shard1 Timestamp(1, 0) 
+	        {  "_id" : "williamblog",  "primary" : "shard3",  "partitioned" : true,  "version" : {  "uuid" : UUID("85c6a65a-dbfe-4ce3-b61a-d636f60df1a7"),  "lastMod" : 1 } }
+	                williamblog.testtab
+	                        shard key: { "age" : 1, "name" : 1 }
+	                        unique: false
+	                        balancing: true
+	                        chunks:
+	                                shard3  1
+	                        { "age" : { "$minKey" : 1 }, "name" : { "$minKey" : 1 } } -->> { "age" : { "$maxKey" : 1 }, "name" : 	{ "$maxKey" : 1 } } on : shard3 Timestamp(1, 0) 
+	可以看到, chunks 只有 shard3  1 一个分片,这就奇怪了,感觉就是没有实现分片均衡的样子,所有数据都放到 shard3 里
+		多鞋机次批量数据也这样,后来飞发现可能是 chunks 数据块大小问题, mongo默认数据块大小是 64mb
+		而我们的批量数据还是没有超过 64mb,所以就都放在同一个数据块上面.
+		所以尝试 修改 chunks 的数据块大小
+		use config
+		db.settings.save( { _id:"chunksize", value: 20 } )	//块大小是 变成20mb
+		然后后再重新批量写次数据,就发现分片了!!
+                williamblog.testtab
+                        shard key: { "age" : 1, "name" : 1 }
+                        unique: false
+                        balancing: true
+                        chunks:
+                                shard1  41
+                                shard2  41
+                                shard3  41
+                        too many chunks to print, use verbose if you want to force print
+		每个数据表 williamblog.testtab 数据 分布在三个shard集群上, 每个shard集群都有41个数据块,
+		每个数据块都有一部分williamblog.testtab 数据表的内容!!
+	balancing 功能是开启着的吗就是说mongo每隔一段时间都会检查 数据的集群分布,务求做到分片均衡!!
+		在这里, shard key: { "age" : 1, "name" : 1 } 表示数据 是按照平分数据到 shard集群的方式存数据的!!
+		balancing 也按照这种规律监管数据库,
+		假如某刻,shard1 有1个数据块,shard2 有2个, shard3 有120个
+		那么一段时间后被 balancing 监管发现, balancing会试图 搬迁平分数据, 务求最后 每个shard 都分得41个数据块的方向努力!!
+	所以 其实分片设置是成功的,mongoDB 会根据数据实际情况自动分片,我一直以为没有分片,是设置上什么错误,
+		其实只不过是各种原因,数据库未选择执行分片而已!! 这里是写入数据还不足以超过(数据块的大小导致)
+	
+	至此,monodb 分偏集群完成!!
+	最后附加上 mogodb 分片股管理的深入参考:
+		https://www.cnblogs.com/zhoujinyi/p/4668218.html	//分片管理!!	
+		https://www.cnblogs.com/chenmh/p/8954584.html   //数据分片策略研究
+		https://blog.csdn.net/wellschen/article/details/82499429 //测试时发现 数据不分块分片的问题!
+		https://blog.csdn.net/wellschen/article/details/82499429 //补充的数据分片不成功的问题探
+	
+		
+	
+	
+
+
+
+		
 
 
 ?????????????????????????????????????
@@ -4489,6 +8246,35 @@ tabstave
 			</div>
 		</div>	
 	</div>
+
+
+stattb日更新与新用户驻点注册的并发问题:
+	19号累计 100个用户注册
+	比如20号前一刻 A用户注册 19号的用户,
+	20号到的那刻 statetb更新 20号 ,显示累计100个用户,
+	而 A 注册成功后 19号实际上 是累计 101 个 用户, 但新的20号却漏了A,只统计出100个
+	想到的办法有:
+		比如 设计 0点 到0点15分,禁止用户注册, 在 3分到 10分处才开始更新statetb!
+ 	或者,0点时,键 20号数据时,不统计累计用户数,
+		0点一刻时才统计累计用户数!!
+
+??点星需要新表, 
+	hdty 自身需要添加一个唯一识别串
+	然后添加一张点赞表,保存 每条 hdty 的点赞数!!!
+	hdty内容更改,点赞数数据重置 !!! 
+
+??修要重构通过显示框架,显示发展过程中变化的结构!!1
+	比如说,为了点星,突然添加 数据条需要增加新内容,跟旧版内容格式就冲突了!!!
+	需要构思通用架构 满足 内容演变!!
+	
+??建立 浏览和编辑两区域!!
+	编辑区默认显示1000行,并可以扩展到 5000行!!!
+	浏览区一般不显示,除非拉伸到了,自动补充!!
+	一人一生有 30000 X 1000 = 3000 0000 万行经验传世
+	一年 有 365 X 1000 = 365000 万行
+	超过100 0000行的省略百万行以后数字, 比如 712 3454
+	
+
 
 ??,有待加入的功能:
 	代码高亮识别!!(以后再说!!)

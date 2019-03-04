@@ -1,0 +1,527 @@
+[root@hadoopsparkmaster ~]# hdfs namenode -format
+WARNING: /root/hadoop//logs does not exist. Creating.
+2019-02-27 09:35:19,687 INFO namenode.NameNode: STARTUP_MSG: 
+/************************************************************
+STARTUP_MSG: Starting NameNode
+STARTUP_MSG:   host = hadoopsparkmaster/172.19.0.2
+STARTUP_MSG:   args = [-format]
+STARTUP_MSG:   version = 3.2.0
+STARTUP_MSG:   classpath = /root/hadoop//etc/hadoop:/root/hadoop//share/hadoop/common/lib/javax.servlet-api-3.1.0.jar:/root/hadoop//share/hadoop/common/lib/kerb-admin-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/re2j-1.1.jar:/root/hadoop//share/hadoop/common/lib/avro-1.7.7.jar:/root/hadoop//share/hadoop/common/lib/hadoop-annotations-3.2.0.jar:/root/hadoop//share/hadoop/common/lib/accessors-smart-1.2.jar:/root/hadoop//share/hadoop/common/lib/jetty-http-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/common/lib/jersey-json-1.19.jar:/root/hadoop//share/hadoop/common/lib/kerby-util-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/kerb-common-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/commons-net-3.6.jar:/root/hadoop//share/hadoop/common/lib/jetty-xml-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/common/lib/token-provider-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/htrace-core4-4.1.0-incubating.jar:/root/hadoop//share/hadoop/common/lib/jersey-servlet-1.19.jar:/root/hadoop//share/hadoop/common/lib/commons-codec-1.11.jar:/root/hadoop//share/hadoop/common/lib/commons-math3-3.1.1.jar:/root/hadoop//share/hadoop/common/lib/commons-compress-1.4.1.jar:/root/hadoop//share/hadoop/common/lib/commons-logging-1.1.3.jar:/root/hadoop//share/hadoop/common/lib/commons-io-2.5.jar:/root/hadoop//share/hadoop/common/lib/kerby-config-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/kerb-crypto-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/curator-framework-2.12.0.jar:/root/hadoop//share/hadoop/common/lib/protobuf-java-2.5.0.jar:/root/hadoop//share/hadoop/common/lib/jetty-io-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/common/lib/gson-2.2.4.jar:/root/hadoop//share/hadoop/common/lib/stax2-api-3.1.4.jar:/root/hadoop//share/hadoop/common/lib/slf4j-api-1.7.25.jar:/root/hadoop//share/hadoop/common/lib/zookeeper-3.4.13.jar:/root/hadoop//share/hadoop/common/lib/jackson-databind-2.9.5.jar:/root/hadoop//share/hadoop/common/lib/jetty-util-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/common/lib/jackson-core-2.9.5.jar:/root/hadoop//share/hadoop/common/lib/jetty-server-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/common/lib/asm-5.0.4.jar:/root/hadoop//share/hadoop/common/lib/kerby-xdr-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/kerb-util-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/httpcore-4.4.4.jar:/root/hadoop//share/hadoop/common/lib/kerb-simplekdc-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/jcip-annotations-1.0-1.jar:/root/hadoop//share/hadoop/common/lib/dnsjava-2.1.7.jar:/root/hadoop//share/hadoop/common/lib/woodstox-core-5.0.3.jar:/root/hadoop//share/hadoop/common/lib/jackson-annotations-2.9.5.jar:/root/hadoop//share/hadoop/common/lib/commons-text-1.4.jar:/root/hadoop//share/hadoop/common/lib/json-smart-2.3.jar:/root/hadoop//share/hadoop/common/lib/jetty-webapp-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/common/lib/metrics-core-3.2.4.jar:/root/hadoop//share/hadoop/common/lib/jackson-jaxrs-1.9.13.jar:/root/hadoop//share/hadoop/common/lib/nimbus-jose-jwt-4.41.1.jar:/root/hadoop//share/hadoop/common/lib/commons-beanutils-1.9.3.jar:/root/hadoop//share/hadoop/common/lib/commons-lang3-3.7.jar:/root/hadoop//share/hadoop/common/lib/kerb-server-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/kerb-client-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/httpclient-4.5.2.jar:/root/hadoop//share/hadoop/common/lib/jettison-1.1.jar:/root/hadoop//share/hadoop/common/lib/guava-11.0.2.jar:/root/hadoop//share/hadoop/common/lib/jersey-server-1.19.jar:/root/hadoop//share/hadoop/common/lib/kerb-core-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/commons-configuration2-2.1.1.jar:/root/hadoop//share/hadoop/common/lib/jaxb-impl-2.2.3-1.jar:/root/hadoop//share/hadoop/common/lib/curator-client-2.12.0.jar:/root/hadoop//share/hadoop/common/lib/jsr305-3.0.0.jar:/root/hadoop//share/hadoop/common/lib/xz-1.0.jar:/root/hadoop//share/hadoop/common/lib/jul-to-slf4j-1.7.25.jar:/root/hadoop//share/hadoop/common/lib/jersey-core-1.19.jar:/root/hadoop//share/hadoop/common/lib/log4j-1.2.17.jar:/root/hadoop//share/hadoop/common/lib/jetty-servlet-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/common/lib/commons-cli-1.2.jar:/root/hadoop//share/hadoop/common/lib/jsp-api-2.1.jar:/root/hadoop//share/hadoop/common/lib/curator-recipes-2.12.0.jar:/root/hadoop//share/hadoop/common/lib/kerby-pkix-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/commons-collections-3.2.2.jar:/root/hadoop//share/hadoop/common/lib/kerb-identity-1.0.1.jar:/root/hadoop//share/hadoop/common/lib/jackson-mapper-asl-1.9.13.jar:/root/hadoop//share/hadoop/common/lib/audience-annotations-0.5.0.jar:/root/hadoop//share/hadoop/common/lib/jsr311-api-1.1.1.jar:/root/hadoop//share/hadoop/common/lib/jsch-0.1.54.jar:/root/hadoop//share/hadoop/common/lib/jackson-xc-1.9.13.jar:/root/hadoop//share/hadoop/common/lib/paranamer-2.3.jar:/root/hadoop//share/hadoop/common/lib/jetty-security-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar:/root/hadoop//share/hadoop/common/lib/jackson-core-asl-1.9.13.jar:/root/hadoop//share/hadoop/common/lib/netty-3.10.5.Final.jar:/root/hadoop//share/hadoop/common/lib/snappy-java-1.0.5.jar:/root/hadoop//share/hadoop/common/lib/hadoop-auth-3.2.0.jar:/root/hadoop//share/hadoop/common/lib/jaxb-api-2.2.11.jar:/root/hadoop//share/hadoop/common/lib/kerby-asn1-1.0.1.jar:/root/hadoop//share/hadoop/common/hadoop-kms-3.2.0.jar:/root/hadoop//share/hadoop/common/hadoop-common-3.2.0-tests.jar:/root/hadoop//share/hadoop/common/hadoop-nfs-3.2.0.jar:/root/hadoop//share/hadoop/common/hadoop-common-3.2.0.jar:/root/hadoop//share/hadoop/hdfs:/root/hadoop//share/hadoop/hdfs/lib/javax.servlet-api-3.1.0.jar:/root/hadoop//share/hadoop/hdfs/lib/kerb-admin-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/re2j-1.1.jar:/root/hadoop//share/hadoop/hdfs/lib/avro-1.7.7.jar:/root/hadoop//share/hadoop/hdfs/lib/hadoop-annotations-3.2.0.jar:/root/hadoop//share/hadoop/hdfs/lib/okhttp-2.7.5.jar:/root/hadoop//share/hadoop/hdfs/lib/accessors-smart-1.2.jar:/root/hadoop//share/hadoop/hdfs/lib/jetty-http-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/hdfs/lib/jersey-json-1.19.jar:/root/hadoop//share/hadoop/hdfs/lib/kerby-util-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/okio-1.6.0.jar:/root/hadoop//share/hadoop/hdfs/lib/kerb-common-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-net-3.6.jar:/root/hadoop//share/hadoop/hdfs/lib/jetty-xml-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/hdfs/lib/token-provider-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-daemon-1.0.13.jar:/root/hadoop//share/hadoop/hdfs/lib/htrace-core4-4.1.0-incubating.jar:/root/hadoop//share/hadoop/hdfs/lib/jersey-servlet-1.19.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-codec-1.11.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-math3-3.1.1.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-compress-1.4.1.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-logging-1.1.3.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-io-2.5.jar:/root/hadoop//share/hadoop/hdfs/lib/kerby-config-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/kerb-crypto-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/curator-framework-2.12.0.jar:/root/hadoop//share/hadoop/hdfs/lib/protobuf-java-2.5.0.jar:/root/hadoop//share/hadoop/hdfs/lib/jetty-io-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/hdfs/lib/gson-2.2.4.jar:/root/hadoop//share/hadoop/hdfs/lib/stax2-api-3.1.4.jar:/root/hadoop//share/hadoop/hdfs/lib/zookeeper-3.4.13.jar:/root/hadoop//share/hadoop/hdfs/lib/jackson-databind-2.9.5.jar:/root/hadoop//share/hadoop/hdfs/lib/jetty-util-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/hdfs/lib/jackson-core-2.9.5.jar:/root/hadoop//share/hadoop/hdfs/lib/jetty-server-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/hdfs/lib/asm-5.0.4.jar:/root/hadoop//share/hadoop/hdfs/lib/kerby-xdr-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/kerb-util-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/httpcore-4.4.4.jar:/root/hadoop//share/hadoop/hdfs/lib/kerb-simplekdc-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/jcip-annotations-1.0-1.jar:/root/hadoop//share/hadoop/hdfs/lib/dnsjava-2.1.7.jar:/root/hadoop//share/hadoop/hdfs/lib/woodstox-core-5.0.3.jar:/root/hadoop//share/hadoop/hdfs/lib/jackson-annotations-2.9.5.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-text-1.4.jar:/root/hadoop//share/hadoop/hdfs/lib/json-smart-2.3.jar:/root/hadoop//share/hadoop/hdfs/lib/jetty-webapp-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/hdfs/lib/jackson-jaxrs-1.9.13.jar:/root/hadoop//share/hadoop/hdfs/lib/nimbus-jose-jwt-4.41.1.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-beanutils-1.9.3.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-lang3-3.7.jar:/root/hadoop//share/hadoop/hdfs/lib/kerb-server-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/kerb-client-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/jetty-util-ajax-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/hdfs/lib/httpclient-4.5.2.jar:/root/hadoop//share/hadoop/hdfs/lib/jettison-1.1.jar:/root/hadoop//share/hadoop/hdfs/lib/guava-11.0.2.jar:/root/hadoop//share/hadoop/hdfs/lib/netty-all-4.0.52.Final.jar:/root/hadoop//share/hadoop/hdfs/lib/jersey-server-1.19.jar:/root/hadoop//share/hadoop/hdfs/lib/kerb-core-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-configuration2-2.1.1.jar:/root/hadoop//share/hadoop/hdfs/lib/jaxb-impl-2.2.3-1.jar:/root/hadoop//share/hadoop/hdfs/lib/curator-client-2.12.0.jar:/root/hadoop//share/hadoop/hdfs/lib/jsr305-3.0.0.jar:/root/hadoop//share/hadoop/hdfs/lib/xz-1.0.jar:/root/hadoop//share/hadoop/hdfs/lib/jersey-core-1.19.jar:/root/hadoop//share/hadoop/hdfs/lib/log4j-1.2.17.jar:/root/hadoop//share/hadoop/hdfs/lib/jetty-servlet-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-cli-1.2.jar:/root/hadoop//share/hadoop/hdfs/lib/curator-recipes-2.12.0.jar:/root/hadoop//share/hadoop/hdfs/lib/kerby-pkix-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/commons-collections-3.2.2.jar:/root/hadoop//share/hadoop/hdfs/lib/kerb-identity-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/lib/leveldbjni-all-1.8.jar:/root/hadoop//share/hadoop/hdfs/lib/jackson-mapper-asl-1.9.13.jar:/root/hadoop//share/hadoop/hdfs/lib/audience-annotations-0.5.0.jar:/root/hadoop//share/hadoop/hdfs/lib/jsr311-api-1.1.1.jar:/root/hadoop//share/hadoop/hdfs/lib/jsch-0.1.54.jar:/root/hadoop//share/hadoop/hdfs/lib/jackson-xc-1.9.13.jar:/root/hadoop//share/hadoop/hdfs/lib/paranamer-2.3.jar:/root/hadoop//share/hadoop/hdfs/lib/jetty-security-9.3.24.v20180605.jar:/root/hadoop//share/hadoop/hdfs/lib/jackson-core-asl-1.9.13.jar:/root/hadoop//share/hadoop/hdfs/lib/json-simple-1.1.1.jar:/root/hadoop//share/hadoop/hdfs/lib/netty-3.10.5.Final.jar:/root/hadoop//share/hadoop/hdfs/lib/snappy-java-1.0.5.jar:/root/hadoop//share/hadoop/hdfs/lib/hadoop-auth-3.2.0.jar:/root/hadoop//share/hadoop/hdfs/lib/jaxb-api-2.2.11.jar:/root/hadoop//share/hadoop/hdfs/lib/kerby-asn1-1.0.1.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-rbf-3.2.0.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-3.2.0.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-client-3.2.0-tests.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-native-client-3.2.0-tests.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-client-3.2.0.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-rbf-3.2.0-tests.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-nfs-3.2.0.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-3.2.0-tests.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-native-client-3.2.0.jar:/root/hadoop//share/hadoop/hdfs/hadoop-hdfs-httpfs-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/lib/junit-4.11.jar:/root/hadoop//share/hadoop/mapreduce/lib/hamcrest-core-1.3.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-nativetask-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-common-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.0-tests.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-hs-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-app-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-hs-plugins-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-uploader-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-shuffle-3.2.0.jar:/root/hadoop//share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.2.0.jar:/root/hadoop//share/hadoop/yarn:/root/hadoop//share/hadoop/yarn/lib/snakeyaml-1.16.jar:/root/hadoop//share/hadoop/yarn/lib/fst-2.50.jar:/root/hadoop//share/hadoop/yarn/lib/geronimo-jcache_1.0_spec-1.0-alpha-1.jar:/root/hadoop//share/hadoop/yarn/lib/json-io-2.5.1.jar:/root/hadoop//share/hadoop/yarn/lib/aopalliance-1.0.jar:/root/hadoop//share/hadoop/yarn/lib/jackson-jaxrs-base-2.9.5.jar:/root/hadoop//share/hadoop/yarn/lib/jersey-guice-1.19.jar:/root/hadoop//share/hadoop/yarn/lib/mssql-jdbc-6.2.1.jre7.jar:/root/hadoop//share/hadoop/yarn/lib/javax.inject-1.jar:/root/hadoop//share/hadoop/yarn/lib/guice-servlet-4.0.jar:/root/hadoop//share/hadoop/yarn/lib/metrics-core-3.2.4.jar:/root/hadoop//share/hadoop/yarn/lib/java-util-1.9.0.jar:/root/hadoop//share/hadoop/yarn/lib/HikariCP-java7-2.4.12.jar:/root/hadoop//share/hadoop/yarn/lib/ehcache-3.3.1.jar:/root/hadoop//share/hadoop/yarn/lib/jersey-client-1.19.jar:/root/hadoop//share/hadoop/yarn/lib/guice-4.0.jar:/root/hadoop//share/hadoop/yarn/lib/jackson-jaxrs-json-provider-2.9.5.jar:/root/hadoop//share/hadoop/yarn/lib/objenesis-1.0.jar:/root/hadoop//share/hadoop/yarn/lib/jackson-module-jaxb-annotations-2.9.5.jar:/root/hadoop//share/hadoop/yarn/lib/swagger-annotations-1.5.4.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-server-timeline-pluginstorage-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-common-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-server-nodemanager-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-registry-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-client-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-api-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-applications-distributedshell-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-server-router-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-submarine-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-server-applicationhistoryservice-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-services-api-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-server-web-proxy-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-server-resourcemanager-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-server-tests-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-server-sharedcachemanager-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-services-core-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-server-common-3.2.0.jar:/root/hadoop//share/hadoop/yarn/hadoop-yarn-applications-unmanaged-am-launcher-3.2.0.jar
+STARTUP_MSG:   build = https://github.com/apache/hadoop.git -r e97acb3bd8f3befd27418996fa5d4b50bf2e17bf; compiled by 'sunilg' on 2019-01-08T06:08Z
+STARTUP_MSG:   java = 11.0.1
+************************************************************/
+2019-02-27 09:35:19,788 INFO namenode.NameNode: registered UNIX signal handlers for [TERM, HUP, INT]
+2019-02-27 09:35:19,946 INFO namenode.NameNode: createNameNode [-format]
+Formatting using clusterid: CID-47d22bf3-cce9-48d1-b919-8242b1583d5c
+2019-02-27 09:35:22,232 INFO namenode.FSEditLog: Edit logging is async:true
+2019-02-27 09:35:22,253 INFO namenode.FSNamesystem: KeyProvider: null
+2019-02-27 09:35:22,254 INFO namenode.FSNamesystem: fsLock is fair: true
+2019-02-27 09:35:22,255 INFO namenode.FSNamesystem: Detailed lock hold time metrics enabled: false
+2019-02-27 09:35:22,574 INFO namenode.FSNamesystem: fsOwner             = root (auth:SIMPLE)
+2019-02-27 09:35:22,574 INFO namenode.FSNamesystem: supergroup          = supergroup
+2019-02-27 09:35:22,574 INFO namenode.FSNamesystem: isPermissionEnabled = true
+2019-02-27 09:35:22,574 INFO namenode.FSNamesystem: HA Enabled: false
+2019-02-27 09:35:22,618 INFO common.Util: dfs.datanode.fileio.profiling.sampling.percentage set to 0. Disabling file IO profiling
+2019-02-27 09:35:22,641 INFO blockmanagement.DatanodeManager: dfs.block.invalidate.limit: configured=1000, counted=60, effected=1000
+2019-02-27 09:35:22,641 INFO blockmanagement.DatanodeManager: dfs.namenode.datanode.registration.ip-hostname-check=true
+2019-02-27 09:35:22,645 INFO blockmanagement.BlockManager: dfs.namenode.startup.delay.block.deletion.sec is set to 000:00:00:00.000
+2019-02-27 09:35:22,646 INFO blockmanagement.BlockManager: The block deletion will start around 2019 Feb 27 09:35:22
+2019-02-27 09:35:22,647 INFO util.GSet: Computing capacity for map BlocksMap
+2019-02-27 09:35:22,647 INFO util.GSet: VM type       = 64-bit
+2019-02-27 09:35:22,667 INFO util.GSet: 2.0% max memory 1.9 GB = 39.6 MB
+2019-02-27 09:35:22,667 INFO util.GSet: capacity      = 2^22 = 4194304 entries
+2019-02-27 09:35:22,679 INFO blockmanagement.BlockManager: Storage policy satisfier is disabled
+2019-02-27 09:35:22,679 INFO blockmanagement.BlockManager: dfs.block.access.token.enable = false
+2019-02-27 09:35:22,685 INFO Configuration.deprecation: No unit for dfs.namenode.safemode.extension(30000) assuming MILLISECONDS
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManagerSafeMode: dfs.namenode.safemode.threshold-pct = 0.9990000128746033
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManagerSafeMode: dfs.namenode.safemode.min.datanodes = 0
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManagerSafeMode: dfs.namenode.safemode.extension = 30000
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManager: defaultReplication         = 3
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManager: maxReplication             = 512
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManager: minReplication             = 1
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManager: maxReplicationStreams      = 2
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManager: redundancyRecheckInterval  = 3000ms
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManager: encryptDataTransfer        = false
+2019-02-27 09:35:22,685 INFO blockmanagement.BlockManager: maxNumBlocksToLog          = 1000
+2019-02-27 09:35:22,733 INFO namenode.FSDirectory: GLOBAL serial map: bits=29 maxEntries=536870911
+2019-02-27 09:35:22,733 INFO namenode.FSDirectory: USER serial map: bits=24 maxEntries=16777215
+2019-02-27 09:35:22,733 INFO namenode.FSDirectory: GROUP serial map: bits=24 maxEntries=16777215
+2019-02-27 09:35:22,733 INFO namenode.FSDirectory: XATTR serial map: bits=24 maxEntries=16777215
+2019-02-27 09:35:22,741 INFO util.GSet: Computing capacity for map INodeMap
+2019-02-27 09:35:22,741 INFO util.GSet: VM type       = 64-bit
+2019-02-27 09:35:22,742 INFO util.GSet: 1.0% max memory 1.9 GB = 19.8 MB
+2019-02-27 09:35:22,742 INFO util.GSet: capacity      = 2^21 = 2097152 entries
+2019-02-27 09:35:22,745 INFO namenode.FSDirectory: ACLs enabled? false
+2019-02-27 09:35:22,745 INFO namenode.FSDirectory: POSIX ACL inheritance enabled? true
+2019-02-27 09:35:22,745 INFO namenode.FSDirectory: XAttrs enabled? true
+2019-02-27 09:35:22,745 INFO namenode.NameNode: Caching file names occurring more than 10 times
+2019-02-27 09:35:22,750 INFO snapshot.SnapshotManager: Loaded config captureOpenFiles: false, skipCaptureAccessTimeOnlyChange: false, snapshotDiffAllowSnapRootDescendant: true, maxSnapshotLimit: 65536
+2019-02-27 09:35:22,752 INFO snapshot.SnapshotManager: SkipList is disabled
+2019-02-27 09:35:22,756 INFO util.GSet: Computing capacity for map cachedBlocks
+2019-02-27 09:35:22,756 INFO util.GSet: VM type       = 64-bit
+2019-02-27 09:35:22,756 INFO util.GSet: 0.25% max memory 1.9 GB = 4.9 MB
+2019-02-27 09:35:22,756 INFO util.GSet: capacity      = 2^19 = 524288 entries
+2019-02-27 09:35:22,763 INFO metrics.TopMetrics: NNTop conf: dfs.namenode.top.window.num.buckets = 10
+2019-02-27 09:35:22,763 INFO metrics.TopMetrics: NNTop conf: dfs.namenode.top.num.users = 10
+2019-02-27 09:35:22,763 INFO metrics.TopMetrics: NNTop conf: dfs.namenode.top.windows.minutes = 1,5,25
+2019-02-27 09:35:22,767 INFO namenode.FSNamesystem: Retry cache on namenode is enabled
+2019-02-27 09:35:22,767 INFO namenode.FSNamesystem: Retry cache will use 0.03 of total heap and retry cache entry expiry time is 600000 millis
+2019-02-27 09:35:22,768 INFO util.GSet: Computing capacity for map NameNodeRetryCache
+2019-02-27 09:35:22,768 INFO util.GSet: VM type       = 64-bit
+2019-02-27 09:35:22,769 INFO util.GSet: 0.029999999329447746% max memory 1.9 GB = 607.6 KB
+2019-02-27 09:35:22,769 INFO util.GSet: capacity      = 2^16 = 65536 entries
+2019-02-27 09:35:22,799 INFO namenode.FSImage: Allocated new BlockPoolId: BP-1734786004-172.19.0.2-1551260122792
+2019-02-27 09:35:22,959 INFO common.Storage: Storage directory /root/hadoop/tmp/dfs/name has been successfully formatted.
+2019-02-27 09:35:22,980 INFO namenode.FSImageFormatProtobuf: Saving image file /root/hadoop/tmp/dfs/name/current/fsimage.ckpt_0000000000000000000 using no compression
+2019-02-27 09:35:23,088 INFO namenode.FSImageFormatProtobuf: Image file /root/hadoop/tmp/dfs/name/current/fsimage.ckpt_0000000000000000000 of size 396 bytes saved in 0 seconds .
+2019-02-27 09:35:23,174 INFO namenode.NNStorageRetentionManager: Going to retain 1 images with txid >= 0
+2019-02-27 09:35:23,210 INFO namenode.NameNode: SHUTDOWN_MSG: 
+/************************************************************
+SHUTDOWN_MSG: Shutting down NameNode at hadoopsparkmaster/172.19.0.2
+************************************************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[root@hadoopspark_master ~]# /root/hadoop/sbin/start-dfs.sh
+
+
+参考:
+http://mazhiyu.info/hadoop/2017/04/13/%E5%90%AF%E5%8A%A8%E9%9B%86%E7%BE%A4start-dfs.sh%E5%92%8Cstart-yarn.sh%E7%9A%84%E8%84%9A%E6%9C%AC%E9%94%99%E8%AF%AF/
+
+vi /root/hadoop/etc/hadoop/hadoop-env.sh
+export HDFS_NAMENODE_USER=root
+export HDFS_DATANODE_USER=root
+export HDFS_SECONDARYNAMENODE_USER=root
+export HDFS_JOURNALNODE_USER=root
+export YARN_RESOURCEMANAGER_USER=root
+export YARN_NODEMANAGER_USER=root
+
+
+
+
+
+
+启动 hadoop，启动需要在 Master 节点上进行：
+/root/hadoop/sbin/start-dfs.sh   //出错:
+Starting namenodes on [hadoopspark_master]
+ERROR: Attempting to operate on hdfs namenode as root
+ERROR: but there is no HDFS_NAMENODE_USER defined. Aborting operation.
+Starting datanodes
+ERROR: Attempting to operate on hdfs datanode as root
+ERROR: but there is no HDFS_DATANODE_USER defined. Aborting operation.
+Starting secondary namenodes [hadoopspark_master]
+ERROR: Attempting to operate on hdfs secondarynamenode as root
+ERROR: but there is no HDFS_SECONDARYNAMENODE_USER defined. Aborting operation.
+问题解决:参考:http://mazhiyu.info/hadoop/2017/04/13/%E5%90%AF%E5%8A%A8%E9%9B%86%E7%BE%A4start-dfs.sh%E5%92%8Cstart-yarn.sh%E7%9A%84%E8%84%9A%E6%9C%AC%E9%94%99%E8%AF%AF/
+发现 接着运行 tart-yarn.sh 也可能会出现以下错误!!!
+Starting resourcemanager
+ERROR: Attempting to operate on yarn resourcemanager as root
+ERROR: but there is no YARN_RESOURCEMANAGER_USER defined. Aborting operation.
+Starting nodemanagers
+ERROR: Attempting to operate on yarn nodemanager as root
+ERROR: but there is no YARN_NODEMANAGER_USER defined. Aborting operation.
+解决办法:添加 hadoop自己的环境变量
+vi /root/hadoop/etc/hadoop/hadoop-env.sh
+export HDFS_NAMENODE_USER=root
+export HDFS_DATANODE_USER=root
+export HDFS_SECONDARYNAMENODE_USER=root
+export HDFS_JOURNALNODE_USER=root
+export YARN_RESOURCEMANAGER_USER=root
+export YARN_NODEMANAGER_USER=root
+再次 start-dfs.sh 成功
+[root@hadoopspark_master ~]# /root/hadoop/sbin/start-dfs.sh
+Starting namenodes on [hadoopspark_master]
+Last login: Wed Feb 27 02:03:43 UTC 2019 from localhost on pts/2
+hadoopspark_master: Warning: Permanently added 'hadoopspark_master,172.19.0.2' (ECDSA) to the list of known hosts.
+Starting datanodes
+Last login: Wed Feb 27 07:52:34 UTC 2019 on pts/1
+172.19.0.4: WARNING: /root/hadoop/logs does not exist. Creating.
+172.19.0.3: WARNING: /root/hadoop/logs does not exist. Creating.
+Starting secondary namenodes [hadoopspark_master]
+Last login: Wed Feb 27 07:52:37 UTC 2019 on pts/1!
+
+继续运行
+[root@hadoopspark_master ~]# /root/hadoop/sbin/start-yarn.sh
+Starting resourcemanager
+Last login: Wed Feb 27 07:52:42 UTC 2019 on pts/1
+Starting nodemanagers
+Last login: Wed Feb 27 07:58:56 UTC 2019 on pts/1
+
+继续运行
+[root@hadoopspark_master ~]# /root/hadoop/sbin/mr-jobhistory-daemon.sh start historyserver
+WARNING: Use of this script to start the MR JobHistory daemon is deprecated.
+WARNING: Attempting to execute replacement "mapred --daemon start" instead.
+
+
+
+其实,并没有启动成功!!!!!  
+jps 里什么都没有看到!!
+查看 root/hadoop/logs 的文件
+
+java.lang.IllegalArgumentException: Does not contain a valid host:port authority:hadoopspark_master/172.19.0.2
+参考
+https://community.hortonworks.com/questions/96359/javalangillegalargumentexception-does-not-contain.html
+Finally this problem is solved by change the hostname format. the hostname could not contain "_" tag.
+果真如此,,,,,,	
+
+
+
+第二次启动:(貌似成功)
+
+[root@hadoopsparkmaster ~]# /root/hadoop/sbin/start-dfs.sh
+Starting namenodes on [hadoopsparkmaster]
+Last login: Wed Feb 27 09:30:34 UTC 2019 from gateway on pts/2
+hadoopsparkmaster: Warning: Permanently added 'hadoopsparkmaster,172.19.0.2' (ECDSA) to the list of known hosts.
+Starting datanodes
+Last login: Wed Feb 27 09:39:35 UTC 2019 on pts/1
+Starting secondary namenodes [hadoopsparkmaster]
+Last login: Wed Feb 27 09:39:38 UTC 2019 on pts/1
+
+jps:	
+[root@hadoopsparkmaster ~]# jps
+8212 DataNode
+8634 Jps
+8076 NameNode
+8476 SecondaryNameNode
+
+
+[root@hadoopsparkmaster ~]# /root/hadoop/sbin/start-yarn.sh
+Starting resourcemanager
+Last login: Wed Feb 27 09:39:41 UTC 2019 on pts/1
+Starting nodemanagers
+Last login: Wed Feb 27 09:42:35 UTC 2019 on pts/1
+
+jps:	
+[root@hadoopsparkmaster ~]# jps
+8212 DataNode
+9125 Jps
+8076 NameNode
+8476 SecondaryNameNode
+
+
+[root@hadoopsparkmaster ~]# hdfs dfsadmin -report
+Configured Capacity: 459871625216 (428.29 GB)
+Present Capacity: 138511605760 (129.00 GB)
+DFS Remaining: 138511581184 (129.00 GB)
+DFS Used: 24576 (24 KB)
+DFS Used%: 0.00%
+Replicated Blocks:
+	Under replicated blocks: 0
+	Blocks with corrupt replicas: 0
+	Missing blocks: 0
+	Missing blocks (with replication factor 1): 0
+	Low redundancy blocks with highest priority to recover: 0
+	Pending deletion blocks: 0
+Erasure Coded Block Groups: 
+	Low redundancy block groups: 0
+	Block groups with corrupt internal blocks: 0
+	Missing block groups: 0
+	Low redundancy blocks with highest priority to recover: 0
+	Pending deletion blocks: 0
+
+-------------------------------------------------
+Live datanodes (1):
+
+Name: 172.19.0.2:9866 (hadoopsparkmaster)
+Hostname: hadoopsparkmaster
+Decommission Status : Normal
+Configured Capacity: 459871625216 (428.29 GB)
+DFS Used: 24576 (24 KB)
+Non DFS Used: 297976303616 (277.51 GB)
+DFS Remaining: 138511581184 (129.00 GB)
+DFS Used%: 0.00%
+DFS Remaining%: 30.12%
+Configured Cache Capacity: 0 (0 B)
+Cache Used: 0 (0 B)
+Cache Remaining: 0 (0 B)
+Cache Used%: 100.00%
+Cache Remaining%: 0.00%
+Xceivers: 1
+Last contact: Wed Feb 27 09:44:15 UTC 2019
+Last Block Report: Wed Feb 27 09:39:42 UTC 2019
+Num of Blocks: 0
+
+
+
+[root@hadoopsparkmaster ~]# /root/hadoop/sbin/mr-jobhistory-daemon.sh start historyserver
+WARNING: Use of this script to start the MR JobHistory daemon is deprecated.
+WARNING: Attempting to execute replacement "mapred --daemon start" instead.
+好像说 使用 mapred --daemon start historyserver 代替
+
+不过 发现 nodemanage 出错了!!!
+
+NodeManager的ERROR
+http://mazhiyu.info/hadoop/2017/04/13/%E5%90%AF%E5%8A%A8%E9%9B%86%E7%BE%A4start-dfs.sh%E5%92%8Cstart-yarn.sh%E7%9A%84%E8%84%9A%E6%9C%AC%E9%94%99%E8%AF%AF/
+也参考:
+Error injecting constructor, java.lang.NoClassDefFoundError: javax/activation/DataSource  问题
+https://bbs.csdn.net/topics/392273321
+修改$HADOOP_HOME/etc/hadoop/yarn-env.sh
+export YARN_RESOURCEMANAGER_OPTS="--add-modules=ALL-SYSTEM"
+export YARN_NODEMANAGER_OPTS="--add-modules=ALL-SYSTEM" 
+也参考:
+hadoop  yarn Caused by: java.lang.NoClassDefFoundError: javax/activation/DataSource
+https://issues.apache.org/jira/browse/HADOOP-14978
+修改$HADOOP_HOME/etc/hadoop/yarn-env.sh
+export YARN_RESOURCEMANAGER_OPTS="--add-modules java.activation"
+export YARN_NODEMANAGER_OPTS="--add-modules java.activation"
+也参考:
+https://stackoverflow.com/questions/52921879/migration-to-jdk-11-has-error-occure-java-lang-noclassdeffounderror-javax-acti
+javax.activation:javax.activation-api:1.2.0 is not a module, so requires java.activation has no meaning. In Java 9 and 10, you can use requires java.activation or --add-modules java.activation instead of including the dependency. In Java 11+ the module doesn't exist in the JDK anymore, so requires java.activation won't work there.
+也参考:
+https://cwiki.apache.org/confluence/display/HADOOP/Hadoop+Java+Versions
+Apache Hadoop 3.x now support only Java 8
+Apache Hadoop from 2.7.x to 2.x support Java 7 and 8
+草
+也就说 不支持java11 只支持 java8
+换 jdk8 :JAVA_HOME
+JAVA_HOME = /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64/
+yarn-env.sh 返回原样
+最后重新  
+start-dfs.sh
+start-yarn.sh
+mapred --daemon start historyserver
+成功
+
+
+
+
+
+使用分布计算例子:
+[root@hadoopsparkmaster ~]# hdfs dfs -put /root/hadoop/etc/hadoop/*.xml input
+[root@hadoopsparkmaster ~]# hadoop jar /root/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar grep input output 'dfs[a-z.]+'
+2019-02-27 16:12:49,090 INFO client.RMProxy: Connecting to ResourceManager at /172.19.0.2:8032
+2019-02-27 16:12:49,469 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/root/.staging/job_1551281016030_0003
+2019-02-27 16:12:49,750 INFO input.FileInputFormat: Total input files to process : 9
+2019-02-27 16:12:49,884 INFO mapreduce.JobSubmitter: number of splits:9
+2019-02-27 16:12:49,934 INFO Configuration.deprecation: yarn.resourcemanager.system-metrics-publisher.enabled is deprecated. Instead, use yarn.system-metrics-publisher.enabled
+2019-02-27 16:12:50,051 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1551281016030_0003
+2019-02-27 16:12:50,053 INFO mapreduce.JobSubmitter: Executing with tokens: []
+2019-02-27 16:12:50,233 INFO conf.Configuration: resource-types.xml not found
+2019-02-27 16:12:50,234 INFO resource.ResourceUtils: Unable to find 'resource-types.xml'.
+2019-02-27 16:12:50,304 INFO impl.YarnClientImpl: Submitted application application_1551281016030_0003
+2019-02-27 16:12:50,340 INFO mapreduce.Job: The url to track the job: http://hadoopsparkmaster:8088/proxy/application_1551281016030_0003/
+2019-02-27 16:12:50,341 INFO mapreduce.Job: Running job: job_1551281016030_0003
+2019-02-27 16:12:57,442 INFO mapreduce.Job: Job job_1551281016030_0003 running in uber mode : false
+2019-02-27 16:12:57,445 INFO mapreduce.Job:  map 0% reduce 0%
+2019-02-27 16:13:13,380 INFO mapreduce.Job:  map 67% reduce 0%
+2019-02-27 16:13:47,001 INFO mapreduce.Job:  map 100% reduce 0%
+2019-02-27 16:13:55,058 INFO mapreduce.Job:  map 100% reduce 100%
+2019-02-27 16:13:56,079 INFO mapreduce.Job: Job job_1551281016030_0003 completed successfully
+2019-02-27 16:13:56,317 INFO mapreduce.Job: Counters: 55
+	File System Counters
+		FILE: Number of bytes read=153
+		FILE: Number of bytes written=2221859
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		HDFS: Number of bytes read=30476
+		HDFS: Number of bytes written=263
+		HDFS: Number of read operations=32
+		HDFS: Number of large read operations=0
+		HDFS: Number of write operations=2
+		HDFS: Number of bytes read erasure-coded=0
+	Job Counters 
+		Killed map tasks=2
+		Launched map tasks=11
+		Launched reduce tasks=1
+		Data-local map tasks=11
+		Total time spent by all maps in occupied slots (ms)=257771
+		Total time spent by all reduces in occupied slots (ms)=39109
+		Total time spent by all map tasks (ms)=257771
+		Total time spent by all reduce tasks (ms)=39109
+		Total vcore-milliseconds taken by all map tasks=257771
+		Total vcore-milliseconds taken by all reduce tasks=39109
+		Total megabyte-milliseconds taken by all map tasks=263957504
+		Total megabyte-milliseconds taken by all reduce tasks=40047616
+	Map-Reduce Framework
+		Map input records=798
+		Map output records=5
+		Map output bytes=137
+		Map output materialized bytes=201
+		Input split bytes=1068
+		Combine input records=5
+		Combine output records=5
+		Reduce input groups=5
+		Reduce shuffle bytes=201
+		Reduce input records=5
+		Reduce output records=5
+		Spilled Records=10
+		Shuffled Maps =9
+		Failed Shuffles=0
+		Merged Map outputs=9
+		GC time elapsed (ms)=1523
+		CPU time spent (ms)=6890
+		Physical memory (bytes) snapshot=2554523648
+		Virtual memory (bytes) snapshot=26673422336
+		Total committed heap usage (bytes)=2171600896
+		Peak Map Physical memory (bytes)=334012416
+		Peak Map Virtual memory (bytes)=2668593152
+		Peak Reduce Physical memory (bytes)=167923712
+		Peak Reduce Virtual memory (bytes)=2675429376
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters 
+		Bytes Read=29408
+	File Output Format Counters 
+		Bytes Written=263
+2019-02-27 16:13:56,389 INFO client.RMProxy: Connecting to ResourceManager at /172.19.0.2:8032
+2019-02-27 16:13:56,433 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/root/.staging/job_1551281016030_0004
+2019-02-27 16:13:56,593 INFO input.FileInputFormat: Total input files to process : 1
+2019-02-27 16:13:56,725 INFO mapreduce.JobSubmitter: number of splits:1
+2019-02-27 16:13:56,800 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1551281016030_0004
+2019-02-27 16:13:56,800 INFO mapreduce.JobSubmitter: Executing with tokens: []
+2019-02-27 16:13:56,824 INFO impl.YarnClientImpl: Submitted application application_1551281016030_0004
+2019-02-27 16:13:56,830 INFO mapreduce.Job: The url to track the job: http://hadoopsparkmaster:8088/proxy/application_1551281016030_0004/
+2019-02-27 16:13:56,830 INFO mapreduce.Job: Running job: job_1551281016030_0004
+2019-02-27 16:14:11,016 INFO mapreduce.Job: Job job_1551281016030_0004 running in uber mode : false
+2019-02-27 16:14:11,017 INFO mapreduce.Job:  map 0% reduce 0%
+2019-02-27 16:14:33,169 INFO mapreduce.Job:  map 100% reduce 0%
+2019-02-27 16:14:39,205 INFO mapreduce.Job:  map 100% reduce 100%
+2019-02-27 16:14:39,218 INFO mapreduce.Job: Job job_1551281016030_0004 completed successfully
+2019-02-27 16:14:39,288 INFO mapreduce.Job: Counters: 54
+	File System Counters
+		FILE: Number of bytes read=153
+		FILE: Number of bytes written=443369
+		FILE: Number of read operations=0
+		FILE: Number of large read operations=0
+		FILE: Number of write operations=0
+		HDFS: Number of bytes read=394
+		HDFS: Number of bytes written=107
+		HDFS: Number of read operations=9
+		HDFS: Number of large read operations=0
+		HDFS: Number of write operations=2
+		HDFS: Number of bytes read erasure-coded=0
+	Job Counters 
+		Launched map tasks=1
+		Launched reduce tasks=1
+		Data-local map tasks=1
+		Total time spent by all maps in occupied slots (ms)=20069
+		Total time spent by all reduces in occupied slots (ms)=3124
+		Total time spent by all map tasks (ms)=20069
+		Total time spent by all reduce tasks (ms)=3124
+		Total vcore-milliseconds taken by all map tasks=20069
+		Total vcore-milliseconds taken by all reduce tasks=3124
+		Total megabyte-milliseconds taken by all map tasks=20550656
+		Total megabyte-milliseconds taken by all reduce tasks=3198976
+	Map-Reduce Framework
+		Map input records=5
+		Map output records=5
+		Map output bytes=137
+		Map output materialized bytes=153
+		Input split bytes=131
+		Combine input records=0
+		Combine output records=0
+		Reduce input groups=1
+		Reduce shuffle bytes=153
+		Reduce input records=5
+		Reduce output records=5
+		Spilled Records=10
+		Shuffled Maps =1
+		Failed Shuffles=0
+		Merged Map outputs=1
+		GC time elapsed (ms)=85
+		CPU time spent (ms)=860
+		Physical memory (bytes) snapshot=433901568
+		Virtual memory (bytes) snapshot=5343563776
+		Total committed heap usage (bytes)=389545984
+		Peak Map Physical memory (bytes)=255922176
+		Peak Map Virtual memory (bytes)=2668388352
+		Peak Reduce Physical memory (bytes)=177979392
+		Peak Reduce Virtual memory (bytes)=2675175424
+	Shuffle Errors
+		BAD_ID=0
+		CONNECTION=0
+		IO_ERROR=0
+		WRONG_LENGTH=0
+		WRONG_MAP=0
+		WRONG_REDUCE=0
+	File Input Format Counters 
+		Bytes Read=263
+	File Output Format Counters 
+		Bytes Written=107
+
+执行如下命令查看执行完毕后的输出结果：
+[root@hadoopsparkmaster ~]# hdfs dfs -cat output/*
+1	dfsadmin
+1	dfs.replication
+1	dfs.namenode.secondary.http
+1	dfs.namenode.name.dir
+1	dfs.datanode.data.dir
+
+
+关闭集群:
+/root/hadoop/sbin/stop-yarn.sh
+/root/hadoop/sbin/stop-dfs.sh
+mapred --daemon stop historyserver
+
+
+
+
+
+
+
+
+
+
+安装 spark
+[root@hadoopsparkmaster ~]# spark-shell 
+2019-02-28 08:01:00 WARN  NativeCodeLoader:62 - Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+Spark context Web UI available at http://hadoopsparkmaster:4040
+Spark context available as 'sc' (master = local[*], app id = local-1551340873985).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 2.4.0
+      /_/
+         
+Using Scala version 2.11.12 (OpenJDK 64-Bit Server VM, Java 1.8.0_191)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala>
+
+好像没成功接入 hadoop, 但是,其实 是成功的
+执行 spark 例子 总会出现: 好像没成功接入 hadoop的样子!!
+2019-02-28 08:51:36 WARN  NativeCodeLoader:62 - Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+
+
+
+
+
+
+
+
+
+
+
+
+
+多次  hdfs namenode -format 后 出现 datanode 不能启动 因为namenode cluterID 变了,而datanode 的还没变,
+直接删除数据文件夹!!
+rm -rf /root/hadoop/tmp/dfs/data/current
+
+
+
+
+
+

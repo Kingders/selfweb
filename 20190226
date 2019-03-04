@@ -1,0 +1,1183 @@
+//现有的 docker 局域网:
+sudo docker network ls
+NETWORK ID          NAME                         DRIVER              SCOPE
+c0855bb6075c        bridge                       bridge              local	"Subnet": "172.17.0.0/16"
+aec052958d73        electicsearch_test_default   bridge              local	"Subnet": "172.18.0.0/16"
+e9823d19d9bc        hadoop-spark-net             bridge              local	"Subnet": "172.19.0.0/16"
+ffcc34d472a4        host                         host                local	null
+5010361fce5e        mongodb-net                  bridge              local	"Subnet": "172.23.0.0/16"
+4a6c0cd999bd        none                         null                local	null
+c3c65c6eed73        pxc-net                      bridge              local	"Subnet": "172.22.0.0/16"
+
+
+docker 建立 一个新网络!!
+sudo docker network create hadoop-spark-net --subnet=172.19.0.0/16 --ip-range=172.19.0.0/16 --gateway=172.19.0.1  
+
+
+创建 3个 节点 hdsp_m 
+sudo docker run -d --privileged=true --network=hadoop-spark-net --ip=172.19.0.2 -itd -h hadoopsparkmaster --add-host=hadoopsparkworker1:172.19.0.3 --add-host=hadoopsparkworker2:172.19.0.4 --name=hdsp_m centos /usr/sbin/init
+(-h 是定义一个hostname,不然一个乱码代替, 注意建立的容器不能修改 hostname
+	[root@b39d369b1b11 /]# 	//未定义hostname 是一个乱码
+	[root@hadoopspark_master /]# 	//定义hostname 后  
+	/etc/hosts 也不能修改,只能 docker run 时候 设置好!!
+)
+
+sudo docker run -d --privileged=true --network=hadoop-spark-net --ip=172.19.0.3 -itd -h hadoopsparkworker1 --add-host=hadoopsparkmaster:172.19.0.2 --add-host=hadoopsparkworker2:172.19.0.4 --name=hdsp_w1 centos /usr/sbin/init
+sudo docker run -d --privileged=true --network=hadoop-spark-net --ip=172.19.0.4 -itd -h hadoopsparkworker2 --add-host=hadoopsparkmaster:172.19.0.2 --add-host=hadoopsparkworker1:172.19.0.3 --name=hdsp_w2 centos /usr/sbin/init
+
+
+需要修改 root 密码: echo 'root:123456'|chpasswd
+
+都添加 ip 映射 :vi /etc/hosts	//后来发现都没有用重新打开容器节点会重置 hosts 文件,本来添加映射更加方便,现在还是跳过吧
+172.19.0.2      hadoopspark_master
+172,19.0.3      hadoopspark_worker1
+172.19.0.4      hadoopsaprk_worker2
+
+
+安装 ssh :yum install openssh-server openssh-clients -y
+设置3节点 ssh 无密码登录, (方便互传文件,与 spark hadoop 本身无关)
+vi /etc/ssh/sshd_config   
+	PubkeyAuthentication yes	# 开启公钥验证
+需要修改 root 密码,用于远程ssh登录: echo 'root:123456'|chpasswd
+
+生成公钥、私钥
+ssh-keygen -t rsa	//一律回车,不需要设置 自身ssh 密码,(注意此密码不是 远程用户登录密码)
+Generating public/private rsa key pair.
+Enter file in which to save the key (/root/.ssh/id_rsa): 
+Created directory '/root/.ssh'.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /root/.ssh/id_rsa.
+Your public key has been saved in /root/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:EKPDf+4spHKrPxgfbLNXK4AUpW00E+69P+XgS4ykIS4 root@hadoopspark_master
+The key's randomart image is:
++---[RSA 2048]----+
+|   .*.o          |
+|  .* + o         |
+|  ..B .          |
+|  .o + .         |
+| ..oo + S        |
+| .o.*+.*o .      |
+|E .=.Boo+=       |
+| .o * +=+ .      |
+|  .=o+ o=o       |
++----[SHA256]-----+
+把自己的公钥id_rsa.pub放入到自己的认证文件中authorized_keys;
+	cd ~/.ssh
+	cat id_rsa.pub >> authorized_keys
+	一定要对 以下文件目录 做权限处理,不然免密登录失败 要求输入 远程用户的密码 	
+	chmod 700 /root/
+	chmod 700 /root/.ssh/
+	chmod 600 /root/.ssh/authorized_keys
+	或者
+	//ssh-copy-id 先 做以下文件目录 权限处理
+	systemctl start sshd
+	chmod 700 /root/
+	chmod 700 /root/.ssh/	 
+	ssh-copy-id root@localhost	//需要先启动 sshd 服务,
+这时,自己登录自己 ssh root@localhost  第一次需要输入密码, 以后的都不需要了!!
+
+免密登录远程ssh
+	ssh-copy-id root@172.19.0.3	//获取运程机子的ssh 公钥!
+	ssh root@172.19.0.3	//然后就可以免密登录远程ssh
+建立 3个节点 可以互免密登录 !!
+
+
+参考 安装 hadoop: https://dxysun.com/2018/04/16/centosForHadoop/
+
+需要安装java
+	yum 装 java  (省事)
+	先 java -version 查看已安装的,如果有安装的,如果版本太低就选择卸载:
+	yum -y remove java-1.7.0-openjdk*  //卸载旧的 jdk
+	yum -y list java*  //查看软件库的 java版本更新 情况
+	yum -y install java-11-openjdk*	   //安装查看到的新的 jdk
+	查看 JAVA_HOME: 
+	whereis javac
+		javac: /usr/bin/javac /usr/share/man/man1/javac.1.gz
+	ll /usr/bin/javac    // 查看 /usr/bin/javac 软链接到啥位置
+		lrwxrwxrwx 1 root root 23 Feb 27 02:37 /usr/bin/javac -> /etc/alternatives/javac
+	ll  /etc/alternatives/javac
+		lrwxrwxrwx 1 root root 63 Feb 27 02:37 /etc/alternatives/javac -> /usr/lib/jvm/java-11-openjdk-11.0.1.13-3.el7_6.x86_64/bin/javac
+	这时,JAVA_HOME 的位置 应该就是 : /usr/lib/jvm/java-11-openjdk-11.0.1.13-3.el7_6.x86_64
+
+创建用户??? (暂不创建)
+
+安装rsync : yum install rsync -y
+
+yum -y install wget
+
+
+master 节点 安装
+下载 hadoop 3.2     (一般使用 java 1.8 就足够,而我现在的是 java 1.11)
+在 root/software 下载:
+wget http://mirror.cogentco.com/pub/apache/hadoop/common/hadoop-3.2.0/hadoop-3.2.0.tar.gz
+然后解压得 hadoop-3.2.0 : tar -zxf /root/software/hadoop-3.2.0.tar.gz -C /root
+更改目录名: mv hadoop-3.2.0 hadoop
+添加 系统环境变量: vi /etc/profile
+#hadoop
+HADOOP_HOME=/root/hadoop/
+PATH=$HADOOP_HOME/bin:$PATH
+export PATH HADOOP_HOME
+环境变量生效 :	source /etc/profile
+配置 hadoop: 这里仅设置了正常启动所必须的设置项： hadoop-env.sh slaves、core-site.xml、hdfs-site.xml、mapred-site.xml、yarn-site.xml
+参数参考:
+	https://hadoop.apache.org/docs/r2.4.1/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml
+	https://hadoop.apache.org/docs/r2.6.0/hadoop-project-dist/hadoop-common/core-default.xml
+	https://hadoop.apache.org/docs/r3.2.0/   //左下角 configuration
+
+vi /root/hadoop/etc/hadoop/hadoop-env.sh		//改成 java1.8
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64/	
+
+vi /root/hadoop/etc/hadoop/core-site.xml
+<configuration>
+    <property>
+        <name>fs.default.name</name>
+        <value>hdfs://172.19.0.2:9000</value>
+        <description> uri of HDFS, hdfs://namenode_name:port</description>
+    </property>
+    <property>
+        <name>hadoop.tmp.dir</name>
+        <value>/root/hadoop/tmp</value>
+        <description>temp files folder of namenode </description>
+    </property>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://172.19.0.2:9000</value>
+    </property>
+</configuration>
+
+vi /root/hadoop/etc/hadoop/hdfs-site.xml
+<configuration>
+    <property>
+        <name>dfs.namenode.secondary.http-address</name>
+        <value>172.19.0.2:50090</value>
+    </property>
+    <property>
+        <name>dfs.replication</name>
+        <value>3</value>
+    </property>
+    <property>
+        <name>dfs.namenode.name.dir</name>			
+        <value>file://${hadoop.tmp.dir}/dfs/name</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file://${hadoop.tmp.dir}/dfs/data</value>
+    </property>
+</configuration>
+dfs.namenode.name.dir注意与 dfs.name.dir 是有区别的
+dfs.datanode.data.dir 和 dfs.data.dir 同理
+注意 查看官方 config 文件 斌没有  dfs.data.dir dfs.name.dir 这两项
+
+vi /root/hadoop/etc/hadoop/mapred-site.xml
+<configuration>
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+    <property>
+        <name>mapreduce.jobhistory.address</name>
+        <value>172.19.0.2:10020</value>
+    </property>
+    <property>
+        <name>mapreduce.jobhistory.webapp.address</name>
+        <value>172.19.0.2:19888</value>
+    </property>
+</configuration>
+注意 新版本没有 mapred.job.tracker, mapred.local.dir
+
+vi /root/hadoop/etc/hadoop/yarn-site.xml
+<configuration>
+<!-- Site specific YARN configuration properties -->
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>172.19.0.2</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+</configuration>
+
+
+打包 master节点 的hadoop ,拷贝到 worker1 worker2 节点
+cd /root
+tar zcf hadoop.tar.gz hadoop
+scp hadoop.tar.gz root@172.19.0.3:/root
+scp hadoop.tar.gz root@172.19.0.4:/root
+
+
+继续配置 master节点:
+vi /root/hadoop/etc/hadoop/workers	//旧版hadoop是 slaves 文件
+localhost
+172.19.0.3			//一般填写 ip 或者 映射ip的 hostname, 一行一个	
+172.19.0.4
+	
+worker1 worker2 节点:
+cd /root
+tar -zxf hadoop.tar.gz
+
+
+添加 hadoop自己的环境变量
+vi /root/hadoop/etc/hadoop/hadoop-env.sh
+export HDFS_NAMENODE_USER=root
+export HDFS_DATANODE_USER=root
+export HDFS_SECONDARYNAMENODE_USER=root
+export HDFS_JOURNALNODE_USER=root
+export YARN_RESOURCEMANAGER_USER=root
+export YARN_NODEMANAGER_USER=root
+
+
+首次启动需要先在 Master 节点执行 NameNode 的格式化
+hdfs namenode -format
+
+
+
+操 重做:
+由于 hosts hosname 不可 修改,所以 docker run 就 通过 --add-host 加入
+
+
+
+最后
+换 jdk8 :JAVA_HOME
+JAVA_HOME = /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64/
+yarn-env.sh 返回原样
+最后重新  启动 hadoop
+start-dfs.sh
+start-yarn.sh
+mapred --daemon start historyserver	
+成功
+[root@hadoopsparkmaster ~]# mapred --daemon start historyserver
+[root@hadoopsparkmaster ~]# jps
+22035 NodeManager
+21205 NameNode
+21898 ResourceManager
+22490 JobHistoryServer
+21515 SecondaryNameNode
+22559 Jps
+[root@hadoopsparkworker1 ~]# jps
+11002 Jps
+10796 NodeManager
+10716 DataNode
+
+
+网页打开 172.19.0.2:9870 查看	//查看 官方默认configuration得知
+网页打开 172.19.0.2:8088 查看	//https://hadoop.apache.org/docs/r3.2.0/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml
+网页打开 172.19.0.2:50070 查看
+网页打开 172.19.0.2:9000 查看
+
+
+
+
+然后尝试执行一个分布式任务!!
+首先创建 HDFS 上的用户目录：
+hdfs dfs -mkdir -p /user/root     //由于没有创建用户 机子属于 root 用户的 所以 需要这样子
+
+将 /root/hadoop/etc/hadoop 中的配置文件作为输入文件复制到分布式文件系统中
+hdfs dfs -mkdir input		//如果没有 -mkdir /user/root ,这条不会成功
+hdfs dfs -put /root/hadoop/etc/hadoop/*.xml input			//*/
+接着就可以运行 MapReduce 作业了：
+hadoop jar /root/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar grep input output 'dfs[a-z.]+'
+出错 ,需要设置 HADOOP_MAPRED_HOME
+vi /root/hadoop/etc/hadoop/mapred-site.xml
+
+    <property>
+        <name>yarn.app.mapreduce.am.env</name>
+        <value>HADOOP_MAPRED_HOME=/root/hadoop/</value>
+    </property>
+    <property>
+        <name>mapreduce.map.env</name>
+        <value>HADOOP_MAPRED_HOME=/root/hadoop/</value>
+    </property>
+    <property>
+        <name>mapreduce.reduce.env</name>
+        <value>HADOOP_MAPRED_HOME=/root/hadoop/</value>
+    </property>
+
+重新 运行例子程序
+hdfs dfs -rm input/* 			//*/  去掉原来的文件
+hdfs dfs -put /root/hadoop/etc/hadoop/*.xml input			//*/
+hadoop jar /root/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar grep input output 'dfs[a-z.]+'
+成功启动 测试 hadoop3.2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+成功 hadoop3.2 集群后,下一步 就是 spark 替换 mapreduce
+hadoop 有三个重要模块,  mapreduce 分布式计算, HDFS 分布式文件系统, yarn 分布式节点管理
+实际上 spark 重点是分布式计算, 一般配合 hsdoop 的 HDFS 一起使用, 可以使用spark自身的节点管理standalone模式,或者使用 hadoop 的 yarn 作为节点管理 
+获得镜像: wget https://archive.apache.org/dist/spark/spark-2.4.0/spark-2.4.0-bin-hadoop2.7.tgz
+
+关于 hadoop3.2 应该使用哪个 spark 问题!!
+http://dblab.xmu.edu.cn/blog/1307-2/
+由于我们已经自己安装了Hadoop，所以，在“Choose a package type”后面需要选择“Pre-build with user-provided Hadoop [can use with most Hadoop distributions]”，然后，点击“Download Spark”后面的“spark-2.1.0-bin-without-hadoop.tgz”下载即可。下载的文件，默认会被浏览器保存在“/home/hadoop/下载”目录下。需要说明的是，Pre-build with user-provided Hadoop: 属于“Hadoop free”版，这样，下载到的Spark，可应用到任意Hadoop 版本。
+由于 是 hadoop3.2 未知道兼容性如何,所以 spark-2.4.0-bin-without-hadoop.tgz 和 spark-2.4.0-bin-hadoop2.7.tgz
+都下载,优先 尝试 spark-2.4.0-bin-hadoop2.7.tgz
+
+主要参考: https://dxysun.com/2018/04/16/centosForSpark/
+	http://dblab.xmu.edu.cn/blog/1307-2/
+
+master 节点安装:
+tar -zxf spark-2.4.0-bin-hadoop2.7.tgz -C /root
+cd /root
+mv spark-2.4.0-bin-hadoop2.7 spark
+
+更改环境变量:
+vi /etc/profile
+#spark
+export SPARK_HOME=/root/spark/
+export PATH=$SPARK_HOME/bin:$PATH
+使生效 source /etc/profile
+
+配置:
+cp /root/spark/conf/spark-env.sh.template /root/spark/conf/spark-env.sh
+vi /root/spark/conf/spark-env.sh
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64/
+export SPARK_MASTER_HOST=172.19.0.2
+export HADOOP_CONF_DIR=/root/hadoop/etc/hadoop
+
+cp /root/spark/conf/slaves.template /root/spark/conf/slaves
+vi /root/spark/conf/slaves
+去掉 localhosts
+172.19.0.3
+172.19.0.4
+
+打包到 worker节点(slave节点)
+tar zcf spark.tar.gz spark
+scp spark.tar.gz root@172.19.0.3:/root
+scp spark.tar.gz root@172.19.0.4:/root
+
+
+worker节点:
+cd /root
+tar -zxf spark.tar.gz
+
+环境变量:也有这样子:
+vi /etc/profile
+#hadoop
+HADOOP_HOME=/root/hadoop/
+PATH=$HADOOP_HOME/bin:$PATH
+export PATH HADOOP_HOME
+
+#spark
+export SPARK_HOME=/root/spark/
+export PATH=$SPARK_HOME/bin:$PATH
+使生效 source /etc/profile
+
+
+master启动 Hadoop
+/root/hadoop/sbin/start-dfs.sh
+/root/hadoop/sbin/start-yarn.sh
+mapred --daemon start historyserver
+
+master启动 spark
+/root/spark/sbin/start-all.sh
+jps 发现 msater节点多了 master  worker节点多了worker
+成功
+
+
+
+启动 Spark Shell
+/root/spark/bin/spark-shell	//或者直接 spark-shell  因为注册了环境变量
+好像没成功接入 hadoop (先不管),貌似使用 standalone 模式, 即使用spark 自带的节点管理
+查看http://172.19.0.2:8080
+查看http://172.19.0.2:4040
+
+
+使用 自带节点管理(standalone 模式) 执行 分布式计算例子程序, 计算圆周率
+[root@hadoopsparkmaster ~]# spark-submit --class org.apache.spark.examples.SparkPi --master spark://172.19.0.2:7077 /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar 100 2>&1 | grep "Pi is roughly"
+Pi is roughly 3.1421811142181113
+
+
+配合 hadoop HDFS 使用
+# 下面这条命令中，我们把spark安装目录下的README.md文件上传到分布式文件系统HDFS的根目录下
+hadoop fs -put /root/spark/README.md /
+# 进入 standalone 模式 进入 spark-shell
+spark-shell --master spark://172.19.0.2:7077	//spark://代表 standalone 模式
+输入代码: (成功, 表示 spark2.4 与 hadoop3.2 的 HDFS 还没有出现冲突!! )
+scala> val textFile = sc.textFile("hdfs://172.19.0.2:9000/README.md")
+textFile: org.apache.spark.rdd.RDD[String] = hdfs://172.19.0.2:9000/README.md MapPartitionsRDD[1] at textFile at <console>:24
+scala> textFile.count()
+res0: Long = 99                                                                 
+scala> textFile.first()
+res1: String = # Apache Spark
+
+使用 hadoop的yarn节点管理 执行 分布式计算例子程序, 
+spark-submit --class org.apache.spark.examples.SparkPi --master yarn-cluster /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar
+//被提醒 新版本 spark 只需要 --master yarn 写 即可
+spark-submit --class org.apache.spark.examples.SparkPi --master yarn /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar
+发现两种写法的 输出log 不太一致, 前者一个post到网端,后者post到 终端 
+中的来说,成功的,未发现异常
+点击 输出的 网址,可以查看 更加详细的执行结果信息例如
+	 client token: N/A
+	 diagnostics: N/A
+	 ApplicationMaster host: hadoopsparkmaster
+	 ApplicationMaster RPC port: 39585
+	 queue: default
+	 start time: 1551345119522
+	 final status: SUCCEEDED
+	 tracking URL: http://hadoopsparkmaster:8088/proxy/application_1551340373862_0006/
+	 user: root
+其中 URL
+
+注意,这次尝试使用 spark-2.4.0-bin-hadoop2.7.tgz   自带 scala ,所以不需要自己安装scala 和配置 环境变量 SCALA_HOME
+spark2.4 与 hadoop3.2  集群暂时没有冲突问题!!!
+
+
+关闭集群:
+关闭 spark 集群:
+/root/spark/sbin/stop-all.sh
+关闭 hadoop 集群:
+mapred --daemon stop historyserver
+/root/hadoop/sbin/stop-yarn.sh
+/root/hadoop/sbin/stop-dfs.sh
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+继续 zookeeper 实现 spark 高可用!!  (经过实验发现 是针对 standalone 模式, 对 yarn无影响)
+master 节点 !!!
+下载安装
+wget http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.12/zookeeper-3.4.12.tar.gz
+cd /root
+tar -zxf /root/software/zookeeper-3.4.12.tar.gz -C /root
+mv zookeeper-3.4.12/ zookeeper
+
+mkdir zookeeper/data zookeeper/logs
+
+echo '0'>zookeeper/data/myid
+配置
+cp zookeeper/conf/zoo_sample.cfg zookeeper/conf/zoo.cfg
+vi zookeeper/conf/zoo.cfg
+dataDir=/root/zookeeper/data
+dataLogDir=/root/zookeeper/logs
+server.0= 172.19.0.2:2888:3888
+server.1= 172.19.0.3:2888:3888
+server.2= 172.19.0.4:2888:3888
+
+
+拷贝到 worker 节点
+tar zcf zookeeper.tar.gz zookeeper
+scp zookeeper.tar.gz root@172.19.0.3:/root
+scp zookeeper.tar.gz root@172.19.0.4:/root
+
+worker节点 处理:
+tar -zxf zookeeper.tar.gz
+
+rm zookeeper/data/myid
+echo '1'>zookeeper/data/myid		//172.19.0.3 节点
+echo '2'>zookeeper/data/myid		//172.19.0.4 节点
+
+
+需要继续配置spark 三个节点都要:
+vi /root/spark/conf/spark-env.sh
+#export SPARK_MASTER_HOST=172.19.0.2（设置了zookeeper这行不用了，注释掉）
+export SPARK_DAEMON_JAVA_OPTS="-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=172.19.0.2:2181,172.19.0.3:2181,172.19.0.4:2181 -Dspark.deploy.zookeeper.dir=/spark"
+
+
+启动 zookeeper 三个节点都要
+/root/zookeeper/bin/zkServer.sh start
+
+//成功后 jps 可以看到 QuorumPeerMain
+
+
+master 节点启动 hadoop 集群:
+/root/hadoop/sbin/start-dfs.sh
+/root/hadoop/sbin/start-yarn.sh
+mapred --daemon start historyserver
+master 节点启动 spark 集群:
+/root/spark/sbin/start-all.sh
+
+worker节点都要 启动:
+/root/spark/sbin/start-master.sh	//即 worker节点 登记成为备用 master
+
+
+8080 端口 查看master状态
+8081 端口 查看worker状态
+master 节点启动的master早 所以 查看master状态 Status: ALIVE 
+worker 节点启动的master早 所以 查看master状态 Status: STANDBY 
+
+测试1
+172.19.0.3 节点启动 spark-shell
+spark-shell --master spark://172.19.0.3:7077		//出错,不行的,因为 alive 的master是 172.19.0.2, 
+							//不会自动转到 172.19.0.3 !!
+测试2
+172.19.0.3 节点启动 spark-shell
+spark-shell --master spark://172.19.0.2:7077		//成功
+关闭 172.19.0.2 的 master : /root/spark/sbin/stop-master.sh
+这时 172.19.0.3 节点启动 spark-shell 出现: 正在 重连接备用master
+scala> 2019-02-28 14:51:22 WARN  StandaloneAppClient$ClientEndpoint:66 - Connection to hadoopsparkmaster:7077 failed; waiting for master to reconnect...
+2019-02-28 14:51:22 WARN  StandaloneSchedulerBackend:66 - Disconnected from Spark cluster! Waiting for reconnection...
+查看 0.3 节点 8080 端口 已经自动升为 master alive
+其实 spark-shell 应该 出现 master has changed，new master is at spark://172.19.0.3:7077
+但是,没有,但是 已经可用!!
+
+测试3
+现在alive msater是 0.3 节点
+0.2节点执行 : 
+spark-submit --class org.apache.spark.examples.SparkPi --master spark://172.19.0.3:7077 /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar
+同时 0.3节点执行 : /root/spark/sbin/stop-master.sh 关闭master,
+这时 运行中的程序会崩溃!!!!! 并不会切换 alive master 继续执行!! 
+
+测试4 
+假如 此刻 0.3 节点是 alive master, 
+0.2节点执行: spark-shell --master yarn
+同时 0.3节点执行 : /root/spark/sbin/stop-master.sh 关闭master,
+因为使用 hadoop yarn 节点管理!!!   0.3 节点 alive master zookeeper 什么的好像没有关系!!!
+
+测试5
+假如 此刻 0.4 节点是 alive master, 
+0.3节点执行: 
+spark-submit --class org.apache.spark.examples.SparkPi --master yarn-cluster /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar
+同时 0.4节点执行 : /root/spark/sbin/stop-master.sh 关闭master,
+真的, 使用 yarn 后 alive master zookeeper 什么的就没有关系!!!, 程序照样运行!!!
+
+zookeeper 做到的 standalone 模式 高可用功能很有限!!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+感觉是方向搞错了, 应该是 hadoop + zookeeper 高可用, spark使用 yarn 模式时,spark不过只提供了计算功能
+高可用 应该针对的是 节点管理,所以 上述zookeeper 针对的 是 standalone 模式的 节点管理
+有个问题 namwnode 自身不能作为 Datanode, 即 namenode和 datanode 不共存??
+	怀疑是 etc/hadoop/worker 文件设置问题引起,每个节点的 worker文件设置应该一致?? 
+
+hadoop3.2 +zookeeper3.4.12 + hbase
+
+zookeeper按以上已经配置好
+
+master节点 继续配置 hadoop!!!
+vi /root/hadoop/etc/hadoop/core-site.xml   添加
+    <!-- 指定ZooKeeper集群的地址和端口。注意，数量一定是奇数，且不少于三个节点-->
+    <property>
+        <name>ha.zookeeper.quorum</name>
+        <value>172.19.0.2:2181,172.19.0.3:2181,172.19.0.4:2181</value>
+    </property>
+
+vi /root/hadoop/etc/hadoop/hdfs-site.xml  
+去掉:
+    <property>
+        <name>dfs.namenode.secondary.http-address</name>
+        <value>172.19.0.2:50090</value>
+    </property>
+添加
+  <!-- 指定副本数，不能超过机器节点数  -->
+  <property>
+    <name>dfs.replication</name>
+    <value>3</value>
+  </property>
+  <!-- 为namenode集群定义一个services name -->
+  <property>
+    <name>dfs.nameservices</name>
+    <value>whservice</value>
+  </property>
+  <!-- nameservice 包含哪些namenode，为各个namenode起名 -->
+  <property>
+    <name>dfs.ha.namenodes.whservice</name>
+    <value>masterA,masterB</value>
+  </property>
+  <!-- 名为masterA的namenode的rpc地址和端口号，rpc用来和datanode通讯 -->
+  <property>
+    <name>dfs.namenode.rpc-address.whservice.masterA</name>
+    <value>172.19.0.2:9000</value>
+  </property>
+  <!-- 名为masterB的namenode的rpc地址和端口号，rpc用来和datanode通讯 -->
+  <property>
+    <name>dfs.namenode.rpc-address.whservice.masterB</name>
+    <value>172.19.0.3:9000</value>
+  </property>
+  <!--名为masterA的namenode的http地址和端口号，用来和web客户端通讯 -->
+  <property>
+    <name>dfs.namenode.http-address.whservice.masterA</name>
+    <value>172.19.0.2:50070</value>
+  </property>
+  <!-- 名为masterB的namenode的http地址和端口号，用来和web客户端通讯 -->
+  <property>
+    <name>dfs.namenode.http-address.whservice.masterB</name>
+    <value>172.19.0.3:50070</value>
+  </property>
+  <!-- namenode间用于共享编辑日志的journal节点列表 -->
+  <property>
+    <name>dfs.namenode.shared.edits.dir</name>
+    <value>qjournal://172.19.0.2:8485;172.19.0.3:8485;172.19.0.4:8485/whservice</value>
+  </property>
+  <!-- 指定该集群出现故障时，是否自动切换到另一台namenode -->
+  <property>
+    <name>dfs.ha.automatic-failover.enabled.whservice</name>
+    <value>true</value>
+  </property>
+  <!-- journalnode 上用于存放edits日志的目录 -->
+  <property>
+    <name>dfs.journalnode.edits.dir</name>
+    <value>/root/hadoop/tmp/data/dfs/journalnode</value>
+  </property>
+  <!-- 客户端连接可用状态的NameNode所用的代理类 -->
+  <property>
+    <name>dfs.client.failover.proxy.provider.whservice</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+  <!-- 一旦需要NameNode切换，使用ssh方式进行操作 -->
+  <property>
+    <name>dfs.ha.fencing.methods</name>
+    <value>sshfence</value>
+  </property>
+  <!-- 如果使用ssh进行故障切换，使用ssh通信时用的密钥存储的位置 -->
+  <property>
+    <name>dfs.ha.fencing.ssh.private-key-files</name>
+    <value>/root/.ssh/id_rsa</value>
+  </property>
+  <!-- connect-timeout超时时间 -->
+  <property>
+    <name>dfs.ha.fencing.ssh.connect-timeout</name>
+    <value>30000</value>
+  </property>
+
+
+vi /root/hadoop/etc/hadoop/yarn-site.xml
+去掉:
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>172.19.0.2</value>
+    </property>
+添加
+  <!-- 启用HA高可用性 -->
+  <property>
+    <name>yarn.resourcemanager.ha.enabled</name>
+    <value>true</value>
+  </property>
+  <!-- 指定resourcemanager的名字 -->
+  <property>
+    <name>yarn.resourcemanager.cluster-id</name>
+    <value>yrm</value>
+  </property>
+  <!-- 使用了2个resourcemanager,分别指定Resourcemanager的地址 -->
+  <property>
+    <name>yarn.resourcemanager.ha.rm-ids</name>
+    <value>rm1,rm2</value>
+  </property>
+  <!-- 指定rm1的地址 -->
+  <property>
+    <name>yarn.resourcemanager.hostname.rm1</name>
+    <value>172.19.0.2</value>
+  </property>
+  <!-- 指定rm2的地址  -->
+  <property>
+    <name>yarn.resourcemanager.hostname.rm2</name>
+    <value>172.19.0.3</value>
+  </property>
+  <!-- 指定当前机器masterA作为rm1 -->
+  <property>
+    <name>yarn.resourcemanager.ha.id</name>
+    <value>rm1</value>
+  </property>
+  <!-- 指定zookeeper集群机器 -->
+  <property>
+    <name>yarn.resourcemanager.zk-address</name>
+    <value>172.19.0.2:2181,172.19.0.3:2181,172.19.0.4:2181</value>
+  </property>
+  <!-- NodeManager上运行的附属服务，默认是mapreduce_shuffle -->
+  <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
+
+清空 之前的数据:
+rm -rf /root/hadoop/logs/*			//*/
+rm -rf /root/hadoop/tmp/*			//*/
+合并: rm -rf /root/hadoop/tmp/* /root/hadoop/logs/*       //*/
+
+重置其他worker节点的 hadoop!!!
+cd /root
+rm -rf hadoop.tar.gz
+tar zcf hadoop.tar.gz hadoop
+scp hadoop.tar.gz root@172.19.0.3:/root
+scp hadoop.tar.gz root@172.19.0.4:/root
+
+worker节点:
+rm -rf hadoop.tar.gz
+rm -rf hadoop
+tar -zxf hadoop.tar.gz
+
+worker1节点:
+vi /root/hadoop/etc/hadoop/yarn-site.xml
+修改
+  <property>
+    <name>yarn.resourcemanager.ha.id</name>
+    <value>rm2</value>
+  </property>
+
+worker2节点:
+vi /root/hadoop/etc/hadoop/yarn-site.xml
+删除:
+  <property>
+    <name>yarn.resourcemanager.ha.id</name>
+    <value>rm1</value>
+  </property>
+
+为了实现 ssh 的故障转移,还需要 fuser
+缺少fuster程序，将在zkfc的日志文件中发现如下错误：
+PATH=$PATH:/sbin:/usr/sbin fuser -v -k -n tcp 9000 via ssh: bash: fuser: 未找到命令
+Unable to fence service by any configured method
+java.lang.RuntimeException: Unable to fence NameNode at master189/192.168.29.189:9000
+Psmisc软件包中包含了fuster 所有节点安装 psmisc
+yum install psmisc
+
+启动:
+所有节点启动zookeeper:
+	/root/zookeeper/bin/zkServer.sh start	// /root/zookeeper/bin/zkServer.sh status 可以查看zookeeper节点运行状态!!!
+所有节点启动Journalnode
+	hdfs --daemon start journalnode		//格式化namenode时要先启动各个JournalNode机器上的journalnode进程
+master (即masterA)节点 格式化 NameNode和ZKFC
+	hdfs namenode -format
+	hdfs zkfc -formatZK
+worker1(即masterB)备用节点 同步主节点数据, 在备用主节点同步主节点的元数据时，主节点的HDFS必须已经启动, 即主节点namenode启动
+	首先 master先运行namenode:	hdfs --daemon start namwnode
+	因为同步需要接到 master的 9000 端口 实现数据同步,
+	worker1节点 执行同步:		hdfs namenode -bootstrapStandby
+	master节点关闭 namenode:	hdfs --daemon stop namwnode
+启动 hadoop 集群:
+	master节点启动:
+		/root/hadoop/sbin/start-dfs.sh
+		/root/hadoop/sbin/start-yarn.sh
+		hdfs --daemon start zkfc
+	worker1节点启动:
+		hdfs --daemon start zkfc 	//不然 namenode 节点不能实现热备转移
+
+jps 查看成功后的进程栈:
+master(masterA):jps
+23282 Jps
+21526 NameNode		// master start-dfs 打开的
+21671 DataNode		// master start-dfs 打开的
+8200 QuorumPeerMain	// master zkServer.sh start 打开的
+22586 NodeManager	// master start-yarn 打开的
+21933 JournalNode	// master start-dfs 重新打开的
+17181 DFSZKFailoverController	//master hdfs --daemon start zkfc
+22446 ResourceManager	// master start-yarn 打开的
+worker1(masterB):jps
+25663 Jps
+24934 DataNode		// master start-dfs 打开的
+25191 ResourceManager	// master start-yarn 打开的
+18055 QuorumPeerMain	// worker1 zkServer.sh start 打开的
+25273 NodeManager	// master start-yarn 打开的
+25037 JournalNode	// master start-dfs 重新打开的
+24845 NameNode		// master start-dfs 打开的
+24270 DFSZKFailoverController	//worker1 hdfs --daemon start zkfc 打开的
+worker2:jps
+16293 Jps
+16016 JournalNode	// master start-dfs 重新打开的
+16130 NodeManager	// master start-yarn 打开的
+13365 QuorumPeerMain	// worker2 zkServer.sh start 打开的
+15913 DataNode		// master start-dfs 打开的
+
+
+查看 hadoop状态 信息
+hdfs haadmin -getServiceState masterA		//alive 表示 0.2节点 dfs namenode 活跃态
+yarn rmadmin -getServiceState rm1 		//stanby 表示 0.2节点 yarn ResourceManager 预备态 
+hdfs haadmin -getServiceState masterB		//stanby 表示 0.3节点 dfs namenode 预备态
+yarn rmadmin -getServiceState rm2		//alive 表示 0.3节点 yarn ResourceManage 活跃态
+
+
+
+测试:(热备转义 高可用重要功能)
+关闭 masterA namenode:
+hdfs --daemon stop namenode
+masterB 的 namenode 变成 alive !!
+//注意到: 当 worker1(masterB)节点 没有启动 hdfs --daemon start zkfc
+//如果 masterB 的 namenode 是standby态,那 就永远都是 standby 态, 不会进行热备转移!! 
+
+关闭 masterB resourcemanager:
+yarn --daemon stop resourcemanager
+发现 masterA 的 resourcemanager 变成 alive
+
+所以 hadoop + zookeeper 高可用集群 成功部署 搭建
+
+关闭集群:
+masterA:
+/root/hadoop/sbin/stop-yarn.sh
+/root/hadoop/sbin/stop-dfs.sh
+masterA, masterB 
+hdfs --daemon stop zkfc
+masterA, masterB(worker1), worker2
+/root/zookeeper/bin/zkServer.sh stop
+
+打开集群:(注意,不再需要首先每个节点独立打开JournalNode, start-dfs 自会实现!!)
+masterA, masterB(worker1), worker2
+/root/zookeeper/bin/zkServer.sh start
+masterA:
+/root/hadoop/sbin/start-dfs.sh
+/root/hadoop/sbin/start-yarn.sh
+masterA, masterB(worker1)
+hdfs --daemon start zkfc
+
+
+最后 注意 zookeeper 自身状态 与其监视 的 dfs 和 yarn 的节点管理的状态是 互补相干的!
+zkServer.sh status 发现zookeeper状态  masterA  masterB 节点都是 follower  worker2 是 leader
+hdfs haadmin -getServiceState ,, 表示 dfs节点管理服务中 masterA alive , masterB standby
+yarn rmadmin -getServiceState .. 表示 yarn节点管理服务中 masterA standby , masterB alive
+所以所 dfs yarn 热备变换时不会 不会改变zookeeper的状态, 依然masterA,masterB>follower,  worker2>leader
+zookeeper状态变化 除非是自身异常引起,与 dfs yarn 无关
+
+dfs 节点管理服务对应 namenode 进程
+yarn 节点管理服务对应 resourcemanager 进程
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hadoop + zookeeper 下 继续加入  Hbase
+hbase是 hadoop 专门数据库, 使用 hbase-2.1.3 
+master 节点
+下载 安装 hbase-2.1.3
+wget http://www.trieuvan.com/apache/hbase/2.1.3/hbase-2.1.3-bin.tar.gz
+cd /root
+tar -zxf /root/software/hbase-2.1.3-bin.tar.gz -C /root
+mv hbase-2.1.3/  hbase/
+
+
+配置:
+vi /root/hbase/conf/hbase-env.sh
+//配置JDK
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64/	
+//保存pid文件
+export HBASE_PID_DIR=/root/hbase/pids
+//修改HBASE_MANAGES_ZK，禁用HBase自带的Zookeeper，因为我们是使用独立的Zookeeper
+export HBASE_MANAGES_ZK=false
+
+
+vi /root/hbase/conf/hbase-site.xml
+<configuration>
+  <!-- 设置HRegionServers共享目录，请加上端口号 -->
+  <property>
+    <name>hbase.rootdir</name>
+    <value>hdfs://172.19.0.2:9000/hbase</value>
+  </property>
+
+  <!-- 指定HMaster主机 -->		//可能出问题的地方
+  <property>
+    <name>hbase.master</name>
+    <value>hdfs://172.19.0.2:60000</value>
+  </property>
+
+  <!-- 启用分布式模式 -->
+  <property>
+    <name>hbase.cluster.distributed</name>
+    <value>true</value>
+  </property>
+
+  <!-- 指定Zookeeper集群位置 -->
+  <property>
+    <name>hbase.zookeeper.quorum</name>
+    <value>172.19.0.2:2181,172.19.0.3:2181,172.19.0.4:2181</value>
+  </property>
+
+  <!-- 指定独立Zookeeper安装路径 -->
+  <property>
+    <name>hbase.zookeeper.property.dataDir</name>
+    <value>/root/zookeeper</value>
+  </property>
+
+  <!-- 指定ZooKeeper集群端口 -->
+  <property>
+    <name>hbase.zookeeper.property.clientPort</name>
+    <value>2181</value>
+  </property>
+</configuration>
+
+vi /root/hbase/conf/regionservers
+172.19.0.2
+172.19.0.3
+172.19.0.4
+
+创建pid文件保存目录
+mkdir /root/hbase/pids
+
+
+拷贝到 worker 节点
+tar zcf hbase.tar.gz hbase
+scp hbase.tar.gz root@172.19.0.3:/root
+scp hbase.tar.gz root@172.19.0.4:/root
+
+worker节点 处理:
+tar -zxf hbase.tar.gz
+
+
+启动: 
+注意:在 namenode 为 active 的节点 启动 Hbase !! (此刻active主节点是masterB)
+/root/hbase/bin/start-hbase.sh
+备用主节点启动HMaster进程，作为备用HMaster： (此刻standby主节点是masterA)
+/root/hbase/bin/hbase-daemon.sh start master
+
+此刻 jps  发现 都多出 HRegionServer
+但是 Hmaster 挂了 !!!!
+check log: vi /root/hbase/logs/....hoopmaster.log 
+发现 HBase Operation category READ is not supported in state standby
+其实就是 没有在 合适的 节点 启动的问题!!!! 配合 active namenode 还有 hbase-site.xml hbase.rootdir hbase.master 才可以成功!!
+https://blog.csdn.net/tiandd12/article/details/53928090
+即 hbase-site.xml hbase.rootdir hbase.master 设置的 是 正在 alive 的 namenode ,这样 Hbase 才可以正常启动
+ 
+
+
+最后启动后, 把所有内存都吃掉了,无法继续下去!!! 需要加内存 !!!!
+还没有完成的测试是 : 测试 Hbase 的高可用
+测试 spark 再 hadoop 高可用下的表现!!!!
+(等内存 加入后继续)
+
+注意 这里 我们会发现 zookeeper 分别独立地管理了 三个高可用节点集群
+dfs 节点集群
+yarn 节点集群
+hbase 节点集群!!
+
+
+zookeeper + hadoop +hbase  重点参考:
+https://segmentfault.com/a/1190000012486628#articleHeader3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+继续 要了解 装的组件 还有 hive hue Flume kafka Storm
+
+storm 跟 spark 一样都是 分布计算单元 但是内核设计理念不一样,处理不同背景下的计数,各有效率差异!!
+hive 是 把 存在 hdfs文件系统的文件 看作像 sql 数据表上的数据 那样的结构,通过 sql 语言来 管理 hdfs 上 的文件 !!!
+hbase 是一个 在 hdfs文件系统 上的 一个key-value数据库(非关系数据库!!)
+
+hue 是一个可视化ui 操作 HDFS
+
+
+应用场景
+
+Hive适合用来对一段时间内的数据进行分析查询，例如，用来计算趋势或者网站的日志。Hive不应该用来进行实时的查询。因为它需要很长时间才可以返回结果。
+hive表中的数据 就是hdfs目录中的文件。按表名把文件夹分开。如果是分区表，则分区值是子文件夹，可以直接在M/R job里使用这些数据.
+hive数据分为真实存储的数据和元数据:
+	真实数据存储在hdfs中，元数据存储在mysql中
+	metastore 元数据存储数据库
+	Hive将元数据存储在数据库中，如MySQL、derby。
+	Hive中的元数据包括表的名字，表的列和分区及其属性，表的属性（是否为外部表等），表的数据所在目录等。
+工作方式: 机子A 安装了hive ,输入了获取 hdfs 所有名字有9的文件!!
+	于是hive 转换成 mapreduce 程序在hadoop集群执行, 最后得到的数据 返回机子A 的 hive 生成一张数据表
+	输入到 机子A的 mysql 数据库里!!
+
+
+Hbase非常适合用来进行大数据的实时查询。Facebook用Hbase进行消息和实时的分析。它也可以用来统计Facebook的连接数。
+
+Sqoop：用于传统数据库与HBase数据转移存储，即利用Sqoop可以将传统数据库上的数据转移到Hbase上，反之亦可。
+
+Flume：可以进行海量数据日志采集，聚合、传输系统
+
+Mahout：方便机器学习，数据挖掘，提供很多可扩展算法
+
+Zeppelin: 以笔记本（notebook）的形式组织和管理交互式数据探索任务
+
+
+
+
+
+
+
+
+///////////////////////   hadoop + zookeeper  调试 记录     ////////////////////////////
+
+	注意此刻应该 master 和 worker1 都可以 jps 到 namenode!!!!
+	因为 同步namenode 时候不成功!! hdfs namenode -bootstrapStandby 中 bootstrapStandby 缺了个d
+	所以最后没有同步,导致最后 只 打开了 master 这个namenode, worker1 的没有打开
+
+
+重新
+格式化 先关掉所有,删掉所有产生的数据
+rm -rf /root/hadoop/tmp/* /root/hadoop/logs/*		//*/
+重新,先全部节点 打开 hdfs --daemon start journalnode
+等待 10秒 直到 journalnode 完全打开,才可以格式化节点
+0.2 节点格式化: 
+	hdfs namenode -format
+	hdfs zkfc -formatZK
+然后 0.3 节点 同步 0.2 节点的 namenode, 	hdfs namenode -bootstrapStandby
+但是出错说 连不上 0.2:9000 端口, 这个端口是 dfs 启动后才提供的 感觉跟说的不一样,
+0.2 节点先得启动 dfs: /root/hadoop/sbin/start-dfs.sh, (只启动 0.2的namenode)
+0.3 节点然后执行 同步 hdfs namenode -bootstrapStandby
+0.2 节点 关闭 dfs 再重新 打开 dfs,
+这时,就会 打开 (0.2 和 0.3 的 namenode !!!)
+
+关闭 masterA namenode:
+hdfs --daemon stop namenode
+masterB 的 namenode 依然是 standby,,,,,
+原来 masterB 节点也要 hdfs --daemon start zkfc 
+
+关闭 masterB resourcemanager:
+yarn --daemon stop resourcemanager
+发现 masterA 的 resourcemanager 变成 alive
+
+
+集群启动参考(十分重要!!!): https://blog.csdn.net/u014686399/article/details/80774547
+
+///////////////////////   hadoop + zookeeper    调试 记录     ////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+mapred --daemon start historyserver
+master 节点启动 spark 集群:
+/root/spark/sbin/start-all.sh
+
+
+
+
+
+hdfs --daemon stop zkfc
+/root/hadoop/sbin/stop-yarn.sh
+/root/hadoop/sbin/stop-dfs.sh
+
+
+
+
+
+
+
+
+
+
+
+
+
+spark参考:
+Hadoop、Spark、Hbase、Hive的安装 :	http://www.voidcn.com/article/p-pwgpxeyr-bow.html
+Spark2.1.0入门：Spark的安装和使用 :	http://dblab.xmu.edu.cn/blog/1307-2/
+在集群上运行Spark应用程序:		http://dblab.xmu.edu.cn/blog/1217-2/
+Centos7搭建hadoop spark集群之spark集群搭建:	https://dxysun.com/2018/04/16/centosForSpark/	//安装spark集群重点参考
+官网 spark 下载页:			http://spark.apache.org/downloads.html
+官网 spark 配置页:			https://spark.apache.org/docs/2.3.0/configuration.html
+基于zookeeper的Spark高可用集群配置:	
+	https://blog.csdn.net/YQlakers/article/details/72831812		//参考配置zookeeper+saprk
+	https://blog.csdn.net/xummgg/article/details/50759913
+	https://blog.csdn.net/lishuan182/article/details/52331333
+
+hadoop参考:
+Centos7搭建hadoop spark集群之hadoop集群搭建 :	https://dxysun.com/2018/04/16/centosForHadoop/	//安装hadoop集群重点参考
+官网 hadoop 左下角configuraion:			https://hadoop.apache.org/docs/r3.2.0/		//重要参考 配置hadoop
+CentOS 7 上安装Hadoop V 2.8.1集群及配置:	https://blog.wuwii.com/linux-hadoop.html
+centos7.6安装配置hadoop-3.2.0笔记(单机安装、伪分布式安装):	https://blog.csdn.net/u010476739/article/details/86647585
+hadoop安装指南:		http://xiaoxin2009.github.io/hadoop%E5%AE%89%E8%A3%85%E6%8C%87%E5%8D%97.html
+启动集群start-dfs.sh和start-yarn.sh的脚本错误:	http://mazhiyu.info/hadoop/2017/04/13/%E5%90%AF%E5%8A%A8%E9%9B%86%E7%BE%A4start-dfs.sh%E5%92%8Cstart-yarn.sh%E7%9A%84%E8%84%9A%E6%9C%AC%E9%94%99%E8%AF%AF/
+java.lang.IllegalArgumentException: Does not contain a valid host:port authority: eastchina2_ops_exactdata1:8020
+	就是说映射IP的hosts 不能带下划线 "_" 
+	https://community.hortonworks.com/questions/96359/javalangillegalargumentexception-does-not-contain.html
+nodemanager和resourceManager日志报错:java.lang.NoClassDefFoundError: javax/activation/DataSource
+	就是说 hadoop 只能用jdk8 版本!!,jdk9,jdk10,可以勉强用用,jdk11就没戏,不用想!!
+	https://bbs.csdn.net/topics/392273321
+	https://issues.apache.org/jira/browse/HADOOP-14978
+	https://blog.csdn.net/wu_noah/article/details/79434048
+	https://cwiki.apache.org/confluence/display/HADOOP/Hadoop+Java+Versions
+tail -f /var/log/hadoop/hdfs/hadoop-hdfs-namenode*.log  查看hadoop logs 方法
+	https://community.hortonworks.com/questions/196075/unable-to-start-namenode-1.html
+格式化namenode 太多,弄得与 datanode 的cluster-ID不同步,删掉datanode 的 current文件夹就好了
+	https://blog.csdn.net/gis_101/article/details/52679914
+
+
+
+
+
+一条龙安装:
+yum -y install openssh-server openssh-clients rsync wget java-11-openjdk*	
+
+
+附加:
+使用vim时，如果你不小心按了 Ctrl + s后，你会发现不能输入任何东西了，像死掉了一般，其实vim并没有死掉，
+这时vim只是停止向终端输出而已，要想退出这种状态，只需按Ctrl + q 即可恢复正常。
+
+命令行 输入 ?woed1  查找 word1, 然后 *下翻 #上翻
+
+
+
+
+
+
+
+

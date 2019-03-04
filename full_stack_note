@@ -7213,6 +7213,9 @@ mysql 集群 PXC (pxc是用于高一致集群的 Mysql 软件版本):
 			pxc是高级版本的mysql, 如果安装启动mysql出现问题,那么就不是pxc 高级模块部分初始化引起的问题!!
 		所以先 关闭,重装 再打开 pxc-node1 容器, 安装测试 mysql5.7:
 			参考 https://www.jianshu.com/p/7cccdaa2d177   ///centos7 安装 mysql5.7
+			//首次密码修改问题
+			ERROR 1819 (HY000): Your password does not satisfy the current policy requirements
+			参考: https://blog.csdn.net/hello_world_qwp/article/details/79551789
 			果然,安装了,也发现同样的问题 InnoDB 权限问题!!!
 		一开始 怀疑是 用户权限问题!! 经学习mysql 不能从属 root 用户下工作,不然会出现很多问题
 			mysal初始化启动时,应该添加 --user=mysql,即 msqld --uer=mysql
@@ -7337,6 +7340,7 @@ mysql 集群 PXC (pxc是用于高一致集群的 Mysql 软件版本):
 			将SELINUX=enforcing改为SELINUX=disabled
 			重启机器即可
 
+建立在 pxc 集群之上的 分片集群!!! (即分布式集群)
 实现 Mycat + pcx 的 分片集群
 再建立一个 pxc 集群
 		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.12 -itd --name=pxc2-node1 centos /usr/sbin/init
@@ -7437,36 +7441,604 @@ mysql 集群 PXC (pxc是用于高一致集群的 Mysql 软件版本):
  	然后, 这个pxc2 集群和 之前的pxc集群 成功相互独立共存!!
 	后面为 建立 mycat 分片集群准备!!
 
- 
+安装数据库可视化工具,辅助数据库搭建部署测试!!:
+	MysqlWorkbench: https://blog.csdn.net/qq_34256348/article/details/78342897
+	navicat: (未安装使用,不合适,只有win版本)
+	
+	由于 docker 把容器的 局域网映射出来了, 所以可以用 可视化工具假装链接远程数据库那样那样子查看操作节点所以的数据库
+
 
 maycat 分片 集群 部署:
-	
+	再建立3个 mycat 节点
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.101 -itd --name=mycat-node1 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.102 -itd --name=mycat-node2 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.103 -itd --name=mycat-node3 centos /usr/sbin/init
+	然后进入每个 节点 命令行窗口操作 !!!
+	需要安装java
+		登录官网:https://www.oracle.com/technetwork/java/javase/downloads/jdk11-downloads-5066655.html
+		下载最新的 jdk11 : jdk-11.0.2_linux-x64_bin.tar.gz  (手动安装的方法放弃,因为更需要麻烦的配置)
+		yum 装 java
+		先 java -version 查看已安装的,如果有安装的,如果版本太低就选择卸载:
+		yum -y remove java-1.7.0-openjdk*  //卸载旧的 jdk
+		yum -y list java*  //查看软件库的 java版本更新 情况
+		yum -y install java-11-openjdk*	   //安装查看到的新的 jdk
+	安装其他辅助工具:
+		yum -y install tree
+		yum -y install wget
+		//还是缺乏一些常用的命令: ifconfig 等
+		寻找 ifconfig 所在 软件包
+			yum provides ifconfig			
+			yum whatprovides ifconfig	//或者这条
+		yum -y install net-tools	//安装
+		寻找 netstat 所在 软件包
+	安装mycat:
+		安装包的位置: 	http://dl.mycat.io/
+		获取,解压安装包
+			cd /root
+			wget http://dl.mycat.io/1.6.5/Mycat-server-1.6.5-release-20180122220033-linux.tar.gz
+			tar -zxvf Mycat-server-1.6.5-release-20180122220033-linux.tar.gz
+		环境变量添加 mycat 位置!!
+			vi /etc/profile 添加:
+			export MYCAT_HOME=/root/mycat
+			使环境变量生效 source /etc/profile
+		改变mycat用户和组
+			groupadd mycat
+			adduser -r -g mycat mycat
+			chown -R mycat.mycat /root/mycat  //修改mycat目录所属mycat用户
+		对以下三个重要配置文件备份!!
+			cp /root/mycat/conf/schema.xml /root/mycat/conf/schema.xmlbackup
+			cp /root/mycat/conf/rule.xml /root/mycat/conf/rule.xmlbackup
+			cp /root/mycat/conf/server.xml /root/mycat/conf/server.xmlbackup
+	测试mycat:(仅仅第一个mycat节点做的测试,熟悉上手mycat)
+		修改 schema.xml !!! 使得只设置 一个 合法 的 datahoat  
+			(注意,一个datahost 是一个存储集群,可以是一个pxc集群,然后只存储分片内容!!)
+////////////////////////
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
 
+        <schema name="TESTDB" checkSQLschema="false" sqlMaxLimit="100">
+                <!-- auto sharding by id (long) -->
+                <table name="travelrecord" dataNode="dn1,dn2,dn3" rule="auto-sharding-long" />
 
+                <!-- global table is auto cloned to all defined data nodes ,so can join
+                        with any table whose sharding node is in the same data node -->
+                <table name="company" primaryKey="ID" type="global" dataNode="dn1,dn2,dn3" />
+                <table name="goods" primaryKey="ID" type="global" dataNode="dn1,dn2" />
 
+                <!-- random sharding using mod sharind rule -->
+                <table name="hotnews" primaryKey="ID" autoIncrement="true" dataNode="dn1,dn2,dn3"
+                           rule="mod-long" />
+                <table name="employee" primaryKey="ID" dataNode="dn1,dn2"
+                           rule="sharding-by-intfile" />
+                <table name="customer" primaryKey="ID" dataNode="dn1,dn2"
+                           rule="sharding-by-intfile">
+                        <childTable name="orders" primaryKey="ID" joinKey="customer_id"
+                                                parentKey="id">
+                                <childTable name="order_items" joinKey="order_id"
+                                                        parentKey="id" />
+                        </childTable>
+                        <childTable name="customer_addr" primaryKey="ID" joinKey="customer_id"
+                                                parentKey="id" />
+                </table>
+        </schema>
 
+        <dataNode name="dn1" dataHost="localhost1" database="db1" />
+        <dataNode name="dn2" dataHost="localhost1" database="db2" />
+        <dataNode name="dn3" dataHost="localhost1" database="db3" /> 
 
+        <dataHost name="localhost1" maxCon="1000" minCon="10" balance="0"
+                          writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                <heartbeat>select user()</heartbeat>
+                <!-- can have multi write hosts -->
+                <writeHost host="hostM1" url="localhost:3306" user="root" password="123456">
+                        <!-- can have multi read hosts -->
+                        <readHost host="hostS2" url="localhost:3306" user="root" password="123456" />
+                </writeHost>
+                <writeHost host="hostS1" url="localhost:3316" user="root" password="123456" />
+        </dataHost>
 
-	
-	建立在 pxc 集群之上的 分片集群!!! (待续) (即分布式集群)
-		mycat :https://www.cnblogs.com/reblue520/p/10338496.html	
-		mycat :https://blog.csdn.net/qq_36762677/article/details/83830154
-	建立
+</mycat:schema>
+////////////////////////
+			简单分析下 mycat 登记了 TESTDB 这个数据库!
+			这个也登记了在 mycat 之下的多个 tables 而这些表的数据都会参与分片操作!!
+			比如: rule="auto-sharding-long" ,这时表的分片规则,这里每5000000条数据分到一个节点分片来存储
+			dataNode="dn1,dn2,dn3" 表示登记的这个表有3个分片节点. 所以最多也只有 15000000 条,超出会出错.
+			<dataNode name="dn1" dataHost="localhost1" database="db1" /> 描述一个分片节点的参数
+				name="dn1" 分片节点的名字, 随便起
+				dataHost="localhost1" 分片节点所在的物理服务器机集群名字,随便起
+				database="db1" 分片节点所在的物理服务器机集群的真实数据库的真实名字db1,
+				就是说 travelrecord数据表,应该属于TESTDB数据库的,
+				但是实际是分开保存在 db1,db2,db3数据库里!! 
+			关于 dataHost 物理服务器机集群 的定义!!
+			maxCon="1000" minCon="10" 最多允许并发1000次连接,最小并发10次连接, balance暂时不清楚
+			<writeHost host="hostM1" 定义的是第一组读写分离操作,
+			<writeHost host="hostS1" 定义的是第二组读写分离操作,
+				当中都包含登录实际数据库的帐号密码信息
+			一般按默认来执行第一组读写分离操作 当服务器集群中相关节点出现故障时才转向其他组读写分离操作	
+		启动mycat :  /root/mycat/bin/mycat start
+			注意 实际数据库 db1,db2,db3 必须先建立好!!!!!! 不然在后面连接数据库的过程中会出错
+			登录mycat 使用 mysql 命令, 意味着maycat节点还需要额外安装一个 mysql 数据库 
+			当然,不安装数据库的可以使用其他安装了mysql数据库 节点来远程访问 这个 mycat!!
+			登录 mycat :  mysql -uroot -p123456 -h127.0.0.1 -P8066
+			或者 : mysql -uroot -p123456 -h127.0.0.1 -P8066
+			注意: 登录 ip:8066 使用的root帐号, 与实际mysql的root 不是同一个帐号!!
+				比如 mysql 帐号是 root:aaabbb, mycat帐号是:root:111222
+				那么 mysql -uroot -paaabbb    登录mysql
+				     mysql -uroot -p111222 -P8066 -h127.0.0.1 登录mycat
+				     mysql -uroot -p111222    错误, 因为登录mysql 却用了mycat的帐号
+				     mysql -uroot -paaabbb -P8066 -h127.0.0.1  错误, 因为登录mycat 却用了mysql的帐号
+			这时进入的不是真正的 mysql ,而是虚拟的mysql 即mycat
+			使用 原来的sql命令在这里操作,最终会被mycat 分配到真正的 mysql 数据库节点上!!
+			例如上述 schema.xml 设置的 分片节点,设置到同 172.22.0.101 节点下的 mysql 数据库 的 db1,db2,db3数据库
+			所以使用mycat前, 必须先在mysql建立好 数据库 db1,db2,db3
+		测试:(再mycat输入 sql命令)
+			CREATE TABLE travelrecord (
+			  id BIGINT(20) NOT NULL,
+			  title VARCHAR(100) NOT NULL,
+			  PRIMARY KEY (id)
+			) ENGINE=INNODB DEFAULT CHARSET=utf8
+				//虽然在mycat 看到了TESTDB数据库 存在 travelrecord 表, 但是实体mysql数据库上并没有
+				//所以,这条命令会 在 db1,db2,db3 实体数据库上 建立起 travelrecord 表
+			插入数据:
+			INSERT INTO travelrecord(ID,TITLE) VALUES(1,'goods1');
+			INSERT INTO travelrecord(ID,TITLE) VALUES(2,'goods2'); 
+			INSERT INTO travelrecord(ID,TITLE) VALUES(3,'goods3');
+				//根据分片rule 这三条会存在 db1.travelrecord 里 
+			INSERT INTO travelrecord(ID,TITLE) VALUES(5000001,'goods5000001');
+				//根据分片rule 这一条会存在 db2.travelrecord 里 
+			INSERT INTO travelrecord(ID,TITLE) VALUES(10000001,'goods10000001');
+				//根据分片rule 这一条会存在 db3.travelrecord 里 
+			INSERT INTO travelrecord(ID,TITLE) VALUES(15000001,'goods15000001');
+				//根据分片rule,每个分片最多只有5000000条数据, 这一条会出错,因为没有 db4.travelrecord 来承载
+
+	配置mycat节点1 与多个 pxc 集群的连接 !!!
+		pxc 和 pxc2 集群 分别建立 shard1 shard2 数据库 作为两个即将被使用的节点!! 
+		mycat节点1: 修改 schema.xml
+///////////////
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+
+        <schema name="WILLIAM" checkSQLschema="false" sqlMaxLimit="100">
+                <!-- auto sharding by id (long) -->
+                <table name="lover" dataNode="dn1,dn2" rule="auto-sharding-long" />
+        </schema>
+
+        <dataNode name="dn1" dataHost="pxc_1" database="shard1" />
+        <dataNode name="dn2" dataHost="pxc_2" database="shard2" />
+
+        <dataHost name="pxc_1" maxCon="1000" minCon="10" balance="2"
+                          writeType="1" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                <heartbeat>select user()</heartbeat>
+                <!-- can have multi write hosts -->
+                <writeHost host="w1" url="172.22.0.2:3306" user="root" password="123456">
+                        <!-- can have multi read hosts -->
+                        <readHost host="r11" url="172.22.0.4:3306" user="root" password="123456" />
+			<readHost host="r12" url="172.22.0.5:3306" user="root" password="123456" />
+                </writeHost>
+                <writeHost host="w2" url="172.22.0.3:3316" user="root" password="123456" >
+                        <readHost host="r21" url="172.22.0.5:3306" user="root" password="123456" />
+			<readHost host="r22" url="172.22.0.6:3306" user="root" password="123456" />
+                </writeHost>
+        </dataHost>
+
+        <dataHost name="pxc_2" maxCon="1000" minCon="10" balance="2"
+                          writeType="1" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                <heartbeat>select user()</heartbeat>
+                <!-- can have multi write hosts -->
+                <writeHost host="w1" url="172.22.0.12:3306" user="root" password="123456">
+                        <!-- can have multi read hosts -->
+                        <readHost host="r11" url="172.22.0.14:3306" user="root" password="123456" />
+			<readHost host="r12" url="172.22.0.15:3306" user="root" password="123456" />
+                </writeHost>
+                <writeHost host="w2" url="172.22.0.13:3316" user="root" password="123456" >
+                        <readHost host="r21" url="172.22.0.15:3306" user="root" password="123456" />
+			<readHost host="r22" url="172.22.0.16:3306" user="root" password="123456" />
+                </writeHost>
+        </dataHost>
+
+</mycat:schema>
+///////////////
+		然后 server.xml需要修改:
+///////////////
+        <user name="root" defaultAccount="true">
+                <property name="password">123456</property>
+                <property name="schemas">WILLIAM</property>		//改这里
+
+                <!-- 表级 DML 权限设置 -->
+                <!-- 
+                <privileges check="false">
+                        <schema name="TESTDB" dml="0110" >
+                                <table name="tb01" dml="0000"></table>
+                                <table name="tb02" dml="1111"></table>
+                        </schema>
+                </privileges>
+                 -->
+        </user>
+
+        <user name="user">
+                <property name="password">user</property>
+                <property name="schemas">WILLIAM</property>		//改这里
+                <property name="readOnly">true</property>
+        </user>
+///////////////
+		然后启动发现失败:
+		mycat console 看到了问题:
+jvm 1    | Caused by: io.mycat.config.util.ConfigException: Illegal table conf : table [ LOVER ] rule function [ rang-long ] partition size : 3 > table datanode size : 2, please make sure table datanode size = function partition size
+		就是说 rule="auto-sharding-long" 要求起码有3个节点,,但是,我们只建立了两个pxc集群,没有第三个集群承担第三个节点
+		产看 rule.xml,最后 知道要修改 autopartition-long.txt,把第三节点屏蔽掉!
+		然后重启 mycat 成功 !!!
+		mycat节点1:执行:
+			CREATE TABLE lover (
+			  id BIGINT(20) NOT NULL,
+			  title VARCHAR(100) NOT NULL,
+			  PRIMARY KEY (id)
+			) ENGINE=INNODB DEFAULT CHARSET=utf8
+			INSERT INTO lover(ID,TITLE) VALUES(1,'misa_1');
+			INSERT INTO lover(ID,TITLE) VALUES(2,'alita_2'); 
+			INSERT INTO lover(ID,TITLE) VALUES(3,'cuter_3'); 
+			INSERT INTO lover(ID,TITLE) VALUES(5000001,'marina_5000001'); 
+			INSERT INTO lover(ID,TITLE) VALUES(5000002,'alsa_5000002');
+		查看对应的 pxc集群 的数据情况!! 测试分片均衡成功
 		
+	mycat节点 集群预备:
+		按照 配置mycat节点 与多个 pxc 集群的连接 
+		重复配置 mycat 的节点2 节点3
+		注意,这两个节点可以只安装了 jdk11 和 mycat, 不再需要安装 mysql,
+		因为最终都是从远程登录 所有 mycat 节点的
+		这些节点都可以 独立 访问 pxc集群,
+		测试:
+		mycat节点2:执行:
+			INSERT INTO lover(ID,TITLE) VALUES(4,'luna_4');
+		mycat节点3:执行:
+			INSERT INTO lover(ID,TITLE) VALUES(5000003,'ayumi_5000003');
+			查看pxc集群数据的存储情况
+			都不需要再次执行 create lover 表的操作, 因为已经存在,这三个节点都指向操作同一个 WILLIAM 数据库
+			而3者是相互独立的, 所以就进一步建立集群,可以实现数据访问流的分流减压
+	mycat节点 安装使用 xinetd 网络微服务,方便 haproxy 节点 对 mycat服务状况监控
+		yum -y install xinetd
+		检查/etc/xinetd.conf的末尾是否有 includedir /etc/xinetd.d
+			cat /etc/xinetd.conf
+		检查是否有 /etc/xinetd.d 文件夹 : ls /etc/xinetd.d
+		添加 mycat 状态检测服务: 
+			vi /etc/xinetd.d/mycat_status  
+//////////////////  
+service mycat_status
+{
+        flags = REUSE
+        socket_type = stream
+        port = 48700
+        wait = no
+        user = root
+        server = /usr/local/bin/mycat_status
+        log_on_failure += USERID
+        disable = no
+}
+//////////////////
+			解释:
+			        socket_type = stream 
+					## 封包处理方式，Stream为TCP数据包
+					## 使用该标记的socket_type为stream，需要设置wait为no
+			        port = 48700 ## 服务监听端口 
+			        wait = no ## 表示不需等待，即服务将以多线程的方式运行 
+			        user = root ## 执行此服务进程的用户 
+			        server = /usr/local/bin/mycat_status ## 需要启动的服务脚本 
+			        log_on_failure += USERID ## 登录失败记录的内容 
+			        disable = no ## 要启动服务，将此参数设置为no 
+		添加 /usr/local/bin/mycat_status 服务脚本: vi /usr/local/bin/mycat_status
+/////////////////
+#!/bin/bash
+#/usr/local/mycat/bin/mycat_status
+# This script checks if a mycat server is healthy running on localhost. It will
+# return:
+#
+# "HTTP/1.x 200 OK\r" (if mycat is running smoothly)
+#
+# "HTTP/1.x 503 Internal Server Error\r" (else)
+mycat=`/root/mycat/bin/mycat status | grep 'not running' | wc -l`
+if [ "$mycat" = "0" ];
+then
+/bin/echo -e "HTTP/1.1 200 OK\r\n"
+else
+/bin/echo -e "HTTP/1.1 503 Service Unavailable\r\n"
+fi
+/////////////////
+		给脚本添加执行权限: chmod a+x /usr/local/bin/mycat_status
+		/etc/services 中加入 mycat_status 服务: vi /etc/services 添加
+			mycat_status    48700/tcp               # mycat_status
+		重启 xinetd: systemctl restart xinetd
+		验证mycat_status服务是否成功启动: netstat -antup|grep 48700
+		脚本测试,直接输入命令: /usr/local/bin/mycat_status 		
+	
+	创建节点 安装 HAProxy
+		添加两个 节点 为haproxy 服务 
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.111 -itd --name=hapro1 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=pxc-net --ip=172.22.0.112 -itd --name=hapro2 centos /usr/sbin/init
+		进入节点 使用 yum 安装 haproxy 参考: 
+			https://blog.csdn.net/aboutmn/article/details/87180266 //这里是haproxy1.8
+			https://blog.csdn.net/weixin_42859280/article/details/83796029 //这里是centos7自带的haproxy1.5
+		使用通用的	haproxy1.5 就好了
+		yum list |grep haproxy
+			haproxy.x86_64                            1.5.18-8.el7                   base   
+			pcp-pmda-haproxy.x86_64                   4.1.0-5.el7_6                  updates
+		yum -y install haproxy
+	测试 haproxy 建立 mycat集群: 
+		由于使用 电脑资源不够, 直接配置 haproxy + mycat + pxc 会容易崩溃!!所以简化操作!!
+		mycat不接 pxc 集群 ,相对地都接到 172.22.0.101 的mysql 的db1 db2 两个分片数据库,简单模拟分片均衡
+		配置 haproxy: vi /etc/haproxy/haproxy.cfg
+		添加三组配置,和其他信息
+/////////////  注意,写到文件时,不要 把 ## 标注的注释也写上
+## golbal下添加节点信息
+    node        hap_node1
+    description haproxy_node1_for_mycat_clusters
+
+
+listen admin_status
+    bind :48800  ## 只绑端口
+    stats uri /admin_status ##统计页面
+    stats auth admin:admin ## 设置统计页面认证的用户和密码 
+    mode http
+    option httplog ## 启用日志记录HTTP请求
+
+listen mycat_servers
+    bind :3307	
+    mode tcp
+    option tcplog  ## 记录TCP请求日志
+    option tcpka ## 是否允许向server和client发送keepalive
+    option httpchk OPTIONS * HTTP/1.1\r\nHost:\ www ## 后端服务状态检测
+    balance roundrobin ## 定义负载均衡算法，可用于"defaults"、"listen"和"backend"中,默认为轮询方式
+    server mycat_01 172.22.0.101:8066 check port 48700 inter 2000ms rise 2 fall 3 weight 10
+    server mycat_02 172.22.0.102:8066 check port 48700 inter 2000ms rise 2 fall 3 weight 10
+    server mycat_03 172.22.0.103:8066 check port 48700 inter 2000ms rise 2 fall 3 weight 10
+    timeout server 20000
+
+listen mycat_admin
+    bind :3308	
+    mode tcp
+    option tcplog  ## 记录TCP请求日志
+    option tcpka ## 是否允许向server和client发送keepalive
+    option httpchk OPTIONS * HTTP/1.1\r\nHost:\ www ## 后端服务状态检测
+    balance roundrobin ## 定义负载均衡算法，可用于"defaults"、"listen"和"backend"中,默认为轮询方式
+    server mycat_01 172.22.0.101:9066 check port 48700 inter 2000ms rise 2 fall 3 weight 10
+    server mycat_02 172.22.0.102:9066 check port 48700 inter 2000ms rise 2 fall 3 weight 10
+    server mycat_03 172.22.0.103:9066 check port 48700 inter 2000ms rise 2 fall 3 weight 10
+    timeout server 20000
+/////////////
+		根据/etc/haproxy/haproxy.cfg 配置:
+		添加haproxy用户组和用户	(yum按装后似乎可以跳过这步)
+			groupadd haproxy
+			useradd -g haproxy haproxy
+		创建chroot运行的路径	(yum按装后似乎可以跳过这步)
+			mkdir /var/lib/haproxy
+		启动 haproxy
+			systemctl start haproxy
+		测试,
+			mysql -uroot -p123456 -h172.22.0.111 -P3307
+			插入一条数据:
+				use WILLIAM; 
+				INSERT INTO lover(ID,TITLE) VALUES(5000003,'fiya_5000003');
+			( 注意使用命令行的 mysql端,不要使用 mysql workbench ,发现
+			  mysql workbench 除了 直接连mysql外 链接到mysql中间件都不稳定!! )
+			然后自己浏览器输入 http://172.22.0.111:48800/admin_status
+			可以查看到 haproxy 的状态信息!!
+			分析一个流程:
+				当 mysql -uroot -p123456 -h172.22.0.111 -P3307
+				haproxy 会选出一个 mycat节点 连接,然后 haproxy也建立起这次连接对话 session,并维持
+				然后 我们接下来的
+					use WILLIAM; 
+					INSERT INTO lover(ID,TITLE) VALUES(5000003,'fiya_5000003');
+				都算入到这次对话的数据传输内容!!
+				然而当我们一段时间步操作, 然后再操作时,比如 select * from lover
+				ERROR 2013 (HY000): Lost connection to MySQL server during query
+				随表示出错,其实就是 haproxy 维护的这次对话表示已经超时,所以就断开了!!!
+				当我们再 select * from lover, haproxy会重新建立起新的对话, 选择新的 mycat节点成功继续操作!!!
+				关于超时问题, 还是因为不太熟悉设置 haproxy 的超时机制!!!
+		继续配置haproxy节点2
+			跟 haproxy节点1 同理配置, 只是 haproxy.cfg golbal的 node description 信息设置成节点2的!!		
+			    node        hap_node2
+			    description haproxy_node2_for_mycat_clusters
+		这下子其实 haproxy 节点1 节点2 都分别独立实现了 对 mycat的集群了!!
+	接下来,加入keepalived, 实现 haproxy 的双机热备!!
+		再 haproxy 节点上 直接yum安装(centos7 自带 1.3.5,版本) :yum -y install keepalived
+		先备份 keepalived 配置文件: cp /etc/keepalived/keepalived.conf /etc/keepalived/keepalived.confbackup
+			因为值得后面参考学习!!
+		配置 keepalived : vi /etc/keepalived/keepalived.conf
+			参考:https://blog.csdn.net/l1028386804/article/details/76397064	
+//////////////////// haproxy节点1的
+! Configuration File for keepalived
+
+global_defs {
+   router_id khnode_in111
+}
+
+vrrp_script chk_haproxy {
+	script "/etc/keepalived/haproxy_check.sh"
+	interval 2
+	weight 2
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface eth0
+    virtual_router_id 51
+    priority 120
+    nopreempt
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+        chk_haproxy
+    }
+    virtual_ipaddress {
+        172.22.0.120
+    }
+}
+////////////////////
+
+//////////////////// haproxy节点2的
+! Configuration File for keepalived
+
+global_defs {
+   router_id khnode_in112
+}
+
+vrrp_script chk_haproxy {
+	script "/etc/keepalived/haproxy_check.sh"
+	interval 2
+	weight 2
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface eth0
+    virtual_router_id 51
+    priority 110
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+        chk_haproxy
+    }
+    virtual_ipaddress {
+        172.22.0.120
+    }
+}
+
+////////////////////
+		添加对应的 检查脚本: 
+			mkdir -p /usr/local/keepalived/log
+			vi /etc/keepalived/haproxy_check.sh
+///////////////////
+#!/bin/bash
+START_HAPROXY="systemctl start haproxy"
+STOP_HAPROXY="systemctl stop haproxy"
+LOG_FILE="/usr/local/keepalived/log/haproxy-check.log"
+HAPS=`ps -C haproxy --no-header |wc -l`
+
+date "+%Y-%m-%d %H:%M:%S" >> $LOG_FILE
+echo "check haproxy status" >> $LOG_FILE
+if [ $HAPS -eq 0 ];then
+    echo $START_HAPROXY >> $LOG_FILE
+    $START_HAPROXY >> $LOG_FILE 2>&1
+    sleep 3 
+    if [ `ps -C haproxy --no-header |wc -l` -eq 0 ];then
+        echo "start haproxy failed, killall keepalived" >> $LOG_FILE
+        killall keepalived 
+    fi 
+fi
+///////////////////
+		给脚本赋执行权限： chmod +x /etc/keepalived/haproxy_check.sh
+		打开 keepalived: systemctl start keepalived
+		然而并没有启动成功 : 查看安装配置 cat /etc/sysconfig/keepalived 找出记录日志地方,寻问题!!
+		后来发现,服务器启动死在 keepalived -D 这一步上,似乎需要补上 rsyslog 日志系统才能正常工作
+		当然,直接跳过 直接使用 keepalived -P 也可以得到我们期望 成功启动 的结果
+			不过就要 透过 kill -9 xxx 来 关闭!!!
+		补全日志系统 rsyslog:
+			yum install -y rsyslog
+		然后直接 systemctl start rsyslog 
+		然后重新启动 keepalived : systemctl start keepalived //还是启动失败,
+		这时 tail -f /var/log/messages 便可以看到 keepalived 启动错误的日志信息 
+			Feb 16 12:30:08 3daaa8cfd4f7 Keepalived_healthcheckers[4667]: IPVS: Can't initialize ipvs: Protocol not available
+			Feb 16 12:30:08 3daaa8cfd4f7 Keepalived_healthcheckers[4667]: Stopped
+		这涉及到kernel内核级别的ipvs 模块!!!!
+		解决办法: (参考:http://www.mamicode.com/info-detail-2128337.html) 
+			宿主机安装 sudo apt-get install ipvsadm
+		然后 宿主机执行 ipvsadm 
+			IP Virtual Server version 1.2.1 (size=4096)
+			Prot LocalAddress:Port Scheduler Flags
+			  -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+		然后宿主机检查: lsmod | grep ip_vs                        
+			ip_vs                 151552  0
+			nf_conntrack          131072  9 	xt_conntrack,nf_nat_masquerade_ipv4,nf_conntrack_ipv4,nf_nat,ipt_MASQUERADE,nf_nat_ipv4,xt_nat,nf_conntrack_netlink,ip_vs
+			libcrc32c              16384  3 nf_conntrack,nf_nat,ip_vs
+			表示已经正常启动 ip_vs 模块了
+		然后 keepalived 常规启动 systemctl start keepalived 便不再出错了!!!
+	关于keepalived + haproxy + mycat + pxc 的方案就先不继续下去了,因为机子貌似撑不起
+		现在是  keepalived + haproxy + mycat + mysql 方案, 只是末端的数据库是 mysql 而不是pxc集群!!
+		有机会再完整实现 keepalived + haproxy + mycat + pxc 方案
+		整个集群框架理应改应该是这样子的: (keepalived + haproxy + mycat + pxc)
+						      
+
+                                       keepalived make a VIP as enter IP							
+                                      -----------(172.22.0.120)----------
+                                      |                                 |
+                              ----------------                    ----------------         
+                              | keepalived1  |   <------------>   | keepalived2  |
+                              | haproxy1     |                    | haproxy2     |
+                              | 172.22.0.111 |                    | 172.22.0.112 |
+                              | p:3307->8066 |                    | p:3307->8066 |
+                              | p:3308->9066 |                    | p:3308->9066 |
+                              ----------------                    ----------------
+                                 /       \   \                     /    /    \
+                                /         \   \                   /    /      \
+                  ----------------              ----------------             ----------------
+                  | mycat1       |              | mycat2       |             | mycat3       |
+                  | 172.22.0.101 |              | 172.22.0.102 |             | 172.22.0.103 |
+		  |p:8066        |              |p:8066        |             |p:8066        |
+                  | for databases|              | for databases|             | for databases|
+                  |p:9066        |              |p:9066        |             |p:9066        |
+                  | manage mycat |              | manage mycat |             | manage mycat |
+                  ----------------              ----------------             ----------------
+                          /      \                   /    \                   /       \
+                         /                          /      \                           \
+  -----------------------------------------------------   -----------------------------------------------------
+  |                  pxc  as  shard1                  |   |                 pxc2  as  shard2                  |
+  |                                                   |   |                                                   |
+  |       ----------------     ----------------       |   |       ----------------     ----------------       |
+  |       |  pxc-node1   |     |  pxc-node2   |       |   |       |  pxc2-node1  |     |  pxc2-node2  |       | 
+  |       |  172.22.0.2  |     |  172.22.0.3  |       |   |       | 172.22.0.12  |     | 172.22.0.13  |       |
+  |       | write1_node  |     | write2_node  |       |   |       | write1_node  |     | write2_node  |       |
+  |       | p:3306       |     | p:3306       |       |   |       | p:3306       |     | p:3306       |       |
+  |       ----------------     ----------------       |   |       ----------------     ----------------       |
+  |          /         \         /          \         |   |          /         \         /          \         |
+  | ---------------  ---------------  --------------- |   | ---------------  ---------------  --------------- |
+  | | pxc-node3   |  | pxc-node4   |  | pxc-node5   | |   | | pxc2-node3  |  | pxc2-node4  |  | pxc2-node5  | |
+  | | 172.22.0.4  |  | 172.22.0.5  |  | 172.22.0.6  | |   | | 172.22.0.14 |  | 172.22.0.15 |  | 172.22.0.16 | |
+  | | read1_node1 |  | read1_node2 |  | read2_node2 | |   | | read1_node1 |  | read1_node2 |  | read2_node2 | |
+  | | p:3306      |  | read2_node1 |  | p:3306      | |   | | p:3306      |  | read2_node1 |  | p:3306      | |
+  | |             |  | p:3306      |  |             | |   | |             |  | p:3306      |  |             | |
+  | ---------------  ---------------  --------------- |   | ---------------  ---------------  --------------- |
+  -----------------------------------------------------   -----------------------------------------------------
+	参考:
+		mycat安装参考: https://blog.csdn.net/promise2017/article/details/79326535
+			      https://www.cnblogs.com/linjiqin/p/7879903.html
+		mycat实现mysql分片集群:https://www.uol123.com/2018/01/16/mycat-mysql.html
+				      https://blog.csdn.net/weixin_42582592/article/details/82919039
+		mycat+pxc分片集群参考: https://www.cnblogs.com/reblue520/p/10338496.html
+		HAProxy实现 mycat集群: https://blog.csdn.net/l1028386804/article/details/75331934
+				       https://blog.csdn.net/u012758088/article/details/78654628
+		keepalived + haproxy + mycat + pxc : https://blog.csdn.net/l1028386804/article/details/76397064
+					https://blog.csdn.net/qq_36586867/article/details/81508032
+			这种集群方案针对的是 短连接方案,恰恰访问数据库的确算短连接!!
+			如果是关于 维护长连接(长时间),考虑使用 zookeeper 而不是 keepalived
+
+		Mycat配置文件schema.xml: https://blog.csdn.net/l1028386804/article/details/53385637
+		mycat配置简单介绍 : http://www.cnblogs.com/wang-meng/p/5861301.html
+		mycat自身集群使用 HAProxy : https://blog.csdn.net/l1028386804/article/details/75331934
+		mycat1.6.5 问题排错参考(我安装的是这个): https://rorschachchan.github.io/2018/07/05/Mycat%E7%9A%84%E9%83%A8%E7%BD%B2%E4%B8%8E%E7%AE%80%E5%8D%95%E6%B5%8B%E8%AF%95/
+		mycat管理端口9066: https://blog.csdn.net/zhouchang3/article/details/54382550
+		mycat连接管理数据库，操作表时报ERROR 3009 (HY000): java.lang.IllegalArgumentException: Invalid DataSource:0
+			https://blog.csdn.net/jaryle/article/details/76830202
+		haproxy 超时机制: https://blog.csdn.net/zhaoyangjian724/article/details/51145045 
+附加:
+vi 常用命令:
+	全选:	 	ggvG或者ggVG
+	全部复制:	ggyG
+	全部删除:	ggvGd
+	显示行号:	:set number
+	跳到第一行:      按两次“g”
+	跳到最后一行：	按“G”,即“shift+g”
+
+最后: 启动 pxc 注意 注意先找到第一节点启动 !!!!!
 
 
 
 
-
-
-
-
-
-
-
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 
@@ -7490,7 +8062,8 @@ maycat 分片 集群 部署:
 	压力测试:
 		https://blog.csdn.net/a13124837937/article/details/79628838    /// jmeter
 		https://www.cnblogs.com/kazihuo/p/7986681.html  ///压力测试 Nxginl 例子
-	HAProxy
+	HAProxy:
+		上述pxc集群已经足够理解了!!
 		
 	Nginx:
 
@@ -8011,10 +8584,1082 @@ centos7 mongoDB4 sahrding cluster集群
 		https://www.cnblogs.com/chenmh/p/8954584.html   //数据分片策略研究
 		https://blog.csdn.net/wellschen/article/details/82499429 //测试时发现 数据不分块分片的问题!
 		https://blog.csdn.net/wellschen/article/details/82499429 //补充的数据分片不成功的问题探
-	
+
 		
+
+
+
+
+
+
+
+
+
 	
 	
+
+20190217
+	未学习 的主流 工具
+	nginx
+	hoodloop
+	electicsearch
+学习 electicsearch 先不考录集群安装,先考虑使用!!
+	直接使用docker版本:
+		sudo docker pull docker.elastic.co/elasticsearch/elasticsearch:6.6.0
+		sudo docker run -p 9200:9200 -p 9300:9300 --name=ES -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.6.0
+		后面实验使用的是 6.1.1 版本,所以 把 6.6.0 版本删除,没必要存在多不同版本的镜像,够用就可以!!!
+		sudo docker images 	//查看镜像的 ID	
+		sudo docker rmi xxxxx	//根据ID:xxxxx 删除镜像 
+	建立一个 docker 程序栈!!
+		补充安装 docker-compose 插件:
+			sudo curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose		//直接下载 bin 文件
+			sudo chmod +x /usr/local/bin/docker-compose   //配置执行权限
+		建立一个 项目目录..full_stack/electicsearch_test,包含程序栈运行的所有内容!!!
+		.
+		├── books
+		│   ├── 10007.txt
+		│   ├── 10007.txt.rsrc
+		│   ├── 103.txt
+		│   ....
+		│
+		├── docker-compose.yml
+		├── Dockerfile
+		├── package.json
+		├── public
+		│   ├── app.js
+		│   ├── index.html
+		│   └── styles.css
+		└── server
+		    ├── app.js
+		    ├── connection.js
+		    ├── load_data.js
+		    └── search.js
+		/public - 目录保存是前端 Vue.js Web应用js代码 
+		/server - 目录保存服务器后端 Node.js 源代码	
+		docker-compose.yml 文件定义全部的应用程序栈,每个被定义的容器都将端口转发到宿主机系统（localhost）上，
+		    以便于我们在宿主机上去访问和调试 Node API、Elasticsearch 实例和前端 Web 应用程序
+		    gs-api - 后端应用程序逻辑使用的 Node.js 容器
+		    gs-frontend - 前端 Web 应用程序使用的 Ngnix 容器。
+		    gs-search - 保存和搜索数据的 Elasticsearch 容器。
+		Dockerfile  由于 gs-frontend gs-search 是使用下载现成的镜像,gs-api却是使用自己定义配置内容的nodejs镜像,
+			所以 需要 这个文件来 告诉生成自定义 nodejs 镜像的步骤!!!
+		.dockerignore  生成自定义镜像 是从一个现成的镜像,配置和拷贝内容得到的
+			这个文件中记录了 那些内容是不需要的,所以不用拷贝到自定义镜像里
+		然后 cd 到 项目文件夹 里 操作: 
+文件分析:
+/////// docker-compose.yml /////////
+version: '3'
+
+services:			# 定义一个程序栈
+  api: # Node.js App
+    container_name: gs-api	# gs-api 容器
+    build: .			# 需要使用重新生成的自定义镜像
+    ports:			# 容器端口 映射到 宿主端口
+      - "3000:3000" # Expose API port	
+      - "9229:9229" # Expose Node process debug port (disable in production)
+    environment: # Set ENV vars  设置环境变量
+     - NODE_ENV=local
+     - ES_HOST=elasticsearch
+     - PORT=3000
+    volumes: # Attach local book data directory 宿主机的指定文件夹 映射 容器的 /usr/src/app/books, 即数据存到宿主机
+     - ./books:/usr/src/app/books
+
+  frontend: # Nginx Server For Frontend App
+    container_name: gs-frontend
+    image: nginx			# 使用网络下载的现成镜像
+    volumes: # Serve local "public" dir
+      - ./public:/usr/share/nginx/html	# 宿主机的指定文件夹 映射 容器 这里是映射放 网页文件的地方!!!
+    ports:				# 容器端口 映射到 宿主端口
+      - "8080:80" # Forward site to localhost:8080
+
+  elasticsearch: # Elasticsearch Instance
+    container_name: gs-search
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.1.1
+    volumes: # Persist ES data in seperate "esdata" volume
+      - esdata:/usr/share/elasticsearch/data	#本来是 想宿主机的指定文件夹映射到容器, 即想在宿主机存放ES 的索引数据库,
+    environment:
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+    ports: # Expose Elasticsearch ports
+      - "9300:9300"
+      - "9200:9200"
+
+volumes: # Define seperate volume for Elasticsearch data
+  esdata:			# 由于没有 指定定义 esdata, 所以 外部文档映射容器并没有实现
+////////////////////////////////////
+
+/////// Dockerfile /////////
+# Use Node v8.9.0 LTS
+FROM node:carbon		# 自定义镜像 基于网上下载的 node:carbon 镜像
+
+# Setup app working directory
+WORKDIR /usr/src/app		# 在自定义镜像上建立一个工作文档
+
+# Copy package.json and package-lock.json
+COPY package*.json ./		# 其实只把当前 项目目录 的 package.json,拷贝到 自定义镜像建立的工作文档
+
+# Install app dependencies
+RUN npm install			# 自定义镜像建立的工作文档里 执行npm 安装,即根据 package.json 安装 软件 
+				# 由于安装过程中会检测到 所要安装软件的版本变化问题,所以npm会自生成 package-lock.json
+				# package-lock.json 记录 npm 最终安装的软件 信息
+# Copy sourcecode
+COPY . .			# 把 项目目录 的所有内容 都 拷贝到 自定义镜像建立的工作文档 
+				# 会去鉴别 .dockerignore 提供的黑名单,并不拷贝黑名单上的内容
+				# 其实实际上,重点是拷贝了 server 文件夹 到 自定义镜像里
+
+# Start app
+CMD [ "npm", "start" ]		# 给自定义镜像 添加 开机执行的命令, 
+				# 这里npm start 是指根据 package.json 配置 运行已经安装的软件!!!
+////////////////////////////
+	
+////////// package.json /////////////
+{
+  "name": "guttenberg-search",
+  "version": "0.0.1",
+  "description": "Source code for Elasticsearch tutorial using 100 classic open source books.",
+  "scripts": {
+    "start": "node --inspect=0.0.0.0:9229 server/app.js"	# npm start 实际就是启动了这个node后端服务,不断监听连接 
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/triestpa/guttenberg-search.git"
+  },
+  "author": "patrick.triest@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/triestpa/guttenberg-search/issues"
+  },
+  "homepage": "https://github.com/triestpa/guttenberg-search#readme",
+  "dependencies": {
+    "elasticsearch": "13.3.1",
+    "joi": "13.0.1",
+    "koa": "2.4.1",
+    "koa-joi-validate": "0.5.1",
+    "koa-router": "7.2.1"
+  }
+}
+/////////////////////////////////////
+
+//////// .dockerignore /////////
+node_modules/		# 这是避免拷贝任何 node_modules 名字的文件夹, 不限路径 
+npm-debug.log		
+books/
+public/
+////////////////////////////////
+		到此为止, 基本分析完 一个docker-compose如何 构造 程序栈
+		接下来, 继续完成整个整个程序栈
+		添加 public/index.html 文件,并添加如下测试页面内容。
+			<html><body>Hello World From The Frontend Container</body></html>
+			注意, public 是以映射到 gs-frontend 容器的 !!
+		添加 server/app.js 文件,并添加 Node.js 执行的 连接监听后端代码
+			const Koa = require('koa')
+			const app = new Koa()
+			
+			app.use(async (ctx, next) => {
+			  ctx.body = 'Hello World From the Backend Container'
+			})
+			
+			const port = process.env.PORT || 3000
+			
+			app.listen(port, err => {
+			  if (err) console.error(err)
+			  console.log(`App Listening on Port ${port}`)
+			})
+			注意, server 并不是映射的方式到 gs-api,而是通过构建自定义镜像时拷贝入镜像的 !!!
+		然后开始 构建程序栈, sudo docker-compose build 
+			其实就是扫一便相关文件 (docker-compose.yml Dockerfile .dockerignore) 
+			如果发现需要自建键像,就自建镜像!!!
+//////////////// 执行log ////////////////////////
+william@william-HP:~/full_stack/electicsearch_test$ sudo docker-compose build
+
+frontend uses an image, skipping
+elasticsearch uses an image, skipping
+Building api
+Step 1/6 : FROM node:carbon
+carbon: Pulling from library/node
+741437d97401: Pull complete
+34d8874714d7: Pull complete
+0a108aa26679: Pull complete
+7f0334c36886: Pull complete
+65c95cb8b3be: Pull complete
+a36b708560f8: Pull complete
+81a7e69fab67: Pull complete
+a88b577be604: Pull complete
+Digest: sha256:a8a9d8eaab36bbd188612375a54fb7f57418458812dabd50769ddd3598bc24fc
+Status: Downloaded newer image for node:carbon
+ ---> 4f01e5319662
+Step 2/6 : WORKDIR /usr/src/app
+Removing intermediate container 304ae5a57d51
+ ---> 85e1dc7a8b13
+Step 3/6 : COPY package*.json ./
+ ---> 94c248e69c79
+Step 4/6 : RUN npm install
+ ---> Running in 7a492633d063
+npm WARN deprecated joi@10.6.0: This version is no longer maintained. Please upgrade to the latest version.
+npm WARN deprecated hoek@5.0.4: This version is no longer maintained. Please upgrade to the latest version.
+npm notice created a lockfile as package-lock.json. You should commit this file.
+added 71 packages from 32 contributors and audited 93 packages in 15.887s
+found 2 vulnerabilities (1 low, 1 moderate)
+  run `npm audit fix` to fix them, or `npm audit` for details
+Removing intermediate container 7a492633d063
+ ---> c419ec45a179
+Step 5/6 : COPY . .
+ ---> 27d81e48e490
+Step 6/6 : CMD [ "npm", "start" ]
+ ---> Running in cc5522c616a7
+Removing intermediate container cc5522c616a7
+ ---> 1e3b367c4e6d
+Successfully built 1e3b367c4e6d
+Successfully tagged electicsearch_test_api:latest			
+/////////////////////////////////////////////////
+		然后执行 docker-compose up 去启动整个应用程序栈,
+			也是根据相关文件 (docker-compose.yml Dockerfile .dockerignore)
+			在这里才开始构建容器 和 启动容器!!!
+//////////////// 执行log ////////////////////////
+william@william-HP:~/full_stack/electicsearch_test$ sudo docker-compose up 
+Creating network "electicsearch_test_default" with the default driver
+Creating volume "electicsearch_test_esdata" with default driver
+Pulling frontend (nginx:)...
+latest: Pulling from library/nginx
+6ae821421a7d: Pull complete
+da4474e5966c: Pull complete
+eb2aec2b9c9f: Pull complete
+Pulling elasticsearch (docker.elastic.co/elasticsearch/elasticsearch:6.1.1)...
+85432449fd0f: Pull complete
+ed29febfeb5c: Pull complete
+3a63b77751ff: Pull complete
+c564c50fb69d: Pull complete
+b1a7ef0a5528: Pull complete
+9af7b1014a51: Pull complete
+Creating gs-api      ... done
+Creating gs-search   ... done
+Creating gs-frontend ... done
+Attaching to gs-frontend, gs-api, gs-search
+gs-api           | 
+gs-api           | > guttenberg-search@0.0.1 start /usr/src/app
+gs-api           | > node --inspect=0.0.0.0:9229 server/app.js
+gs-api           | 
+gs-api           | Debugger listening on ws://0.0.0.0:9229/d8f7cfca-e9a8-46e4-b34a-da148c130373
+gs-api           | For help see https://nodejs.org/en/docs/inspector
+gs-api           | App Listening on Port 3000
+gs-search        | [2019-02-19T09:51:59,796][WARN ][o.e.b.JNANatives         ] Unable to lock JVM Memory: error=12, reason=Cannot allocate memory
+gs-search        | [2019-02-19T09:51:59,798][WARN ][o.e.b.JNANatives         ] This can result in part of the JVM being swapped out.
+gs-search        | [2019-02-19T09:51:59,798][WARN ][o.e.b.JNANatives         ] Increase RLIMIT_MEMLOCK, soft limit: 65536, hard limit: 65536
+gs-search        | [2019-02-19T09:51:59,798][WARN ][o.e.b.JNANatives         ] These can be adjusted by modifying /etc/security/limits.conf, for example: 
+gs-search        |      # allow user 'elasticsearch' mlockall
+gs-search        |      elasticsearch soft memlock unlimited
+gs-search        |      elasticsearch hard memlock unlimited
+gs-search        | [2019-02-19T09:51:59,799][WARN ][o.e.b.JNANatives         ] If you are logged in interactively, you will have to re-login for the new limits to take effect.
+gs-search        | [2019-02-19T09:51:59,933][INFO ][o.e.n.Node               ] [] initializing ...
+gs-search        | [2019-02-19T09:52:00,076][INFO ][o.e.e.NodeEnvironment    ] [4TpwwJi] using [1] data paths, mounts [[/usr/share/elasticsearch/data (/dev/sda1)]], net usable_space [147.7gb], net total_space [428.2gb], types [ext4]
+gs-search        | [2019-02-19T09:52:00,076][INFO ][o.e.e.NodeEnvironment    ] [4TpwwJi] heap size [494.9mb], compressed ordinary object pointers [true]
+gs-search        | [2019-02-19T09:52:00,078][INFO ][o.e.n.Node               ] node name [4TpwwJi] derived from node ID [4TpwwJiLQ0Sw4BQGQX99aQ]; set [node.name] to override
+gs-search        | [2019-02-19T09:52:00,079][INFO ][o.e.n.Node               ] version[6.1.1], pid[1], build[bd92e7f/2017-12-17T20:23:25.338Z], OS[Linux/4.15.0-45-generic/amd64], JVM[Oracle Corporation/OpenJDK 64-Bit Server VM/1.8.0_151/25.151-b12]
+gs-search        | [2019-02-19T09:52:00,079][INFO ][o.e.n.Node               ] JVM arguments [-Xms1g, -Xmx1g, -XX:+UseConcMarkSweepGC, -XX:CMSInitiatingOccupancyFraction=75, -XX:+UseCMSInitiatingOccupancyOnly, -XX:+AlwaysPreTouch, -Xss1m, -Djava.awt.headless=true, -Dfile.encoding=UTF-8, -Djna.nosys=true, -XX:-OmitStackTraceInFastThrow, -Dio.netty.noUnsafe=true, -Dio.netty.noKeySetOptimization=true, -Dio.netty.recycler.maxCapacityPerThread=0, -Dlog4j.shutdownHookEnabled=false, -Dlog4j2.disable.jmx=true, -XX:+HeapDumpOnOutOfMemoryError, -Des.cgroups.hierarchy.override=/, -Xms512m, -Xmx512m, -Des.path.home=/usr/share/elasticsearch, -Des.path.conf=/usr/share/elasticsearch/config]
+gs-search        | [2019-02-19T09:52:01,647][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [aggs-matrix-stats]
+gs-search        | [2019-02-19T09:52:01,647][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [analysis-common]
+gs-search        | [2019-02-19T09:52:01,647][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [ingest-common]
+gs-search        | [2019-02-19T09:52:01,647][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [lang-expression]
+gs-search        | [2019-02-19T09:52:01,648][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [lang-mustache]
+gs-search        | [2019-02-19T09:52:01,648][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [lang-painless]
+gs-search        | [2019-02-19T09:52:01,648][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [mapper-extras]
+gs-search        | [2019-02-19T09:52:01,648][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [parent-join]
+gs-search        | [2019-02-19T09:52:01,648][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [percolator]
+gs-search        | [2019-02-19T09:52:01,648][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [reindex]
+gs-search        | [2019-02-19T09:52:01,648][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [repository-url]
+gs-search        | [2019-02-19T09:52:01,648][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [transport-netty4]
+gs-search        | [2019-02-19T09:52:01,648][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded module [tribe]
+gs-search        | [2019-02-19T09:52:01,649][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded plugin [ingest-geoip]
+gs-search        | [2019-02-19T09:52:01,649][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded plugin [ingest-user-agent]
+gs-search        | [2019-02-19T09:52:01,649][INFO ][o.e.p.PluginsService     ] [4TpwwJi] loaded plugin [x-pack]
+gs-search        | [2019-02-19T09:52:04,149][INFO ][o.e.x.m.j.p.l.CppLogMessageHandler] [controller/120] [Main.cc@128] controller (64 bit): Version 6.1.1 (Build c508cf991ee61c) Copyright (c) 2017 Elasticsearch BV
+gs-search        | [2019-02-19T09:52:04,524][INFO ][o.e.d.DiscoveryModule    ] [4TpwwJi] using discovery type [single-node]
+gs-search        | [2019-02-19T09:52:05,113][INFO ][o.e.n.Node               ] initialized
+gs-search        | [2019-02-19T09:52:05,113][INFO ][o.e.n.Node               ] [4TpwwJi] starting ...
+gs-search        | [2019-02-19T09:52:05,237][INFO ][o.e.t.TransportService   ] [4TpwwJi] publish_address {172.18.0.4:9300}, bound_addresses {0.0.0.0:9300}
+gs-search        | [2019-02-19T09:52:05,256][WARN ][o.e.b.BootstrapChecks    ] [4TpwwJi] memory locking requested for elasticsearch process but memory is not locked
+gs-search        | [2019-02-19T09:52:05,256][WARN ][o.e.b.BootstrapChecks    ] [4TpwwJi] max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]
+gs-search        | [2019-02-19T09:52:05,349][INFO ][o.e.x.s.t.n.SecurityNetty4HttpServerTransport] [4TpwwJi] publish_address {172.18.0.4:9200}, bound_addresses {0.0.0.0:9200}
+gs-search        | [2019-02-19T09:52:05,349][INFO ][o.e.n.Node               ] [4TpwwJi] started
+gs-search        | [2019-02-19T09:52:05,475][INFO ][o.e.g.GatewayService     ] [4TpwwJi] recovered [0] indices into cluster_state
+gs-search        | [2019-02-19T09:52:06,281][INFO ][o.e.l.LicenseService     ] [4TpwwJi] license [0c6db8a3-2495-4956-ae4f-645d4b64eaa9] mode [basic] - valid
+gs-search        | [2019-02-19T09:52:15,253][INFO ][o.e.c.m.MetaDataCreateIndexService] [4TpwwJi] [.monitoring-es-6-2019.02.19] creating index, cause [auto(bulk api)], templates [.monitoring-es], shards [1]/[1], mappings [doc]
+gs-frontend      | 172.18.0.1 - - [19/Feb/2019:09:53:08 +0000] "GET / HTTP/1.1" 200 66 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0" "-"
+gs-frontend      | 172.18.0.1 - - [19/Feb/2019:09:53:08 +0000] "GET /favicon.ico HTTP/1.1" 404 153 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0" "-"
+gs-frontend      | 2019/02/19 09:53:08 [error] 7#7: *1 open() "/usr/share/nginx/html/favicon.ico" failed (2: No such file or directory), client: 172.18.0.1, server: localhost, request: "GET /favicon.ico HTTP/1.1", host: "localhost:8080"
+/////////////////////////////////////////////////
+		宿主机浏览器 登录 localhost:8080  localhost:3000  localhost:9200 
+		分别 访问了 gs-frontend, gs-api, gs-search, 三个节点,都可以成功看到相关内容!!!
+		最后,我们可以 登录 gs-api 容器 查看 /usr/src/app 的内容来 分析根据 Dockerfile 建立镜像的情况
+
+	接下来就是在这个 程序栈,实验 electicsearch
+		我们的实验是建立一个电子书信息内容搜索服务!!!
+		首先是建立电子书数据( 有100本明著,来自古登堡项目 ),在项目目录下执行
+			wget https://cdn.patricktriest.com/data/books.zip
+			unar books.zip
+		得到 books/文件夹 而这个文件夹及其内容根据程序栈设置,会映射到 gs-api 的/usr/src/app/books
+		书本都有统一的格式,可供机器分析: 
+		假设打开的是 219-0.txt,
+		你将注意到它开头是一个公开访问的协议，接下来是一些标识这本书的书名、作者、发行日期、语言和字符编码的行。
+			Title: Heart of Darkness
+
+			Author: Joseph Conrad
+			
+			Release Date: February 1995 [EBook #219]
+			Last Updated: September 7, 2016
+			
+			Language: English
+			
+			Character set encoding: UTF-8
+		在 *** START OF THIS PROJECT GUTENBERG EBOOK HEART OF DARKNESS *** 后，
+		在 *** END OF THIS PROJECT GUTENBERG EBOOK HEART OF DARKNESS *** 前,是这本书的正式内容。
+		而 *** END OF THIS PROJECT GUTENBERG EBOOK HEART OF DARKNESS *** 后,是这本书更详细的协议版本。
+		然后,测试 后端服务器 访问 search 服务器的情况!!!
+			添加 server/connection.js 文件,添加内容:
+////////////////
+const elasticsearch = require('elasticsearch')		//自建镜像添加了ES的 js 的接口,所以可以被node.js使用
+
+// Core ES variables for this project
+const index = 'library'
+const type = 'novel'
+const port = 9200
+const host = process.env.ES_HOST || 'localhost'
+const client = new elasticsearch.Client({ host: { host, port } })	//建立一个到 gs-search 的连接
+
+/** Check the ES connection status */
+async function checkConnection () {
+  let isConnected = false
+  while (!isConnected) {
+    console.log('Connecting to ES')
+    try {
+      const health = await client.cluster.health({})
+      console.log(health)
+      isConnected = true
+    } catch (err) {
+      console.log('Connection Failed, Retrying...', err)
+    }
+  }
+}
+////////////////
+			由于 server 内容改变了, 需要重建镜像!! sudo docker-compose build 
+			重建重开容器,这次选择后台执行程序栈 docker-compose up -d
+			程序栈起来后执行: sudo docker exec gs-api "node" "server/connection.js" 会有以下信息
+				{ cluster_name: 'docker-cluster',
+				  status: 'yellow',
+				  timed_out: false,
+				  number_of_nodes: 1,
+				  number_of_data_nodes: 1,
+				  active_primary_shards: 1,
+				  active_shards: 1,
+				  relocating_shards: 0,
+				  initializing_shards: 0,
+				  unassigned_shards: 1,
+				  delayed_unassigned_shards: 0,
+				  number_of_pending_tasks: 0,
+				  number_of_in_flight_fetch: 0,
+				  task_max_waiting_in_queue_millis: 0,
+				  active_shards_percent_as_number: 50 }
+				表示 gs-api 连接 gs-search 成功 !!!
+			(注意,重建镜像后,之前的旧自建镜像会保留,所以需要手动去清理,
+			为了避免麻烦为啥 不把 server 作为映射目录到 镜像? 
+			是为了执行安全,因为,node正在执行server的监听js,而你又在此刻更新js, node执行会出错吧)
+		server/connection.js 是 gs-api 连接 gs-search 的 接口, 接下来完善这个接口js文件
+///////////// server/connection.js /////////////////
+const elasticsearch = require('elasticsearch')		//使用 ES 的 javascript api接口
+
+// Core ES variables for this project
+const index = 'library'
+const type = 'novel'
+const port = 9200
+const host = process.env.ES_HOST || 'localhost'
+const client = new elasticsearch.Client({ host: { host, port } })	//建立一个到 gs-search 的连接
+
+/** Check the ES connection status */
+async function checkConnection () {
+  let isConnected = false
+  while (!isConnected) {
+    console.log('Connecting to ES')
+    try {
+      const health = await client.cluster.health({})	//查看集群的 运行情况
+      console.log(health)
+      isConnected = true
+    } catch (err) {
+      console.log('Connection Failed, Retrying...', err)
+    }
+  }
+}
+
+/** Clear the index, recreate it, and add mappings */
+async function resetIndex (index) {			//重置 索引
+  if (await client.indices.exists({ index })) {			
+    await client.indices.delete({ index })	
+  }
+
+  await client.indices.create({ index })	//创建一个索引
+  await putBookMapping()			//为索引定义一个映射, 相当于给sql数据库定义一个table
+}
+
+/** Add book section schema mapping to ES */	
+async function putBookMapping () {		//为 索引定义了一个映射。
+  const schema = {
+    title: { type: 'keyword' },
+    author: { type: 'keyword' },
+    location: { type: 'integer' },
+    text: { type: 'text' }
+  }
+
+  return client.indices.putMapping({ index, type, body: { properties: schema } })
+}
+
+
+module.exports = {
+  client, index, type, checkConnection, resetIndex	//导出对外发布的属性和函数，这样其它模块就可以访问
+}
+
+//checkConnection()
+////////////////////////////////////////////////////
+		接下来是读取图书的数据, 生成用于能被 ES 实际执行搜索的合法文档,放入 electiicearch 服务器的索引里,
+			添加 server/load_data.js 文件
+///////////////// server/load_data.js //////////////
+const fs = require('fs')
+const path = require('path')
+const esConnection = require('./connection')		//引用刚刚写的 connection 接口
+
+/** Clear ES index, parse and index all files from the books directory */
+async function readAndInsertBooks () {
+  try {
+    // Clear previous ES index				//重置索引
+    await esConnection.resetIndex(esConnection.index)	//原教程出现的bug, 必须加上 esConnection.index
+							//如果重置索引失败,会引起后续的众多问题!!!
+  } catch (err) {
+    console.error(err)
+  }
+
+  try {							//读取 电子书数据, 建立 ES 映射文件
+    // Read books directory
+    let files = fs.readdirSync('./books').filter(file => file.slice(-4) === '.txt')
+    console.log(`Found ${files.length} Files`)
+
+    // Read each book file, and index each paragraph in elasticsearch
+    for (let file of files) {
+      console.log(`Reading File - ${file}`)
+      const filePath = path.join('./books', file)
+      const { title, author, paragraphs } = parseBookFile(filePath)	//分析 一本电子数内容 并分割段落建立映射内容
+      await insertBookData(title, author, paragraphs)			//递交内容到 ES 索引 形成映射文件
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+
+/** Read an individual book text file, and extract the title, author, and paragraphs */
+function parseBookFile (filePath) {
+  // Read text file
+  const book = fs.readFileSync(filePath, 'utf8')		//从文件系统中读取书的文本
+
+  // Find book title and author					//使用正则表达式 解析书名,作者
+  const title = book.match(/^Title:\s(.+)$/m)[1]		
+  const authorMatch = book.match(/^Author:\s(.+)$/m)
+  const author = (!authorMatch || authorMatch[1].trim() === '') ? 'Unknown Author' : authorMatch[1]
+
+  console.log(`Reading Book - ${title} By ${author}`)
+
+  // Find Guttenberg metadata header and footer		//通过匹配 “古登堡项目” 的头部和尾部，识别书的正文内容。
+  const startOfBookMatch = book.match(/^\*{3}\s*START OF (THIS|THE) PROJECT GUTENBERG EBOOK.+\*{3}$/m)
+  const startOfBookIndex = startOfBookMatch.index + startOfBookMatch[0].length
+  const endOfBookIndex = book.match(/^\*{3}\s*END OF (THIS|THE) PROJECT GUTENBERG EBOOK.+\*{3}$/m).index
+
+  // Clean book text and split into array of paragraphs	//提取书的内容文本,分割每个段落到它的数组中,清理文本并删除空白行
+  const paragraphs = book
+    .slice(startOfBookIndex, endOfBookIndex) // Remove Guttenberg header and footer
+    .split(/\n\s+\n/g) // Split each paragraph into it's own array entry
+    .map(line => line.replace(/\r\n/g, ' ').trim()) // Remove paragraph line breaks and whitespace
+    .map(line => line.replace(/_/g, '')) // Guttenberg uses "_" to signify italics.  We'll remove it, since it makes the raw text look messy.
+    .filter((line) => (line && line.length !== '')) // Remove empty lines
+
+  console.log(`Parsed ${paragraphs.length} Paragraphs\n`)
+  return { title, author, paragraphs }	//返回构建的对象，这个对象包含书名、作者、以及书中各段落的数组 paragraphs
+}
+
+
+//这个函数将使用书名、作者和附加元数据的段落位置来索引书中的每个段落。我们通过批量操作来插入段落，它比逐个段落插入要快的多。
+/** Bulk index the book data in Elasticsearch */
+async function insertBookData (title, author, paragraphs) {
+  let bulkOps = [] // Array to store bulk operations
+
+  // Add an index operation for each section in the book
+  for (let i = 0; i < paragraphs.length; i++) {
+    // Describe action
+    bulkOps.push({ index: { _index: esConnection.index, _type: esConnection.type } })
+
+    // Add document
+    bulkOps.push({
+      author,
+      title,
+      location: i,
+      text: paragraphs[i]
+    })
+
+    if (i > 0 && i % 500 === 0) { // Do bulk insert in 500 paragraph batches
+      await esConnection.client.bulk({ body: bulkOps })
+      bulkOps = []
+      console.log(`Indexed Paragraphs ${i - 499} - ${i}`)
+    }
+  }
+
+  // Insert remainder of bulk ops array
+  await esConnection.client.bulk({ body: bulkOps })
+  console.log(`Indexed Paragraphs ${paragraphs.length - (bulkOps.length / 2)} - ${paragraphs.length}\n\n\n`)
+}
+
+readAndInsertBooks()
+////////////////////////////////////////////////////	
+			然后 重建重启程序栈,快捷命令: sudo docker-compose up -d --build
+				相当于sudo docker-compose build  加 sudo docker-compose up -d 
+				(注意 手动删除多余的旧镜像)
+				docker-compose logs -f api   //从 Node 应用程序中查看实时日志
+			然后执行 sudo docker exec gs-api "node" "server/load_data.js"
+				gs-api 读取电子书数据文件并生成映射内容 上传到 gs-search 的 book 索引
+////////////////////// 部分执行log ///////////////////////////
+william@william-HP:~/full_stack/electicsearch_test$ sudo docker exec gs-api "node" "server/load_data.js"
+Found 100 Files
+Reading File - 10.txt
+Reading Book - The King James Bible By Unknown Author
+Parsed 24609 Paragraphs
+
+Indexed Paragraphs 1 - 500
+Indexed Paragraphs 501 - 1000
+Indexed Paragraphs 1001 - 1500
+Indexed Paragraphs 1501 - 2000
+Indexed Paragraphs 2001 - 2500
+.........
+
+
+
+Reading File - 10007.txt
+Reading Book - Carmilla By J. Sheridan LeFanu
+Parsed 681 Paragraphs
+
+Indexed Paragraphs 1 - 500
+Indexed Paragraphs 501 - 681
+
+
+
+Reading File - 103.txt
+Reading Book - Around the World in 80 Days By Jules Verne
+Parsed 1720 Paragraphs
+
+Indexed Paragraphs 1 - 500
+Indexed Paragraphs 501 - 1000
+Indexed Paragraphs 1001 - 1500
+Indexed Paragraphs 1501 - 1720
+
+
+
+Reading File - 1080.txt
+Reading Book - A Modest Proposal By Jonathan Swift
+Parsed 39 Paragraphs
+
+Indexed Paragraphs 0 - 39
+
+
+
+Reading File - 11-0.txt
+Reading Book - Alice’s Adventures in Wonderland By Lewis Carroll
+Parsed 820 Paragraphs
+
+Indexed Paragraphs 1 - 500
+Indexed Paragraphs 501 - 820
+
+...........
+
+/////////////////////////////////////////////////////////////
+		然后,我们就可以执行搜索了测试了
+		浏览器执行:
+			http://localhost:9200/library/_search?q=text:Java&pretty
+			这是直接访问 gs-search 节点执行的极其简单的 搜索操作.
+			浏览器会看到一堆json内容返回.
+			而且只是从 ES 索引中找到合适的 映射文件
+			然后返回映射文件 而已!!! 不是真正意义上的搜索功能!!
+		真实的搜索的一种常规场景应该是这样子的!!!
+			后端服务器,对数据库 执行的分析 生成映射文件 存入  ES服务器
+			映射文件包含了 数据片段外,还包含了真是数据的位置信息 !!!!
+			
+			[client] <---> [gs-frontend] <----> [gs-api]
+			                                        ^ 
+								|
+                                                                v
+			                                   [gs-search]
+			client只能访问 前端服务器即web应用服务器, 搜索请求由 前端传递到后端,后端传递到ES服务器
+			ES 返回,合适的 映射文件内容.给后端,后端再返回 前端
+			client看到许多结果,其实 都是 ES 的映射文件而已,当 client点击其中一个 结果
+			就是 请求打开 这个映射文件的指向的数据真实位置, 请求从client传到前端传到后端,
+			后端把 指定位置的数据库信息 读出 返回前端再返回client
+			当然也有直接 从 前端 直接访问 ES 获取搜索的 映射文件,(可能安全性会差些吧)
+		接下来我们的实验是.
+			client 搜索请求,经 前端,后端到 ES
+			结果映射文件经 ES, 后端, 前端, 到 client 
+			client 点击一个结果, 依然是 经 前端,后端到 ES
+			ES收集这个结果对应的映射文件附近的映射文件,经 ES, 后端, 前端, 到 client
+			与一般场景有所区别,是因为仅仅这个例子映射文本就记录了全部所需要的信息,
+			不需要通过映射文本寻找读取后端的 电子书数据!!
+	开始 ES 实验:
+		gs-api 容易 添加 使用 ES 搜索的功能模块
+///////////// server/search.js //////////////
+const { client, index, type } = require('./connection')		//使用 server/connection.js 接口
+
+module.exports = {
+  /** Query ES index for the provided term */
+  queryTerm (term, offset = 0) {	//搜索 关键字 得到 结果
+    const body = {
+      from: offset,		//from - 允许我们分页查询结果。默认每个查询返回 10 个结果，from: 10 将允许我们取回 10-20 的结果。
+      query: { match: {		
+        text: {		
+          query: term,		//query - 这里我们指定要查询的词。
+          operator: 'and',	//operator - 搜索行为；本例中，我们使用 and 操作去对查询中包含所有字元（要查询的词）的结果来确定优先顺序。
+          fuzziness: 'auto'	//fuzziness - 对拼写错误的容错调整，auto 的默认为 fuzziness: 2。模糊值越高，结果越需要更多校正。
+        } } },
+      highlight: { fields: { text: {} } }	//highlights - 结果返回一个额外的字段包含 HTML，以显示精确的文本字集和查询中匹配的关键词。
+    }
+
+    return client.search({ index, type, body })		
+  },		// 一定要添加 , 号
+
+  /** Get the specified range of paragraphs from a book */
+  getParagraphs (bookTitle, startLocation, endLocation) {	//根据当前选择的搜索结果(映射文件),获得其前后各5片映射文件
+    const filter = [						//目的是后面取其段落文本片段组成 结果文章 显示!! 
+      { term: { title: bookTitle } },
+      { range: { location: { gte: startLocation, lte: endLocation } } }
+    ]
+
+    const body = {
+      size: endLocation - startLocation,
+      sort: { location: 'asc' },
+      query: { bool: { filter } }
+    }
+
+    return client.search({ index, type, body })
+  }
+
+}
+/////////////////////////////////////////////		
+		更新 server/app.js 内容, 使 gs-api 成为一个简单完整的后端服务器
+		这些代码将为 Koa.js Node API 服务器导入服务器依赖，设置简单的日志，以及错误处理。 
+////////////////////// server/app.js ///////////////////////
+
+const Koa = require('koa')
+const Router = require('koa-router')
+const joi = require('joi')
+const validate = require('koa-joi-validate')
+const search = require('./search')
+
+const app = new Koa()
+const router = new Router()
+
+// Log each request to the console
+app.use(async (ctx, next) => {
+  const start = Date.now()
+  await next()
+  const ms = Date.now() - start
+  console.log('${ctx.method} ${ctx.url} - ${ms}')
+})
+
+// Log percolated errors to the console
+app.on('error', err => {
+  console.error('Server Error', err)
+})
+
+// Set permissive CORS header
+app.use(async (ctx, next) => {
+  ctx.set('Access-Control-Allow-Origin', '*')
+  return next()
+})
+
+// ADD ENDPOINTS HERE
+/**
+ * GET /search
+ * Search for a term in the library
+ * Query Params -
+ * term: string under 60 characters
+ * offset: positive integer
+ */				
+router.get('/search',			//根据 前端 获得/search请求, 后端向es获取搜索数据
+  validate({				//http://localhost:3000/search,,, 就是执行到后端服务器的这个地方 获取搜索功能
+    query: {
+      term: joi.string().max(60).required(),		//添加一些使用 Joi 和 Koa-Joi-Validate 库的中间件，以对输入做校验
+      offset: joi.number().integer().min(0).default(0)
+    }
+  }),
+  async (ctx, next) => {
+    const { term, offset } = ctx.request.query
+    ctx.body = await search.queryTerm(term, offset)	//后端向es获取搜索数据
+  }
+)
+/**
+ * GET /paragraphs
+ * Get a range of paragraphs from the specified book
+ * Query Params -
+ * bookTitle: string under 256 characters
+ * start: positive integer
+ * end: positive integer greater than start
+ */
+router.get('/paragraphs',	//根据 前端 获得 /paragraphs请求, 后端向es获取结果附近的文本段落
+  validate({
+    query: {
+      bookTitle: joi.string().max(256).required(),	//添加一些使用 Joi 和 Koa-Joi-Validate 库的中间件，以对输入做校验
+      start: joi.number().integer().min(0).default(0),
+      end: joi.number().integer().greater(joi.ref('start')).default(10)
+    }
+  }),
+  async (ctx, next) => {
+    const { bookTitle, start, end } = ctx.request.query
+    ctx.body = await search.getParagraphs(bookTitle, start, end)	//后端向es获取结果附近的文本段落
+
+  }
+)
+
+const port = process.env.PORT || 3000
+
+app					//建立监听程序
+  .use(router.routes())
+  .use(router.allowedMethods())
+  .listen(port, err => {
+    if (err) throw err
+    console.log('App Listening on Port ${port}')
+  })
+////////////////////////////////////////////////////////////
+		接着 我们给前端服务 添加 web 应用 ,允许其与 客户端交互
+		添加 /public/app.js
+		这是 一个 基于 vue 的简单 js 程序!!
+		只定义了一些共享的数据属性，以及添加了检索和分页搜索结果的方法。
+		为防止每次按键一次都调用 API，搜索输入有一个 100 毫秒的除颤功能 
+/////////////////// /public/app.js /////////////////////
+const vm = new Vue ({
+  el: '#vue-instance',
+  data () {
+    return {
+      baseUrl: 'http://localhost:3000', // API url  后端gs-api 访问接口
+      searchTerm: 'Hello World', // Default search term
+      searchDebounce: null, // Timeout for search bar debounce
+      searchResults: [], // Displayed search results
+      numHits: null, // Total search results found
+      searchOffset: 0, // Search result pagination offset
+
+      selectedParagraph: null, // Selected paragraph object
+      bookOffset: 0, // Offset for book paragraphs being displayed
+      paragraphs: [] // Paragraphs being displayed in book preview window
+    }
+  },
+  async created () {
+    this.searchResults = await this.search() // Search for default term
+  },
+  methods: {
+    /** Debounce search input by 100 ms */
+    onSearchInput () {
+      clearTimeout(this.searchDebounce)
+      this.searchDebounce = setTimeout(async () => {
+        this.searchOffset = 0
+        this.searchResults = await this.search()
+      }, 100)
+    },
+    /** Call API to search for inputted term */
+    async search () {				// 搜索请求
+      const response = await axios.get(`${this.baseUrl}/search`, { params: { term: this.searchTerm, offset: this.searchOffset } })
+      this.numHits = response.data.hits.total	//
+      return response.data.hits.hits
+    },
+    /** Get next page of search results */
+    async nextResultsPage () {
+      if (this.numHits > 10) {
+        this.searchOffset += 10
+        if (this.searchOffset + 10 > this.numHits) { this.searchOffset = this.numHits - 10}
+        this.searchResults = await this.search()
+        document.documentElement.scrollTop = 0
+      }
+    },
+    /** Get previous page of search results */
+    async prevResultsPage () {
+      this.searchOffset -= 10
+      if (this.searchOffset < 0) { this.searchOffset = 0 }
+      this.searchResults = await this.search()
+      document.documentElement.scrollTop = 0
+    },
+
+    /** Call the API to get current page of paragraphs */
+    async getParagraphs (bookTitle, offset) {	// 获取结果所在文章
+      try {
+        this.bookOffset = offset
+        const start = this.bookOffset
+        const end = this.bookOffset + 10
+        const response = await axios.get(`${this.baseUrl}/paragraphs`, { params: { bookTitle, start, end } })
+        console.log(response.data)
+        return response.data.hits.hits
+      } catch (err) {
+        console.error(err)
+      }
+    },
+    /** Get next page (next 10 paragraphs) of selected book */
+    async nextBookPage () {
+      this.$refs.bookModal.scrollTop = 0
+      this.paragraphs = await this.getParagraphs(this.selectedParagraph._source.title, this.bookOffset + 10)
+    },
+    /** Get previous page (previous 10 paragraphs) of selected book */
+    async prevBookPage () {
+      this.$refs.bookModal.scrollTop = 0
+      this.paragraphs = await this.getParagraphs(this.selectedParagraph._source.title, this.bookOffset - 10)
+    },
+    /** Display paragraphs from selected book in modal window */
+    async showBookModal (searchHit) {		//显示结果文本, 这里会经历一个 获取 围绕结果上下文段落的 get过程
+      try {
+        document.body.style.overflow = 'hidden'
+        this.selectedParagraph = searchHit
+        this.paragraphs = await this.getParagraphs(searchHit._source.title, searchHit._source.location - 5)
+        console.log(searchHit._source.title, ' ', searchHit._source.location)
+      } catch (err) {
+        console.error(err)
+      }
+    },
+    /** Close the book detail modal */
+    closeBookModal () {
+      //console.log('wiliam/n/r')
+      document.body.style.overflow = 'auto'
+      this.selectedParagraph = null
+    }
+  }
+})
+////////////////////////////////////////////////////////
+		完善前端 web应用的 页面样板
+		还有 css ui 样式
+/////////////////// /public/index.html /////////////////
+<!--
+<html><body>Hello World From The Frontend Container</body></html>
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Elastic Library</title>
+  <meta name="description" content="Literary Classic Search Engine.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css" rel="stylesheet" type="text/css" />
+  <link href="https://cdn.muicss.com/mui-0.9.20/css/mui.min.css" rel="stylesheet" type="text/css" />
+  <link href="https://fonts.googleapis.com/css?family=EB+Garamond:400,700|Open+Sans" rel="stylesheet">
+  <link href="styles.css" rel="stylesheet" />
+</head>
+<body>
+<div class="app-container" id="vue-instance">
+    <!-- Search Bar Header -->
+    <div class="mui-panel">
+      <div class="mui-textfield">
+        <input v-model="searchTerm" type="text" v-on:keyup="onSearchInput()">
+        <label>Search</label>
+      </div>
+    </div>
+
+    <!-- Search Metadata Card -->
+    <div class="mui-panel">
+      <div class="mui--text-headline">{{ numHits }} Hits</div>
+      <div class="mui--text-subhead">Displaying Results {{ searchOffset }} - {{ searchOffset + 9 }}</div>
+    </div>
+
+    <!-- Top Pagination Card -->
+    <div class="mui-panel pagination-panel">
+        <button class="mui-btn mui-btn--flat" v-on:click="prevResultsPage()">Prev Page</button>
+        <button class="mui-btn mui-btn--flat" v-on:click="nextResultsPage()">Next Page</button>
+    </div>
+
+    <!-- Search Results Card List -->
+    <div class="search-results" ref="searchResults">
+      <div class="mui-panel" v-for="hit in searchResults" v-on:click="showBookModal(hit)">
+        <div class="mui--text-title" v-html="hit.highlight.text[0]"></div>
+        <div class="mui-divider"></div>
+        <div class="mui--text-subhead">{{ hit._source.title }} - {{ hit._source.author }}</div>
+        <div class="mui--text-body2">Location {{ hit._source.location }}</div>
+      </div>
+    </div>
+
+    <!-- Bottom Pagination Card -->
+    <div class="mui-panel pagination-panel">
+        <button class="mui-btn mui-btn--flat" v-on:click="prevResultsPage()">Prev Page</button>
+        <button class="mui-btn mui-btn--flat" v-on:click="nextResultsPage()">Next Page</button>
+    </div>
+
+    <!-- INSERT BOOK MODAL HERE -->
+    <!-- Book Paragraphs Modal Window -->
+    <div v-if="selectedParagraph" ref="bookModal" class="book-modal">
+      <div class="paragraphs-container">
+        <!-- Book Section Metadata -->
+        <div class="title-row">
+          <div class="mui--text-display2 all-caps">{{ selectedParagraph._source.title }}</div>
+          <div class="mui--text-display1">{{ selectedParagraph._source.author }}</div>
+        </div>
+        <br>
+        <div class="mui-divider"></div>
+        <div class="mui--text-subhead locations-label">Locations {{ bookOffset - 5 }} to {{ bookOffset + 5 }}</div>
+        <div class="mui-divider"></div>
+        <br>
+
+        <!-- Book Paragraphs -->
+        <div v-for="paragraph in paragraphs">	//这里显然轮选显示 paragraphs段落数组的 每个段落 paragraph
+          <div v-if="paragraph._source.location === selectedParagraph._source.location" class="mui--text-body2">
+            <strong>{{ paragraph._source.text }}</strong>
+          </div>
+          <div v-else class="mui--text-body1">
+            {{ paragraph._source.text }}	
+          </div>
+          <br>
+        </div>
+      </div>
+
+      <!-- Book Pagination Footer -->
+      <div class="modal-footer">
+        <button class="mui-btn mui-btn--flat" v-on:click="prevBookPage()">Prev Page</button>
+        <button class="mui-btn mui-btn--flat" v-on:click="closeBookModal()">Close</button>
+        <button class="mui-btn mui-btn--flat" v-on:click="nextBookPage()">Next Page</button>
+      </div>
+    </div>
+
+
+</div>
+<script src="https://cdn.muicss.com/mui-0.9.28/js/mui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.3/vue.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.17.0/axios.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
+////////////////////////////////////////////////////////
+////////////////// public/styles.css//////////////////
+body { font-family: 'EB Garamond', serif; }
+
+.mui-textfield > input, .mui-btn, .mui--text-subhead, .mui-panel > .mui--text-headline {
+  font-family: 'Open Sans', sans-serif;
+}
+
+.all-caps { text-transform: uppercase; }
+.app-container { padding: 16px; }
+.search-results em { font-weight: bold; }
+.book-modal > button { width: 100%; }
+.search-results .mui-divider { margin: 14px 0; }
+
+.search-results {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.search-results > div {
+  flex-basis: 45%;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .search-results > div { flex-basis: 100%; }
+}
+
+.paragraphs-container {
+  max-width: 800px;
+  margin: 0 auto;
+  margin-bottom: 48px;
+}
+
+.paragraphs-container .mui--text-body1, .paragraphs-container .mui--text-body2 {
+  font-size: 1.8rem;
+  line-height: 35px;
+}
+
+.book-modal {
+  width: 100%;
+  height: 100%;
+  padding: 40px 10%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  background-color: white;
+  overflow-y: scroll;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.pagination-panel {
+  display: flex;
+  justify-content: space-between;
+}
+
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+@media (max-width: 600px) {
+  .title-row{ 
+    flex-direction: column; 
+    text-align: center;
+    align-items: center
+  }
+}
+
+.locations-label {
+  text-align: center;
+  margin: 8px;
+}
+
+.modal-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  background: white;
+}
+//////////////////////////////////////////////////////
+		最后 重建重启程序栈: sudo docker-compose up -d --build     (注意 手动删除多余的旧镜像)
+		登录 http://localhost:8080/ 就可以体验到效果!!!!
+	最后在项目文件夹里:
+		sudo docker-compose stop	//停止整个 service ,就是关闭容器!
+		sudo docker-compose up -d	//重新开启整个 service	 或者 sudo docker-compose stop
+
+	
+	参考:
+		Docker 和 Elasticsearch 构建一个全文搜索应用程序 (上述例子参考尝试了):
+			教程相当有启发性,还开拓的不小其他技能点!!!!,当然也有几个漏洞
+			https://www.zcfy.cc/article/building-a-full-text-search-app-using-docker-and-elasticsearch
+		docker简易搭建ElasticSearch集群: (未尝试集群)
+			https://blog.csdn.net/belonghuang157405/article/details/83301937
+	首先想学习到如何 实现 一个 docker 程序栈:
+		即通过把需要使用的资源整合,然后通过脚本,自动创建运行容器集群,提供特定的服务!!
+		一般我们模拟搭建一个网站会 使用多个docker容器来模拟多个服务器,然后集群生成服务!!
+		一般手动过程繁琐复杂,但是通过 docker-compose 插件, 可以把手动过程简单集成到脚本文本,
+		通过运行脚本即可 一键实现!
+	
+
+
+
+
+
+
+
+
+
+
+20190220
+今天就补全 hadoop spark: 
+	zookeeper Hbase Hive Sqoop 需要拓展的内容
+	参考: 
+		http://dblab.xmu.edu.cn/blog/1709-2/ 	//理论
+		https://www.jianshu.com/p/4801bb7ab9e0			//集群参考
+		https://github.com/big-data-europe/docker-spark		//集群参考
+		https://dxysun.com/2018/04/16/centosForSpark/		//有用 不过只有两台机...集群参考!!
+
+
+
+
 
 
 

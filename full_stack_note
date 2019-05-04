@@ -2556,8 +2556,8 @@ CSS 框模型
 	|      |      |                            |      |     |
 	|      |      |                            |      |     |
 	|      |      ------------------------------      |     |
-	|      |                                   |            |
-	|      |                                   |            |
+	|      |                                          |     |
+	|      |                                          |     |
 	|      --------------------------------------------     |
 	|                                                       |
 	|                                                       |
@@ -9649,21 +9649,3246 @@ body { font-family: 'EB Garamond', serif; }
 
 
 20190220
-今天就补全 hadoop spark: 
-	zookeeper Hbase Hive Sqoop 需要拓展的内容
-	参考: 
-		http://dblab.xmu.edu.cn/blog/1709-2/ 	//理论
-		https://www.jianshu.com/p/4801bb7ab9e0			//集群参考
-		https://github.com/big-data-europe/docker-spark		//集群参考
-		https://dxysun.com/2018/04/16/centosForSpark/		//有用 不过只有两台机...集群参考!!
+补全分布式任务计算运行系统主要 hadoop + spark:
+hadoop 是一个分布式计算系统 主要包含 
+	分布式存储的文件系统 HDFS
+	节点管理辅助系统 yarn
+	分布式计算单元架构 mapreduce
+一个分布分布式系统意味着 可以通过 集群的的力量 实现庞大的数据分析处理
+spark 是一个 成熟的分布式计算架构软件, 一般用于单纯的分布式计算,自身本来就是带有节点管理,
+	使用 spark自身的节点管理执行分布式计算, 属于 standalone模式,
+	而使用 hadoop 的 yarn 作为节点管理执行分布式计算是 另外的一种模式!!
+	组合到 hadoop 使用 ,替代 mapreduce 分布计算架构,应用在特定的场景,工作效率更加高效,
+		因为配合 hadoop 的 HDFS 等资源, 所以能实现更多复杂的 分布任务
+Hbase 是运行再 HDFS 上的 非sql数据库 (key-value数据库)
+
+接下来是 真实 hadoop 生产环境的集群搭建: (使用 docker 模拟)
+准备环境(每个节点都有):
+	建立一个新的局域网:
+		sudo docker network create hadoop-spark-net --subnet=172.19.0.0/16 --ip-range=172.19.0.0/16 --gateway=172.19.0.1  
+	查看目前为止的局域网络分配:
+		sudo docker network ls
+		NETWORK ID          NAME                         DRIVER              SCOPE
+		c0855bb6075c        bridge                       bridge              local	"Subnet": "172.17.0.0/16"
+		aec052958d73        electicsearch_test_default   bridge              local	"Subnet": "172.18.0.0/16"
+		e9823d19d9bc        hadoop-spark-net             bridge              local	"Subnet": "172.19.0.0/16"
+		ffcc34d472a4        host                         host                local	null
+		5010361fce5e        mongodb-net                  bridge              local	"Subnet": "172.23.0.0/16"
+		4a6c0cd999bd        none                         null                local	null
+		c3c65c6eed73        pxc-net                      bridge              local	"Subnet": "172.22.0.0/16
+	创建 3个 容器节点 hdsp_m hdsp_w1 hdsp_w2
+		sudo docker run -d --privileged=true --network=hadoop-spark-net --ip=172.19.0.2 -itd -h hadoopsparkmaster --add-host=hadoopsparkworker1:172.19.0.3 --add-host=hadoopsparkworker2:172.19.0.4 --name=hdsp_m centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=hadoop-spark-net --ip=172.19.0.3 -itd -h hadoopsparkworker1 --add-host=hadoopsparkmaster:172.19.0.2 --add-host=hadoopsparkworker2:172.19.0.4 --name=hdsp_w1 centos /usr/sbin/init
+		sudo docker run -d --privileged=true --network=hadoop-spark-net --ip=172.19.0.4 -itd -h hadoopsparkworker2 --add-host=hadoopsparkmaster:172.19.0.2 --add-host=hadoopsparkworker1:172.19.0.3 --name=hdsp_w2 centos /usr/sbin/init 
+			(-h 是定义一个hostname,不然一个乱码代替, 注意建立的容器不能修改 hostname
+			[root@b39d369b1b11 /]# 	//未定义hostname 是一个乱码
+			[root@hadoopspark_master /]# 	//定义hostname 后  
+			三个节点组成的集群网络需要 互相认识对方的 IP , 
+			--add-host 是添加对方机子的 IP 映射, 到容器的 /etc/hosts 文件里
+			建立好的 /etc/hosts 是不能修改,所以只能 docker run 时候 设置好!!
+			)
+	查看容器的 hosts 可以看到: vi /etc/hosts
+		172.19.0.2      hadoopspark_master
+		172,19.0.3      hadoopspark_worker1
+		172.19.0.4      hadoopsaprk_worker2
+	需要安装 ssh 并实现三节点 无密登录 (方便后面的集群配置)
+		安装 ssh :yum install openssh-server openssh-clients -y
+		开启公钥验证 vi /etc/ssh/sshd_config  添加:   
+			PubkeyAuthentication yes	
+		容器需要修改 root 密码,用于远程ssh登录: echo 'root:123456'|chpasswd
+			容器建立时都被随机建立的 root 密码.需要自己更换回自己知道的密码
+		每台节点 生成公钥、私钥: 执行ssh-keygen -t rsa	//一律回车,不需要设置 自身ssh 密码,(注意此密码不是 远程用户登录密码)
+//////////////////////////////  ssh-keygen -t rsa  (log) ///////////////////////////
+Generating public/private rsa key pair.
+Enter file in which to save the key (/root/.ssh/id_rsa): 
+Created directory '/root/.ssh'.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /root/.ssh/id_rsa.
+Your public key has been saved in /root/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:EKPDf+4spHKrPxgfbLNXK4AUpW00E+69P+XgS4ykIS4 root@hadoopspark_master
+The key's randomart image is:
++---[RSA 2048]----+
+|   .*.o          |
+|  .* + o         |
+|  ..B .          |
+|  .o + .         |
+| ..oo + S        |
+| .o.*+.*o .      |
+|E .=.Boo+=       |
+| .o * +=+ .      |
+|  .=o+ o=o       |
++----[SHA256]-----+
+//////////////////////////////  ssh-keygen -t rsa  (log) ///////////////////////////
+		实现登录自己免密:
+		把自己的公钥id_rsa.pub放入到自己的认证文件中authorized_keys:
+			systemctl start sshd	//需要先启动 sshd 服务,
+			chmod 700 /root/	//一定要对 以下文件目录 做权限处理,不然免密登录失败 要求输入 远程用户的密码
+			chmod 700 /root/.ssh/	//一定要对 以下文件目录 做权限处理,不然免密登录失败 要求输入 远程用户的密码	 
+			ssh-copy-id root@localhost	//获得自己的 公钥考到自己的 认证文件authorized_keys
+		这时,自己登录自己 ssh root@localhost  第一次需要输入密码, 以后的都不需要了!!	
+		实现登录 远程节点 免密:
+			ssh-copy-id root@172.19.0.3	//获取运程机子的ssh 公钥!
+			ssh root@172.19.0.3	//然后就可以免密登录远程ssh
+		以此类推,建立 3个节点 可以互免密登录 !!
+	安装 java8 (注意 只能是java8, 因为 hadoop 到目前 20190304,我使用的 3.2 版本依然是基于 java8)
+		yum 装 java  (省事)
+		先 java -version 查看已安装的,如果有安装的,如果版本太低就选择卸载:
+		yum -y remove java-1.7.0-openjdk*  //卸载旧的 jdk
+		yum -y list java*  //查看软件库的 java版本更新 情况
+		yum -y install java-1.8-openjdk*	   //安装查看到的新的 jdk
+		寻找 JAVA_HOME 的集体位置: 
+		whereis javac
+			javac: /usr/bin/javac /usr/share/man/man1/javac.1.gz
+		ll /usr/bin/javac    // 查看 /usr/bin/javac 软链接到啥位置
+			lrwxrwxrwx 1 root root 23 Feb 27 02:37 /usr/bin/javac -> /etc/alternatives/javac
+		ll  /etc/alternatives/javac
+		lrwxrwxrwx 1 root root 63 Feb 27 02:37 /etc/alternatives/javac -> /usr/lib/jvm/java-1.8-openjdk-xxxxxxx.x86_64/bin/javac
+		这时,JAVA_HOME 的位置 应该就是 : /usr/lib/jvm/java-1.8-openjdk-xxxxxxxxxx.el7_6.x86_64
+	安装其他 工具:
+		yum -y install rsync wget
+准备hadoop3.2:(一般装master节点,然后配置好, 把整个hadoop打包拷贝到从节点解压,不建议从节点重新安装和重新配置):
+	在 root/software 下载: wget http://mirror.cogentco.com/pub/apache/hadoop/common/hadoop-3.2.0/hadoop-3.2.0.tar.gz
+	然后解压得 hadoop-3.2.0 : tar -zxf /root/software/hadoop-3.2.0.tar.gz -C /root
+	更改目录名: mv hadoop-3.2.0 hadoop
+	添加 系统环境变量: vi /etc/profile
+		#hadoop
+		HADOOP_HOME=/root/hadoop/
+		PATH=$HADOOP_HOME/bin:$PATH
+		export PATH HADOOP_HOME
+	环境变量生效 :	source /etc/profile
+简单配置 hadoop 启动使用:
+	正常启动所必须的设置项： hadoop-env.sh slaves、core-site.xml、hdfs-site.xml、mapred-site.xml、yarn-site.xml
+	参数参考:
+		https://hadoop.apache.org/docs/r2.4.1/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml
+		https://hadoop.apache.org/docs/r2.6.0/hadoop-project-dist/hadoop-common/core-default.xml
+		https://hadoop.apache.org/docs/r3.2.0/   //左下角 configuration
+	master节点(容器):
+//////////////////////////  简单启动 hadoop 的配置  (master节点) //////////////////////////////////////////
+vi /root/hadoop/etc/hadoop/hadoop-env.sh	//添加 java_home 环境变量
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64/	
 
 
+vi /root/hadoop/etc/hadoop/core-site.xml
+<configuration>
+    <property>
+        <name>fs.default.name</name>			//hdfs 的根节点入口
+        <value>hdfs://172.19.0.2:9000</value>
+        <description> uri of HDFS, hdfs://namenode_name:port</description>
+    </property>
+    <property>
+        <name>hadoop.tmp.dir</name>			//hdfs 实际放置数据映射到机子的文件夹位置
+        <value>/root/hadoop/tmp</value>
+        <description>temp files folder of namenode </description>
+    </property>
+    <property>
+        <name>fs.defaultFS</name>			//还是 hdfs 的根节点入口
+        <value>hdfs://172.19.0.2:9000</value>
+    </property>
+</configuration>
 
 
+vi /root/hadoop/etc/hadoop/hdfs-site.xml	
+<configuration>
+    <property>
+        <name>dfs.namenode.secondary.http-address</name>
+        <value>172.19.0.2:50090</value>			//用户监视 hdfs 的入口
+    </property>
+    <property>
+        <name>dfs.replication</name>			//有的说是数据备份数.有说是分布集群放数据的物理节点数
+        <value>3</value>
+    </property>
+    <property>
+        <name>dfs.namenode.name.dir</name>		//主节点的信息的数据的物理节点存放	
+        <value>file://${hadoop.tmp.dir}/dfs/name</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>		//数据节点的信息的数据的物理节点存放
+        <value>file://${hadoop.tmp.dir}/dfs/data</value>
+    </property>
+</configuration>
+dfs.namenode.name.dir注意与 dfs.name.dir 是有区别的
+dfs.datanode.data.dir 和 dfs.data.dir 同理
+注意 查看官方 config 文件 斌没有  dfs.data.dir dfs.name.dir 这两项
 
 
+vi /root/hadoop/etc/hadoop/mapred-site.xml		//map分布计算架构单元配置
+<configuration>
+    <property>
+        <name>mapreduce.framework.name</name>		//使用 yarn 节点管理系统
+        <value>yarn</value>
+    </property>
+    <property>
+        <name>mapreduce.jobhistory.address</name>	//查看 计算任务历史信息 的入口
+        <value>172.19.0.2:10020</value>
+    </property>
+    <property>
+        <name>mapreduce.jobhistory.webapp.address</name>	//查看 计算任务历史信息 的浏览器管理入口
+        <value>172.19.0.2:19888</value>
+    </property>
+</configuration>
+注意 新版本没有 mapred.job.tracker, mapred.local.dir
 
+
+vi /root/hadoop/etc/hadoop/yarn-site.xml
+<configuration>
+<!-- Site specific YARN configuration properties -->
+    <property>
+        <name>yarn.resourcemanager.hostname</name>	//yarn 节点管理服务的 主节点
+        <value>172.19.0.2</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>	//附加 服务 mapreduce_shuffle,纤细谷歌!!
+        <value>mapreduce_shuffle</value>
+    </property>
+</configuration>
+
+
+vi /root/hadoop/etc/hadoop/workers	//旧版hadoop是 slaves 文件, 表示那些机子提供 worker 服务!!
+172.19.0.2			//注意表示 master 容器下 也提供一个 worker 服务, master 和 worker 服务共存把并不冲突
+172.19.0.3			//一般填写 ip 或者 映射ip的 hostname, 一行一个	
+172.19.0.4
+
+
+添加 hadoop自己的环境变量
+vi /root/hadoop/etc/hadoop/hadoop-env.sh
+export HDFS_NAMENODE_USER=root
+export HDFS_DATANODE_USER=root
+export HDFS_SECONDARYNAMENODE_USER=root
+export HDFS_JOURNALNODE_USER=root
+export YARN_RESOURCEMANAGER_USER=root
+export YARN_NODEMANAGER_USER=root
+\\\\\\\\\\\\\\\\\\\\\\\\\\  简单启动 hadoop 的配置  (master节点) \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	worker节点:
+		(把配置好的 master 节点 的 hadoop 直接打包拷贝到 我让可燃节点)
+		master:
+			cd /root
+			tar zcf hadoop.tar.gz hadoop
+			scp hadoop.tar.gz root@172.19.0.3:/root
+			scp hadoop.tar.gz root@172.19.0.4:/root
+		worker1 worker2 节点:
+			cd /root
+			tar -zxf hadoop.tar.gz
+		简单启动,并不需要 worker 节点继续深入配置 hadoop
+		修改和 master节点同样的 /etc/profile 环境变量!!!
+	启动:
+		首次启动需要先在 Master 节点执行 NameNode 的格式化
+			hdfs namenode -format
+		然后继续在 master 节点:
+			start-dfs.sh
+			start-yarn.sh
+			mapred --daemon start historyserver
+		成功后: 可以查看:
+			[root@hadoopsparkmaster ~]# jps
+			22035 NodeManager		//yarn 从服务
+			21205 NameNode			//hdfs 主服务
+			10716 DataNode			//hdfs 从服务	workers文件也是设置了自己ip得到
+			21898 ResourceManager		//yarn 主服务
+			22490 JobHistoryServer		//任务历史管理服务 
+			21515 SecondaryNameNode		//hdfs 主服务备用
+			22559 Jps
+			[root@hadoopsparkworker1 ~]# jps
+			11002 Jps
+			10796 NodeManager		//yarn 从服务
+			10716 DataNode			//hdfs 从服务
+		继续查看技巧:
+			//查看 官方默认configuration  
+			//	https://hadoop.apache.org/docs/r3.2.0/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml
+			//得知各个监视端口的使用
+			网页打开 172.19.0.2:9870 查看	//查看 官方默认configuration得知
+			网页打开 172.19.0.2:8088 查看	
+			网页打开 172.19.0.2:50070 查看
+			网页打开 172.19.0.2:9000 查看
+	测试:
+		尝试执行一个分布式任务!!
+		首先创建 HDFS 上的用户目录：
+			hdfs dfs -mkdir -p /user/root     //由于没有创建用户 机子属于 root 用户的 所以 需要这样子
+		将 /root/hadoop/etc/hadoop 中的配置文件作为输入文件复制到分布式文件系统中
+			hdfs dfs -mkdir input		//如果没有 -mkdir /user/root ,这条不会成功
+			hdfs dfs -put /root/hadoop/etc/hadoop/*.xml input
+		接着就可以运行 MapReduce 作业了：
+		hadoop jar /root/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar grep input output 'dfs[a-z.]+'
+		出错 ,需要设置 HADOOP_MAPRED_HOME (所有节点都有)
+			vi /root/hadoop/etc/hadoop/mapred-site.xml
+			    <property>
+			        <name>yarn.app.mapreduce.am.env</name>
+			        <value>HADOOP_MAPRED_HOME=/root/hadoop/</value>
+			    </property>
+			    <property>
+			        <name>mapreduce.map.env</name>
+			        <value>HADOOP_MAPRED_HOME=/root/hadoop/</value>
+			    </property>
+			    <property>
+			        <name>mapreduce.reduce.env</name>
+			        <value>HADOOP_MAPRED_HOME=/root/hadoop/</value>
+			    </property>
+		重新 运行例子程序
+		hdfs dfs -rm input/* 			//*/  去掉原来的文件
+		hdfs dfs -put /root/hadoop/etc/hadoop/*.xml input			//*/
+		hadoop jar /root/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar grep input output 'dfs[a-z.]+'
+		成功启动 测试 hadoop3.2
+
+spark 替换 mapreduce 作为 hadoop 的分布式计算单元架构
+	同样先 master 容器节点安装 spark
+		配合 hadopp3.2 应该取哪个版本的 spark 比较 讲究:
+			参考:http://dblab.xmu.edu.cn/blog/1307-2/
+			究竟选择 in hadoop2.7 还是 without hadoop 的镜像,比较讲究,按道理我们应该选择 without hadoop的版本
+			因为我们 安装了 hadoop3.2, 不需要spark安装时添附加的 hadoop 接口,
+			但是 这里我们选择 in hadoop2.7 的版本,好像也没有出问题!!!
+		获得镜像: wget https://archive.apache.org/dist/spark/spark-2.4.0/spark-2.4.0-bin-hadoop2.7.tgz
+		注意,这次尝试使用 spark-2.4.0-bin-hadoop2.7.tgz 自带 scala ,所以不需要自己安装scala 和配置 环境变量 SCALA_HOME
+		安装:
+			tar -zxf spark-2.4.0-bin-hadoop2.7.tgz -C /root
+			cd /root
+			mv spark-2.4.0-bin-hadoop2.7 spark
+		更改环境变量:
+			vi /etc/profile
+				#spark
+				export SPARK_HOME=/root/spark/
+				export PATH=$SPARK_HOME/bin:$PATH
+			使生效 source /etc/profile
+		配置:
+			cp /root/spark/conf/spark-env.sh.template /root/spark/conf/spark-env.sh
+			vi /root/spark/conf/spark-env.sh
+				export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64/
+				export SPARK_MASTER_HOST=172.19.0.2
+				export HADOOP_CONF_DIR=/root/hadoop/etc/hadoop
+
+			cp /root/spark/conf/slaves.template /root/spark/conf/slaves
+			vi /root/spark/conf/slaves
+				去掉 localhosts
+				172.19.0.3
+				172.19.0.4
+
+	打包到 worker节点(slave节点)
+		tar zcf spark.tar.gz spark
+		scp spark.tar.gz root@172.19.0.3:/root
+		scp spark.tar.gz root@172.19.0.4:/root	
+
+	worker节点操作:
+		解压 spark :
+			cd /root
+			tar -zxf spark.tar.gz
+
+		环境变量:也有这样子:
+			vi /etc/profile
+				#hadoop
+				HADOOP_HOME=/root/hadoop/
+				PATH=$HADOOP_HOME/bin:$PATH
+				export PATH HADOOP_HOME
+
+				#spark
+				export SPARK_HOME=/root/spark/
+				export PATH=$SPARK_HOME/bin:$PATH
+			使生效 source /etc/profile
+	启动:
+		先启动 hadoop 环境
+			master容器:
+			/root/hadoop/sbin/start-dfs.sh
+			/root/hadoop/sbin/start-yarn.sh
+			mapred --daemon start historyserver
+
+		master 容器 启动 spark
+			/root/spark/sbin/start-all.sh
+			jps 发现 msater节点多了 master  worker节点多了worker 即成功
+	测试:
+		启动 Spark Shell (默认 standalone 模式)
+			/root/spark/bin/spark-shell	//或者直接 spark-shell  因为注册了环境变量
+			这样 默认 使用 standalone 模式, 即使用spark 自带的节点管理
+			查看http://172.19.0.2:8080
+			查看http://172.19.0.2:4040
+		如果使用 yarn 节点管理模式 启动 spark shell
+			spark-shell --master yarn
+		执行 分布式任务!!! satndalone 模式
+ 			spark-submit --class org.apache.spark.examples.SparkPi --master spark://172.19.0.2:7077 /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar 100 2>&1 | grep "Pi is roughly"
+			成功打印: Pi is roughly 3.1421811142181113 
+		执行 分布式任务!!!  使用 hadoop的yarn节点管理 的模式
+			spark-submit --class org.apache.spark.examples.SparkPi --master yarn-cluster /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar
+			//被提醒 新版本 spark 只需要 --master yarn 写 即可
+			spark-submit --class org.apache.spark.examples.SparkPi --master yarn /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar
+			发现两种写法的 输出log 不太一致, 前者一个post到网端,后者post到 终端 
+			中的来说,成功的,未发现异常
+			点击 输出结果的网址(其中 URL) ,可以查看 更加详细的执行结果信息例如
+				 client token: N/A
+				 diagnostics: N/A
+				 ApplicationMaster host: hadoopsparkmaster
+				 ApplicationMaster RPC port: 39585
+				 queue: default
+				 start time: 1551345119522
+				 final status: SUCCEEDED
+				 tracking URL: http://hadoopsparkmaster:8088/proxy/application_1551340373862_0006/
+				 user: root
+		配合 hadoop HDFS 使用
+			# 下面这条命令中，我们把spark安装目录下的README.md文件上传到分布式文件系统HDFS的根目录下
+			hadoop fs -put /root/spark/README.md /
+			# standalone 模式 进入 spark-shell
+			spark-shell --master spark://172.19.0.2:7077	//spark://代表 standalone 模式
+			输入代码: (成功, 表示 spark2.4 与 hadoop3.2 的 HDFS 还没有出现冲突!! )
+			scala> val textFile = sc.textFile("hdfs://172.19.0.2:9000/README.md")
+			textFile: org.apache.spark.rdd.RDD[String] = hdfs://172.19.0.2:9000/README.md MapPartitionsRDD[1] at textFile at <console>:24
+			scala> textFile.count()
+			res0: Long = 99                                                                 
+			scala> textFile.first()
+			res1: String = # Apache Spark
+	测试可见:  spark2.4 与 hadoop3.2  集群暂时没有冲突问题!!!
+	关闭集群:
+		关闭 spark 集群:
+			/root/spark/sbin/stop-all.sh
+		关闭 hadoop 集群:
+			mapred --daemon stop historyserver
+			/root/hadoop/sbin/stop-yarn.sh
+			/root/hadoop/sbin/stop-dfs.sh
+
+
+zookeeper 实现 spark  standalone模式下的 高可用!!!!
+	首先 master容器 安装配置 zookeeper
+		获取镜像: wget http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.12/zookeeper-3.4.12.tar.gz
+		安装:
+			cd /root
+			tar -zxf /root/software/zookeeper-3.4.12.tar.gz -C /root
+			mv zookeeper-3.4.12/ zookeeper
+		配置:
+			mkdir zookeeper/data zookeeper/logs
+			echo '0'>zookeeper/data/myid
+			cp zookeeper/conf/zoo_sample.cfg zookeeper/conf/zoo.cfg
+			vi zookeeper/conf/zoo.cfg
+				dataDir=/root/zookeeper/data
+				dataLogDir=/root/zookeeper/logs
+				server.0= 172.19.0.2:2888:3888
+				server.1= 172.19.0.3:2888:3888
+				server.2= 172.19.0.4:2888:3888
+		拷贝到 worker 节点
+			tar zcf zookeeper.tar.gz zookeeper
+			scp zookeeper.tar.gz root@172.19.0.3:/root
+			scp zookeeper.tar.gz root@172.19.0.4:/root
+
+	worker节点 安装和配置 zookeeper:
+		tar -zxf zookeeper.tar.gz
+		rm zookeeper/data/myid
+		echo '1'>zookeeper/data/myid		//仅 172.19.0.3 (worker1)节点操作
+		echo '2'>zookeeper/data/myid		//仅 172.19.0.4 (worker2)节点操作
+	配置 spark , (所有容器都要):
+		vi /root/spark/conf/spark-env.sh
+			#export SPARK_MASTER_HOST=172.19.0.2（因为设置了zookeeper,所以这行不用了，注释掉）
+			export SPARK_DAEMON_JAVA_OPTS="-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=172.19.0.2:2181,172.19.0.3:2181,172.19.0.4:2181 -Dspark.deploy.zookeeper.dir=/spark"
+
+	启动:
+		先启动zookeeper, 所有容易都要:
+			/root/zookeeper/bin/zkServer.sh start
+			//成功后 jps 可以看到 QuorumPeerMain
+		master 节点启动 hadoop 集群:
+			/root/hadoop/sbin/start-dfs.sh
+			/root/hadoop/sbin/start-yarn.sh
+			mapred --daemon start historyserver
+		master 节点启动 spark 集群:
+			/root/spark/sbin/start-all.sh
+		worker节点都要 启动:
+			/root/spark/sbin/start-master.sh	//即 worker节点 登记成为备用 master
+	监视查看:
+		ip:8080 端口 查看master状态
+		ip:8081 端口 查看worker状态
+		master 节点启动的master早 所以 查看master状态 Status: ALIVE 
+		worker 节点启动的master晚 所以 查看master状态 Status: STANDBY 		
+	测试:
+		测试1
+		172.19.0.3 节点启动 spark-shell  :   spark-shell --master spark://172.19.0.3:7077	
+			//出错,不行的,因为 alive 的master是 172.19.0.2, 
+			//不会自动转到 172.19.0.3 !!
+		测试2
+		172.19.0.3 节点启动 spark-shell  :   spark-shell --master spark://172.19.0.2:7077
+			//成功
+		关闭 172.19.0.2 的 master : /root/spark/sbin/stop-master.sh
+			//这时 172.19.0.3 节点启动 spark-shell 出现: 正在 重连接备用master
+			//scala> 2019-02-28 14:51:22 WARN  StandaloneAppClient$ClientEndpoint:66 - Connection to hadoopsparkmaster:7077 failed; waiting for master to reconnect...
+			//2019-02-28 14:51:22 WARN  StandaloneSchedulerBackend:66 - Disconnected from Spark cluster! Waiting for reconnection...
+		查看 0.3 节点 8080 端口 已经自动升为 master alive
+		但是 spark-shell 还是没有重新自动转连成功的迹象 
+		因为重链成功应该 出现 master has changed，new master is at spark://172.19.0.3:7077
+		但是退出 连接 spark-shell --master spark://172.19.0.3:7077 会成功
+		初步认为 配置没有到位, 节点可以 主备切换, 但是运行中被打断的任务 直接崩溃!!
+
+		测试3
+		现在alive msater是 0.3 节点
+		0.2节点执行 : 
+			spark-submit --class org.apache.spark.examples.SparkPi --master spark://172.19.0.3:7077 /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar
+		同时 0.3节点执行 : /root/spark/sbin/stop-master.sh 关闭master,
+		这时 运行中的程序会崩溃!!!!! 并不会切换 alive master 继续执行!! 
+
+		测试4 
+		假如 此刻 0.3 节点是 alive master, 
+		0.2节点执行: spark-shell --master yarn
+		同时 0.3节点执行 : /root/spark/sbin/stop-master.sh 关闭master,
+		因为使用 hadoop yarn 节点管理!!!  
+		所以 spark 自带的节点管理 崩溃 切换并不会影响到什么 !!!
+
+		测试5
+		假如 此刻 0.4 节点是 alive master, 
+		0.3节点执行: 
+		spark-submit --class org.apache.spark.examples.SparkPi --master yarn-cluster /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar
+		同时 0.4节点执行 : /root/spark/sbin/stop-master.sh 关闭master,
+		真的, 使用 yarn 后 alive master zookeeper 什么的就没有关系!!!, 程序照样运行!!!
+
+		暂时得到的结果 zookeeper 实现的 standalone 模式高可用, 功能很有限!!!,或许是配置未到位!!!
+
+
+zookeeper 对 hadoop 实现高可用,
+	zookeeper 按上述已经部署好,所以跳过
+	master 容器 继续配置 hadoop:
+/////////////////////// master 配置 hadoop 配合 zookeeper 实现高可用 //////////////////////////
+vi /root/hadoop/etc/hadoop/core-site.xml   添加
+    <!-- 指定ZooKeeper集群的地址和端口。注意，数量一定是奇数，且不少于三个节点-->
+    <property>
+        <name>ha.zookeeper.quorum</name>
+        <value>172.19.0.2:2181,172.19.0.3:2181,172.19.0.4:2181</value>
+    </property>
+
+vi /root/hadoop/etc/hadoop/hdfs-site.xml  
+去掉:
+    <property>
+        <name>dfs.namenode.secondary.http-address</name>
+        <value>172.19.0.2:50090</value>
+    </property>
+添加
+  <!-- 指定副本数，不能超过机器节点数  -->
+  <property>
+    <name>dfs.replication</name>
+    <value>3</value>
+  </property>
+  <!-- 为namenode集群定义一个services name -->
+  <property>
+    <name>dfs.nameservices</name>
+    <value>whservice</value>
+  </property>
+  <!-- nameservice 包含哪些namenode，为各个namenode起名 -->
+  <property>
+    <name>dfs.ha.namenodes.whservice</name>
+    <value>masterA,masterB</value>
+  </property>
+  <!-- 名为masterA的namenode的rpc地址和端口号，rpc用来和datanode通讯 -->
+  <property>
+    <name>dfs.namenode.rpc-address.whservice.masterA</name>
+    <value>172.19.0.2:9000</value>
+  </property>
+  <!-- 名为masterB的namenode的rpc地址和端口号，rpc用来和datanode通讯 -->
+  <property>
+    <name>dfs.namenode.rpc-address.whservice.masterB</name>
+    <value>172.19.0.3:9000</value>
+  </property>
+  <!--名为masterA的namenode的http地址和端口号，用来和web客户端通讯 -->
+  <property>
+    <name>dfs.namenode.http-address.whservice.masterA</name>
+    <value>172.19.0.2:50070</value>
+  </property>
+  <!-- 名为masterB的namenode的http地址和端口号，用来和web客户端通讯 -->
+  <property>
+    <name>dfs.namenode.http-address.whservice.masterB</name>
+    <value>172.19.0.3:50070</value>
+  </property>
+  <!-- namenode间用于共享编辑日志的journal节点列表 -->
+  <property>
+    <name>dfs.namenode.shared.edits.dir</name>
+    <value>qjournal://172.19.0.2:8485;172.19.0.3:8485;172.19.0.4:8485/whservice</value>
+  </property>
+  <!-- 指定该集群出现故障时，是否自动切换到另一台namenode -->
+  <property>
+    <name>dfs.ha.automatic-failover.enabled.whservice</name>
+    <value>true</value>
+  </property>
+  <!-- journalnode 上用于存放edits日志的目录 -->
+  <property>
+    <name>dfs.journalnode.edits.dir</name>
+    <value>/root/hadoop/tmp/data/dfs/journalnode</value>
+  </property>
+  <!-- 客户端连接可用状态的NameNode所用的代理类 -->
+  <property>
+    <name>dfs.client.failover.proxy.provider.whservice</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+  <!-- 一旦需要NameNode切换，使用ssh方式进行操作 -->
+  <property>
+    <name>dfs.ha.fencing.methods</name>
+    <value>sshfence</value>
+  </property>
+  <!-- 如果使用ssh进行故障切换，使用ssh通信时用的密钥存储的位置 -->
+  <property>
+    <name>dfs.ha.fencing.ssh.private-key-files</name>
+    <value>/root/.ssh/id_rsa</value>
+  </property>
+  <!-- connect-timeout超时时间 -->
+  <property>
+    <name>dfs.ha.fencing.ssh.connect-timeout</name>
+    <value>30000</value>
+  </property>
+
+
+vi /root/hadoop/etc/hadoop/yarn-site.xml
+去掉:
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>172.19.0.2</value>
+    </property>
+添加
+  <!-- 启用HA高可用性 -->
+  <property>
+    <name>yarn.resourcemanager.ha.enabled</name>
+    <value>true</value>
+  </property>
+  <!-- 指定resourcemanager的名字 -->
+  <property>
+    <name>yarn.resourcemanager.cluster-id</name>
+    <value>yrm</value>
+  </property>
+  <!-- 使用了2个resourcemanager,分别指定Resourcemanager的地址 -->
+  <property>
+    <name>yarn.resourcemanager.ha.rm-ids</name>
+    <value>rm1,rm2</value>
+  </property>
+  <!-- 指定rm1的地址 -->
+  <property>
+    <name>yarn.resourcemanager.hostname.rm1</name>
+    <value>172.19.0.2</value>
+  </property>
+  <!-- 指定rm2的地址  -->
+  <property>
+    <name>yarn.resourcemanager.hostname.rm2</name>
+    <value>172.19.0.3</value>
+  </property>
+  <!-- 指定当前机器masterA作为rm1 -->
+  <property>
+    <name>yarn.resourcemanager.ha.id</name>
+    <value>rm1</value>
+  </property>
+  <!-- 指定zookeeper集群机器 -->
+  <property>
+    <name>yarn.resourcemanager.zk-address</name>
+    <value>172.19.0.2:2181,172.19.0.3:2181,172.19.0.4:2181</value>
+  </property>
+  <!-- NodeManager上运行的附属服务，默认是mapreduce_shuffle -->
+  <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
+\\\\\\\\\\\\\\\\\\\\\\\ master 配置 hadoop 配合 zookeeper 实现高可用 \\\\\\\\\\\\\\\\\\\\\\\\\\
+
+	清空 之前的数据:(所有节点)
+		rm -rf /root/hadoop/logs/*			//*/
+		rm -rf /root/hadoop/tmp/*			//*/
+		合并: rm -rf /root/hadoop/tmp/* /root/hadoop/logs/*       //*/
+	重置其他 worker 节点的 hadoop!!!
+		master节点:
+			cd /root
+			rm -rf hadoop.tar.gz
+			tar zcf hadoop.tar.gz hadoop
+			scp hadoop.tar.gz root@172.19.0.3:/root
+			scp hadoop.tar.gz root@172.19.0.4:/root	
+		worker节点:
+			rm -rf hadoop.tar.gz
+			rm -rf hadoop
+			tar -zxf hadoop.tar.gz
+	worker节点 深入修改配置:
+		worker1节点:
+		vi /root/hadoop/etc/hadoop/yarn-site.xml
+		修改
+		  <property>
+		    <name>yarn.resourcemanager.ha.id</name>
+		    <value>rm2</value>
+		  </property>
+
+		worker2节点:
+		vi /root/hadoop/etc/hadoop/yarn-site.xml
+		删除:
+		  <property>
+		    <name>yarn.resourcemanager.ha.id</name>
+		    <value>rm1</value>
+		  </property>
+
+	为了实现 ssh 的故障转移,还需要 fuser (所以节点都要检查!!)
+		缺少fuster程序，将在zkfc的日志文件中发现如下错误：
+		PATH=$PATH:/sbin:/usr/sbin fuser -v -k -n tcp 9000 via ssh: bash: fuser: 未找到命令
+		Unable to fence service by any configured method
+		java.lang.RuntimeException: Unable to fence NameNode at master189/192.168.29.189:9000
+		Psmisc软件包中包含了fuster 所有节点安装 psmisc
+		yum install psmisc
+	启动:
+		所有节点启动zookeeper:
+			/root/zookeeper/bin/zkServer.sh start	
+				// /root/zookeeper/bin/zkServer.sh status 可以查看zookeeper节点运行状态!!!
+		格式化 同步 集群:
+			所有节点启动Journalnode  (格式化namenode时要先启动各个JournalNode机器上的journalnode进程)
+				hdfs --daemon start journalnode		
+			master (即masterA)节点 格式化 NameNode和ZKFC
+				hdfs namenode -format
+				hdfs zkfc -formatZK
+			worker1(即masterB)备用节点 同步主节点数据, 
+				在备用主节点同步主节点的元数据时，主节点的 HDFS 必须已经启动, 即主节点namenode启动
+				因为同步需要接到 master的 9000 端口 实现数据同步,
+				所以首先 master先运行namenode:	hdfs --daemon start namwnode
+				worker1节点 执行同步:		hdfs namenode -bootstrapStandby
+				然后 master节点关闭 namenode:	hdfs --daemon stop namwnode
+		启动 hadoop 集群:
+			master节点启动:
+				/root/hadoop/sbin/start-dfs.sh
+				/root/hadoop/sbin/start-yarn.sh
+				hdfs --daemon start zkfc
+			worker1节点启动:
+				hdfs --daemon start zkfc 	//不然 namenode 节点不能实现热备转移
+	监视检查成功启动后的内容:
+		jps 查看成功启动后的进程栈:
+			master(masterA):jps
+				23282 Jps
+				21526 NameNode		// master start-dfs 打开的
+				21671 DataNode		// master start-dfs 打开的
+				8200 QuorumPeerMain	// master zkServer.sh start 打开的
+				22586 NodeManager	// master start-yarn 打开的
+				21933 JournalNode	// master start-dfs 重新打开的
+				17181 DFSZKFailoverController	//master hdfs --daemon start zkfc
+				22446 ResourceManager	// master start-yarn 打开的
+			worker1(masterB):jps
+				25663 Jps
+				24934 DataNode		// master start-dfs 打开的
+				25191 ResourceManager	// master start-yarn 打开的
+				18055 QuorumPeerMain	// worker1 zkServer.sh start 打开的
+				25273 NodeManager	// master start-yarn 打开的
+				25037 JournalNode	// master start-dfs 重新打开的
+				24845 NameNode		// master start-dfs 打开的
+				24270 DFSZKFailoverController	//worker1 hdfs --daemon start zkfc 打开的
+			worker2:jps
+				16293 Jps
+				16016 JournalNode	// master start-dfs 重新打开的
+				16130 NodeManager	// master start-yarn 打开的
+				13365 QuorumPeerMain	// worker2 zkServer.sh start 打开的
+				15913 DataNode		// master start-dfs 打开的
+		查看 hadoop状态 信息
+			hdfs haadmin -getServiceState masterA		//alive 表示 0.2节点 dfs namenode 活跃态
+			yarn rmadmin -getServiceState rm1 		//stanby 表示 0.2节点 yarn ResourceManager 预备态 
+			hdfs haadmin -getServiceState masterB		//stanby 表示 0.3节点 dfs namenode 预备态
+			yarn rmadmin -getServiceState rm2		//alive 表示 0.3节点 yarn ResourceManage 活跃态	
+	测试:(热备转义 高可用重要功能)
+		关闭 masterA namenode:
+			hdfs --daemon stop namenode
+			masterB 的 namenode 变成 alive !!
+			//注意到: 当 worker1(masterB)节点 没有启动 hdfs --daemon start zkfc
+			//这时, 如果 masterB 的 namenode 是standby态,那 就永远都是 standby 态, 不会进行热备转移!! 
+		关闭 masterB resourcemanager:
+			yarn --daemon stop resourcemanager
+			发现 masterA 的 resourcemanager 变成 alive
+		所以 hadoop + zookeeper 高可用集群 成功部署 搭建
+	关闭集群:
+		masterA:
+			/root/hadoop/sbin/stop-yarn.sh
+			/root/hadoop/sbin/stop-dfs.sh
+		masterA, masterB(worker1) 
+			hdfs --daemon stop zkfc
+		masterA, masterB(worker1), worker2
+			/root/zookeeper/bin/zkServer.sh stop
+	(重新)打开集群:(注意,不再需要首先每个节点独立打开JournalNode, start-dfs 自会实现!!)
+		masterA, masterB(worker1), worker2
+			/root/zookeeper/bin/zkServer.sh start
+		masterA:
+			/root/hadoop/sbin/start-dfs.sh
+			/root/hadoop/sbin/start-yarn.sh
+		masterA, masterB(worker1)
+			hdfs --daemon start zkfc
+
+zookeeper 实现 集群高可用的分析:
+	zookeeper 自身状态 与 zookeeper 监视 的 dfs 和 yarn 的节点状态 是 互不相干的!
+	zkServer.sh status 监视 zookeeper自身状态  masterA  masterB 节点都是 follower  worker2 是 leader
+	hdfs haadmin -getServiceState ,, 表示 dfs节点管理服务的状态: masterA alive , masterB standby
+	yarn rmadmin -getServiceState .. 表示 yarn节点管理服务的状态: masterA standby , masterB alive
+	所以所 dfs yarn 热备变换时  跟 zookeeper 自身状态如何,没有关系, 依然masterA,masterB>follower,  worker2>leader
+	zookeeper状态变化 除非是自身异常引起,与 dfs yarn 无关
+	zookeeper 监视 dfs 和 yarn 又是独立监视的,
+		dfs 节点管理服务对应 namenode 进程
+		yarn 节点管理服务对应 resourcemanager 进程
+		dfs主节点挂了 ,zookeeper会更换 dfs 的主节点, 不会影响 当前的 yarn 状态
+		相反同理!!!!
+
+
+hadoop高可用下 加入 Hbase 数据库
+	master节点安装
+		hbase是 hadoop 专门数据库, 使用 hbase-2.1.3 
+		wget http://www.trieuvan.com/apache/hbase/2.1.3/hbase-2.1.3-bin.tar.gz
+		cd /root
+		tar -zxf /root/software/hbase-2.1.3-bin.tar.gz -C /root
+		mv hbase-2.1.3/  hbase/
+		配置:
+//////////////////// master 节点 hadoop高可用下 配置 Hbase //////////////////
+vi /root/hbase/conf/hbase-env.sh
+//配置JDK
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.191.b12-1.el7_6.x86_64/	
+//保存pid文件
+export HBASE_PID_DIR=/root/hbase/pids
+//修改HBASE_MANAGES_ZK，禁用HBase自带的Zookeeper，因为我们是使用独立的Zookeeper
+export HBASE_MANAGES_ZK=false
+
+
+vi /root/hbase/conf/hbase-site.xml
+<configuration>
+  <!-- 设置HRegionServers共享目录，请加上端口号 -->
+  <property>
+    <name>hbase.rootdir</name>
+    <value>hdfs://172.19.0.2:9000/hbase</value>
+  </property>
+
+  <!-- 指定HMaster主机 -->		//可能出问题的地方
+  <property>
+    <name>hbase.master</name>
+    <value>hdfs://172.19.0.2:60000</value>
+  </property>
+
+  <!-- 启用分布式模式 -->
+  <property>
+    <name>hbase.cluster.distributed</name>
+    <value>true</value>
+  </property>
+
+  <!-- 指定Zookeeper集群位置 -->
+  <property>
+    <name>hbase.zookeeper.quorum</name>
+    <value>172.19.0.2:2181,172.19.0.3:2181,172.19.0.4:2181</value>
+  </property>
+
+  <!-- 指定独立Zookeeper安装路径 -->
+  <property>
+    <name>hbase.zookeeper.property.dataDir</name>
+    <value>/root/zookeeper</value>
+  </property>
+
+  <!-- 指定ZooKeeper集群端口 -->
+  <property>
+    <name>hbase.zookeeper.property.clientPort</name>
+    <value>2181</value>
+  </property>
+</configuration>
+
+vi /root/hbase/conf/regionservers
+172.19.0.2
+172.19.0.3
+172.19.0.4
+
+创建pid文件保存目录
+mkdir /root/hbase/pids
+
+\\\\\\\\\\\\\\\\\\\\ master 节点 hadoop高可用下 配置 Hbase \\\\\\\\\\\\\\\\\\
+		拷贝到 worker 节点
+			tar zcf hbase.tar.gz hbase
+			scp hbase.tar.gz root@172.19.0.3:/root
+			scp hbase.tar.gz root@172.19.0.4:/root
+
+	worker节点 处理:
+		tar -zxf hbase.tar.gz
+	启动: 
+		注意:在 namenode resourcemanager 均为 active 的节点,且是hbase.master 指定的节点 启动 Hbase !! 
+		(即要求此刻 active 主节点 是 masterA, 在masterA 启动 Hbase)
+		/root/hbase/bin/start-hbase.sh
+		备用主节点也要启动 HMaster 进程，作为备用HMaster： (此刻standby主节点是masterB)
+		/root/hbase/bin/hbase-daemon.sh start master
+
+		成功后,jps 
+			masterA 多了 HRegionServer Hmaster 
+			masterB 多了 HRegionServer Hmaster
+			worker2 多了 HRegionServer
+	
+		最后启动多个集群, 内存消耗特大, 需要 16G 内存 !!!!
+	测试:
+		测试 Hbase 高可用:
+			由于 hadoop 高可用下使用 Hbase,所有 Hbase 默认高可用 : 
+			172.19.0.2:16010 可以看到作为 hbase master , 172.19.0.2:16010 可以看到作为 hbase backup master ,
+			kill 掉 0.2 的 Hmaster, 0.3 就成了 主master
+			注意 : jps 显示 的是 执行java 的进程 和 进程pid ,所以可以通过 kill pid 来关闭进程!!
+		打开 Hbase
+			/root/hbase/bin/hbase shell	//任意一机都可以 通过客户端 登录 hbase 数据库 !!
+		hbase 的 数据库操作命令测试:
+			//查看当前HBase有哪些表
+			hbase(main):> list
+			//创建表t_user，cf1和cf2是列族，列族一般不超过3个
+			hbase(main):> create 't_user','cf1','cf2'
+			//获得表t_user的描述信息
+			hbase(main):> describe 't_user'
+			//禁用表
+			hbase(main):> disable 't_user'
+			//删除表，删除表之前要先把表禁用掉
+			hbase(main):> drop 't_user'
+			//查询表是否存在
+			hbase(main):> exists 't_user'
+			//查看全表数据
+			hbase(main):> scan 't_user'
+			//插入数据，分别是表名、key、列（列族：具体列）、值。HBase是面向列的数据库，列可无限扩充
+			hbase(main):> put 't_user' ,'001','cf1:name','chenxj'
+			hbase(main):> put 't_user' ,'001','cf1:age','18'
+			hbase(main):> put 't_user' ,'001','cf2:sex','man'
+			hbase(main):> put 't_user' ,'002','cf1:name','chenxj'
+			hbase(main):> put 't_user' ,'002','cf1:address','fuzhou'
+			hbase(main):> put 't_user' ,'002','cf2:sex','man'
+			//获取数据，可根据key、key和列族等进行查询
+			hbase(main):> get 't_user','001'
+			hbase(main):> get 't_user','002','cf1'
+			hbase(main):> get 't_user','001','cf1:age'
+	
+hadoop高可用下 使用 spark 分布计算架构
+	假设 hadoop hbase 的已经在高可用配置下打开,
+	
+	启动spark: (其实并不需要.因为启动的不是我们想象中的spark,而是 spark 的自带节点管理系统)
+		masterA节点(0.2节点)
+			/root/spark/sbin/start-all.sh	
+			0.2 多了 master , 0.3,0.4 多了 workeer
+		masterB 节点
+			/root/spark/sbin/start-master.sh
+			0.3 多了master
+		这时,其实spark 自身节点管理也被 zookeeper 监视着,能实现高可用
+	测试
+		masterA节点 启动 spark shell 利用高可用的 yarn节点管理器
+			spark-shell --master yarn  (成功) 因为使用 yarn 节点管理,不是使用自身节点管理
+			而接上 shell 后 yarn dfs 的active主节点崩溃, 并不会断开 shell ,还可以做简单工作,但是就应该不能做分布计算任务了
+		kill 掉 masterA (0,2节点) 的 master (spark的自带节点管理的 master) 然后
+			spark-shell --master spark://172.19.0.2:7077	(失败) 因为0.2的spark自带节点管理已被kill, 强制接入会出错
+			spark-shell --master spark://172.19.0.3:7077	(成功) 因为spark自身节点管理高可用模式已被zookeeper监视,0.3的spark自带节点管理 alive
+			这时, 启动 0.2 的 spark master kill 掉 0.3 的saprk master
+			在 热备转变过程中 spark-shell 只是出标示了,但是没有自动断开,还是可以工作,
+			但是 我们 也把0.2 的master kill 了后 , spark-shell 依然能工作!!!!!!!(这就比较神奇了)
+			可能是 master 未断开前便分配了 计算单元, 即使所有master 挂了 但是计算单元的连接还没有挂!!!
+		测试分布计算任务
+			spark-submit --class org.apache.spark.examples.SparkPi --master yarn-cluster /root/spark/examples/jars/spark-examples_2.11-2.4.0.jar
+			发现实际上的高可用 不能的发生在 分布计算任务正在进行时的状态!!
+			就是说 分布计算任务正在进行时,发生主备切换会 计算任务直接失败
+
+		结论: 目前测试 hadoop 实现的高可用能力还是很有限的,主要是正在运行的分布计算,再主节点突然崩溃切换时会直接 死掉,
+			不会自动转换链接并继续
+		注意 这里 我们会发现 zookeeper 分别独立地管理了 三个高可用节点集群
+			dfs 节点集群
+			yarn 节点集群
+			hbase 节点集群!!
+			spark 自带的节点管理集群
 		
+继续 要了解 hadoop 的其他 可用组件:
+	storm 跟 spark 一样都是 分布计算单元 但是内核设计理念不一样,处理不同背景下的计数,各有效率差异!!
+	hbase 是一个 在 hdfs文件系统 上的 一个key-value数据库(非关系数据库!!)
+	hue 是一个可视化ui 操作 HDFS
+	hive 是 把 存在 hdfs文件系统的文件 看作像 sql 数据表上的数据 那样的结构,通过 sql 语言来 管理 hdfs 上 的文件 !!!
+		应用场景
+			Hive适合用来对一段时间内的数据进行分析查询，
+				例如，用来计算趋势或者网站的日志。Hive不应该用来进行实时的查询。因为它需要很长时间才可以返回结果。
+			hive表中的数据 就是hdfs目录中的文件。按表名把文件夹分开。
+				如果是分区表，则分区值是子文件夹，可以直接在M/R job里使用这些数据.
+			hive数据分为真实存储的数据和元数据:
+		真实数据存储在hdfs中，元数据存储在mysql中
+		metastore 元数据存储数据库
+		Hive将元数据存储在数据库中，如MySQL、derby。
+		Hive中的元数据包括表的名字，表的列和分区及其属性，表的属性（是否为外部表等），表的数据所在目录等。
+		工作方式: 机子A 安装了hive ,输入了获取 hdfs 所有名字有9的文件!!
+			于是hive 转换成 mapreduce 程序在hadoop集群执行, 最后得到的数据 返回机子A 的 hive 生成一张数据表
+			输入到 机子A的 mysql 数据库里!!
+	Hbase非常适合用来进行大数据的实时查询。Facebook用Hbase进行消息和实时的分析。它也可以用来统计Facebook的连接数。
+	Sqoop：用于传统数据库与HBase数据转移存储，即利用Sqoop可以将传统数据库上的数据转移到Hbase上，反之亦可。
+	Flume：可以进行海量数据日志采集，聚合、传输系统
+	Mahout：方便机器学习，数据挖掘，提供很多可扩展算法
+	Zeppelin: 以笔记本（notebook）的形式组织和管理交互式数据探索任务
+
+重点填坑记录:
+	namwnode 自身不能作为 Datanode, 即 namenode和 datanode 不共存??
+		最后,怀疑是 etc/hadoop/worker 文件设置问题引起,每个节点的 worker文件设置应该一致
+		还有不应该使用 localhost 这个host, 往往会导致集群冲突 而出现这个问题 !!!! 
+	还有过多使用 格式化 namenode 导致 hadoop 启动失败
+		因为 格式化 只格式化了 master 的 namenode, 并没有 同步到 worker 的Datanode,
+		所以失败,办法是清空 worker 节点 数据,例如这里是清空 tmp 文件夹	
+	打开 Hbase 失败:Hmaster 自动挂!!
+		jps  发现 都多出 HRegionServer
+		但是 Hmaster 挂了 !!!!
+		check log: vi /root/hbase/logs/....hoopmaster.log 
+		发现 HBase Operation category READ is not supported in state standby
+		其实就是 没有在 合适的 节点 启动的问题!!!! 配合 active namenode 还有 hbase-site.xml hbase.rootdir hbase.master 才可以成功!!
+		https://blog.csdn.net/tiandd12/article/details/53928090
+		即 hbase-site.xml hbase.rootdir hbase.master 设置的 是 正在 alive 的 namenode ,这样 Hbase 才可以正常启动
+///////////////////////   hadoop + zookeeper  调试 记录     ////////////////////////////
+
+	注意此刻应该 master 和 worker1 都可以 jps 到 namenode!!!!
+	因为 同步namenode 时候不成功!! hdfs namenode -bootstrapStandby 中 bootstrapStandby 缺了个d
+	所以最后没有同步,导致最后 只 打开了 master 这个namenode, worker1 的没有打开
+
+重新
+格式化 先关掉所有,删掉所有产生的数据
+rm -rf /root/hadoop/tmp/* /root/hadoop/logs/*		//*/
+重新,先全部节点 打开 hdfs --daemon start journalnode
+等待 10秒 直到 journalnode 完全打开,才可以格式化节点
+0.2 节点格式化: 
+	hdfs namenode -format
+	hdfs zkfc -formatZK
+然后 0.3 节点 同步 0.2 节点的 namenode, 	hdfs namenode -bootstrapStandby
+但是出错说 连不上 0.2:9000 端口, 这个端口是 dfs 启动后才提供的 感觉跟说的不一样,
+0.2 节点先得启动 dfs: /root/hadoop/sbin/start-dfs.sh, (只启动 0.2的namenode)
+0.3 节点然后执行 同步 hdfs namenode -bootstrapStandby
+0.2 节点 关闭 dfs 再重新 打开 dfs,
+这时,就会 打开 (0.2 和 0.3 的 namenode !!!)
+
+
+关闭 masterA namenode:
+hdfs --daemon stop namenode
+masterB 的 namenode 依然是 standby,,,,,
+原来 masterB 节点也要 hdfs --daemon start zkfc 
+
+关闭 masterB resourcemanager:
+yarn --daemon stop resourcemanager
+发现 masterA 的 resourcemanager 变成 alive
+
+
+集群启动参考(十分重要!!!): https://blog.csdn.net/u014686399/article/details/80774547
+\\\\\\\\\\\\\\\\\\\\\\\   hadoop + zookeeper    调试 记录     \\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+参考:
+	spark:
+		Hadoop、Spark、Hbase、Hive的安装 :	http://www.voidcn.com/article/p-pwgpxeyr-bow.html
+		Spark2.1.0入门：Spark的安装和使用 :	http://dblab.xmu.edu.cn/blog/1307-2/			//Spark的安装版本参考
+		在集群上运行Spark应用程序:		http://dblab.xmu.edu.cn/blog/1217-2/
+		Centos7搭建hadoop spark集群之spark集群搭建:	https://dxysun.com/2018/04/16/centosForSpark/	//安装spark集群重点参考
+		官网 spark 下载页:			http://spark.apache.org/downloads.html
+		官网 spark 配置页:			https://spark.apache.org/docs/2.3.0/configuration.html
+		基于zookeeper的Spark高可用集群配置:	
+			https://blog.csdn.net/YQlakers/article/details/72831812		//参考配置zookeeper+saprk
+			https://blog.csdn.net/xummgg/article/details/50759913
+			https://blog.csdn.net/lishuan182/article/details/52331333
+
+	hadoop:
+		Centos7搭建hadoop spark集群之hadoop集群搭建 :	https://dxysun.com/2018/04/16/centosForHadoop/	//安装hadoop集群重点参考
+		官网 hadoop 左下角configuraion:			https://hadoop.apache.org/docs/r3.2.0/		//重要参考 配置hadoop
+		CentOS 7 上安装Hadoop V 2.8.1集群及配置:	https://blog.wuwii.com/linux-hadoop.html
+		centos7.6安装配置hadoop-3.2.0笔记(单机安装、伪分布式安装):	https://blog.csdn.net/u010476739/article/details/86647585
+		hadoop安装指南:		http://xiaoxin2009.github.io/hadoop%E5%AE%89%E8%A3%85%E6%8C%87%E5%8D%97.html
+		启动集群start-dfs.sh和start-yarn.sh的脚本错误:	http://mazhiyu.info/hadoop/2017/04/13/%E5%90%AF%E5%8A%A8%E9%9B%86%E7%BE%A4start-dfs.sh%E5%92%8Cstart-yarn.sh%E7%9A%84%E8%84%9A%E6%9C%AC%E9%94%99%E8%AF%AF/
+		java.lang.IllegalArgumentException: Does not contain a valid host:port authority: eastchina2_ops_exactdata1:8020
+			就是说映射IP的hosts 不能带下划线 "_" 
+			https://community.hortonworks.com/questions/96359/javalangillegalargumentexception-does-not-contain.html
+		nodemanager和resourceManager日志报错:java.lang.NoClassDefFoundError: javax/activation/DataSource
+			就是说 hadoop 只能用jdk8 版本!!,jdk9,jdk10,可以勉强用用,jdk11就没戏,不用想!!
+			https://bbs.csdn.net/topics/392273321
+			https://issues.apache.org/jira/browse/HADOOP-14978
+			https://blog.csdn.net/wu_noah/article/details/79434048
+			https://cwiki.apache.org/confluence/display/HADOOP/Hadoop+Java+Versions
+		tail -f /var/log/hadoop/hdfs/hadoop-hdfs-namenode*.log  查看hadoop logs 方法
+			https://community.hortonworks.com/questions/196075/unable-to-start-namenode-1.html
+		格式化namenode 太多,弄得与 datanode 的cluster-ID不同步,删掉datanode 的 current文件夹就好了
+			https://blog.csdn.net/gis_101/article/details/52679914
+		
+附加:
+vi 无反应 vim 无反应
+使用vim时，如果你不小心按了 Ctrl + s后，你会发现不能输入任何东西了，像死掉了一般，其实vim并没有死掉，
+这时vim只是停止向终端输出而已，要想退出这种状态，只需按Ctrl + q 即可恢复正常。
+
+命令行 输入 ?woed1  查找 word1, 然后 *下翻 #上翻		
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190308
+准备构建2.0
+bug1
+今天遇到了一件离奇的事情,火狐的 js系统 onkeypress 不再俘获 backspace (退格按键)
+弄得我需要 修改 keydown 以支持, 幸亏简单修改后恢复正常,他妈的
+修改处 添加了 20190308 的水印
+
+bug2
+本来有12行, 如果修改减到小于12行就会保存出错!!
+行本存在数据,然后行变成新行,可以存储
+行本存在数据,但是 wrap 到 小行,无法存储
+反正各种保存bug,并没有做好!!
+wrap 和 new 共存 无法保存!!
+反正 wrap 就无法 保存 
+
+参考:
+https://stackoverflow.com/questions/4843472/javascript-listener-keypress-doesnt-detect-backspace/23256446
+
+
+
+
+
+
+
+
+
+
+20190410
+小结 与 2.0
+1.0 暂时的功能是 登录 然后 可以写自己的博客内容,但是,存储还是有bug
+就是跟 wrap 和 冲突, 当更新后的总行数小于 原来的行数,更新是失败,
+bug 先不修复,
+
+
+## 2.0 主要内容
+接下来需要 处理2.0的 主体,滑动blog,
+基于需求,由于无法同步处理超过 3000 0000 行 数据,所以,显示内容滑动添加,可更改的内容范围只能1000-2000 行数据
+暂时前端测试 2000 行 读写问题
+后端测试 3000 0000 行数据 的处理问题
+
+djanggo 单元测试:
+写3000 0000 行文本
+	在 shelltest 添加一个 makexml 函数 
+	专门用来生成测试 xml 行的文件
+	150行, 1000行, 5000行, 10000行, 30000行,,,,,30000000行
+	最后发现使用 python xml 模块来生成 3000 0000 行太慢
+	还是用回基本的 open read write 快速!!
+写 3000 0000 行 数据库
+	bulk_create()
+	100000 起码 29s
+	3000 0000 起码 8700s = 145m = 2.5h
+	要脱离 django 写数据!!!!  使用 mysql.connector 模块(不过问题是用户密码隐身性能问题)
+	https://www.jb51.net/article/133144.htm
+	别人做的 100000 行只需要 5s !! 相当厉害了!! 
+改 3000 0000 行 数据库
+	bulk_update() /或者 with transaction.atomic(): 事务操作
+	一种 使用  with transaction.atomic():  事务操作!!!
+	 1000 行处理 4.5s
+	 10000行要 150s  !!!!
+	另一种使用 插件  pip install django-bulk-update
+	 500 行处理 1.3 s
+	 1000 行处理  3.7s
+	 2000 行处理 9s
+	 3000 行处理 17s
+	 10000 行处理 132s
+	太慢!!!!!  操作数据库,不能使用django的 orm了,需要近乎指令级别的操作!!!!
+	还要改缓存大小 !!!!!
+	https://blog.csdn.net/u014520745/article/details/52416002
+	https://blog.csdn.net/number1killer/article/details/77839529
+	批量更新的其他操作
+批量操作,不能使用 django 的 orm 模块, 直接使用 mysql.connector 直链模块,完全mysql指令操作
+	参考:https://www.jb51.net/article/133144.htm
+	目前的得到效果: line 加 cnte 表 合计 1000 0000 + 1000 0000 =2000 0000 条数据写入 20分钟!!
+	目前每100000 + 100000 = 200000 条数据 需要 12s!!
+	现在开始修改 mysql 参数 提高性能!!!
+		max_allowed_packet               | 16777216       //原来16MB  单位byte
+		max_heap_table_size              | 16777216       //原来16MB  单位byte
+			块操作时,处理包的默认大小,参数越大,块就可以越大,减少硬盘请求次数??
+			然而, 都从 16MB 设置为 32MB 处理数据 处理 200000 条数据 还是需要大概 24s,性能没有上来
+		innodb_log_buffer_size                   | 16777216    //原来16MB 单位byte
+		innodb_log_file_size                     | 50331648    //原来48MB 单位byte
+		innodb_autoextend_increment              | 64          //原来64MB 单位Mbyte  
+			innodb_log_buffer_size配置项作用设定innodb 数据库引擎写日志缓存区；
+			将此缓存段增大可以减少数据库写数据文件次数
+			innodb_log_file_size配置项作用设定innodb 数据库引擎UNDO日志的大小；从而减少数据库checkpoint操作。
+			当tablespace 空间已经满了后，autoextend_increment 需要MySQL系统需要自动扩展多少空间，
+			增加自动扩展Size可以减少tablespace自动扩展次数
+			分别设置为 48MB 128MB 128MB (不懂动态改,只线下改 my.cnf 重启)
+			my.cnf 添加:
+				[mysqld]
+				innodb_log_file_size=128M
+				innodb_log_buffer_size=48M
+				innodb_autoextend_increment=128
+			最后  处理 200000 条数据 还是需要大概 24s, 还是没有改变!!
+			主要是之前 100000条记录一次的块操作 是在一次缓存i/o操作中工作完毕,没有多次log缓存io申请的操作的时间开销
+			所以 跟log缓存io申请的操作只有一次, 时间都用刷入处理了!!
+			所以 即使扩大了log缓存空间, 可以实现 200000条记录一次的块操作, 但是缓存io申请的操作也只有1次,
+			所以 缓存io申请的操作 的开销没有变化
+		unique_checks | ON	//唯一性检查,默认开启
+			set unique_check 0  //关闭,没强化多少!!!
+
+		innodb_read_io_threads                   | 4         //读操作线程
+		innodb_write_io_threads                  | 4         //写操作线程
+			都改到 8, 变化还是不明显!!!
+		innodb_buffer_pool_size                  | 134217728        //默认128MB 
+		innodb_buffer_pool_instances             | 1                //默认1
+			buffer_pool_size 缓存表数据，索引数据的地方。增加它的值可以减少 磁盘 io ，提升 读写性能。
+			buffer_pool_instances 是 buffer_pool 实例数量，默认为1。增加它的值，
+			可以减少数据库内部的资源竞争，增加并发处理能力。
+			改到 size 改到 512MB instances 改成 ?
+			最后发现 都不明显!!
+		
+	20 0000 数据平均 24 S, 即每 10000条 1.2s 感觉改参数优化单表数据已经 到头了!!, 需要多表来尝试降低时间开销!!!!
+		即分表操作 !!!!
+
+mysql 参数操作:
+	查看参数:
+		SHOW VARIABLES ;     //查看参数!!! 不过是查看 session参数		    
+		SHOW VARIABLES like 'max_%';     //查看参数!!!  不过是查看 session参数
+		SHOW GLOBAL VARIABLES ;     //查看GLOBAL参数!!!	
+		SHOW GLOBAL VARIABLES like  'innodb_%' ;     //查看GLOBAL参数!!!		    	    
+	设置参数: 
+		SET GLOBAL read_buffer_size = 2*1024*1024	//设置 GLOBAL 参数
+		SET read_buffer_size = 2*1024*1024	//设置 session 参数
+	有些参数在 mysql 启动时,不能修改,需要 下线 mysql,再修改 my.cnf 文件 (locate my.cnf 寻找文件位置)
+		并重启 mysql : sudo service mysql restart
+		
+mysql 常用操作指令
+	显示表最后的10条记录
+	select * from web_linex9014 order by id desc limit 10 ;
+	select * from web_cntex9014 order by id desc limit 10 ;
+	查看表大小:
+	use information_schema;
+	select concat(round(sum(DATA_LENGTH/1024/1024),2),'MB') as data  from TABLES where table_schema='db_selfweb_pyth3' and table_name='web_cntex9014' or table_name='web_linex9014';
+
+数据库性能优化 参考: 
+	http://www.111cn.net/database/mysql/43315.htm
+	http://blog.jobbole.com/107264/
+	https://coolshell.cn/articles/1846.html
+	https://juejin.im/post/59d83f1651882545eb54fc7e
+
+
+ubuntu 内存塞满检查命令:
+	top -o %MEM
+
+python file open 读写模式的类型有：
+	rU 或 Ua 以读方式打开, 同时提供通用换行符支持 (PEP 278)
+	w     以写方式打开，
+	a     以追加模式打开 (从 EOF 开始, 必要时创建新文件)
+	r+     以读写模式打开 (不会清除文件源内容)
+	w+     以读写模式打开 (先清除文件内容再读写操作)	
+	a+     以读写模式打开 (参见 a )
+	rb     以二进制读模式打开
+	wb     以二进制写模式打开 (参见 w )
+	ab     以二进制追加模式打开 (参见 a )
+	rb+    以二进制读写模式打开 (参见 r+ )
+	wb+    以二进制读写模式打开 (参见 w+ )
+	ab+    以二进制读写模式打开 (参见 a+ )
+
+python 	seek
+    offset -- 开始的偏移量，也就是代表需要移动偏移的字节数
+    whence：可选，默认值为 0,表示要从哪个位置开始偏移；
+	0代表从文件开头开始算起，
+	1代表从当前位置开始算起，
+	2代表从文件末尾算起。
+
+python readlines 的参数问题:
+	hint参数 是字节的总大小，会读取到该文件内对应字节数的当前行。
+	第一行如果有5个字符，hint=5，就只读取第一行，(hint<=5时都只会读取第一行的内容)
+	第二行如果有5个字符，hint=6，会开始读取第二行内容。(5<=hint<=11时时会读取到前两行的内容)
+	注意到 如果 把最后的换行符号也算进 hint参数, readlines 会逼
+
+python 插入一段数据:
+    file = open('./static/clients/clie001/linenum.txt', 'r+')
+    content = file.read()   # 270MB全部读到内存 0.3-0.5s !!
+    post = content.find('22998990\n')
+    content = content[:post + 9] + kk + content[post + 9:]
+    time_end = time.time()
+    print('cost:', time_end - time_start)
+    file.seek(0)
+    file.write(content)
+	#注意,如果是这样直接添加数据并不成功,只不过是覆盖了原来是数据而已!!!
+    file.seek(xxxxx)
+    file.write(kk)
+
+python break pass continue
+	break是终止本次循环，比如你很多个for循环，你在其中一个for循环里写了一个break，满足条件，只会终止这个for里面的循环
+	continue：跳出本次循环，执行下一次
+	pass:不做任何事情，只起到占位的作用
+
+后端的基本逻辑性能基本 填坑完毕部分代码参考:
+#事务操作
+'''
+insertwrap()  函数片段
+#事务操作 方式 实现 批量 save()
+    k=0
+    #@transaction.commit_manually       #用法废弃
+    with transaction.atomic():          #新用法!!
+        for i in lnum:
+            i.linecnte = content[k]
+            k += 1
+            i.save()
+'''
+
+#修改数据的语法!!
+'''
+    #sql = "select max(cntenum) from  web_cntex9014 ;"
+    #cur.execute(sql)
+    #cnteid = cur.fetchall()[0][0]
+    #print(cnteid+1000)
+
+    #print(inxeidt)
+'''
+
+# 随加生成 不同组合的字符串
+'''
+    for i in range(256):
+        kk =[]
+        while 1:
+            k = ''.join(random.sample(string.ascii_letters + string.digits, 8))
+            if k in kk:
+                pass
+            else:
+                kk.append(k)
+                print( "'<Cnte>"+ k +" &lt;br&gt;</Cnte>\\n',  # cnteid:"+str(i)+"     undefined just placeholder!!" )
+                break
+'''
+
+## 数组 转 字符串
+'''
+a = ['ss', 'dwdw', 'rrrr']
+d = "".join(map(lambda x: str(x), a))
+print(d)
+print(a[-1])    # rrrr
+'''
+
+##块操作
+'''
+sql = "update web_cntex%s set cntenum=%s,type=%s where id=%s"  # 修改数据的语法!!
+value = []
+value.append([9014, 257, 'hdty', 2])
+value.append([9014, 258, 'vido', 3])
+cur.executemany(sql, value)
+'''
+
+# 检测 是否系统行
+'''
+k = '<Cnte>&lt;br&gt;</Cnte>\n'
+try:
+    kk = qstag.sysline.index(k)
+    print(kk)
+    pass
+except:
+    print('no kk')
+    pass
+'''
+
+# 修改数据
+'''
+    delsql = "update web_cntex%s set count=0 where cntenum=%s"     #value_eaample [9014, 23330]
+    ppp=[9014,3000]
+    kkk=[]
+    for i in  delsval:
+        delsql += " or cntenum=%s"
+        ppp.append(i[1])
+    kkk.append(ppp)
+    cur.executemany(delsql, kkk)
+    time_end = time.time()
+    print('2cost:', time_end - time_start)
+'''
+
+    opq=[]
+    for i in range(2000):
+        while 1:
+            num = random.randint (1000,200000)
+            if num in opq:
+                pass
+            else:
+                break
+        opq.append(num)
+        fixsval.append([n, b'dddd', str(num) ])
+        delsval.append([n, str(num)])
+        print(num)
+    time_end = time.time()
+    print('random cost:', time_end - time_start)
+
+
+    ### 刷 数据库!!!
+    time_end = time.time()
+    print('cost:', time_end - time_start)
+    conn.start_transaction()
+    # cur.executemany(delsql, delsval)
+    # cur.executemany(fixsql, fixsval)
+    cur.executemany(newsql, newsval)
+    conn.commit()
+    time_end = time.time()
+    print('1cost:', time_end - time_start)
+
+
+    # 插入数据
+    #newsql = "insert into web_cntex%s(cntenum, type, content, history, count, datetime) values(%s,%s,%s,%s,%s,%s)"    #value_example [9014,123434,edit,'<Cnte>dsdsds</Cnte>',None,1,'2019-01-02:22:22:22:22' ]
+    #newsql = "insert into web_cntex9014(cntenum, type, content, history, count, datetime) values(%s,%s,%s,%s,%s,%s)"
+    #kkk=[]
+    #kkk.append( (300001, 'ssss','ddddddd', None,1,'2019-04-06 12:50:29.978461' ) )
+    #cur.executemany(newsql, kkk)
+
+    # 伪删除数据
+    delsqlf = "update web_cntex9014 "
+    delsql1 = "set count=case cntenum "
+    delsqlw = "where cntenum in ("
+    for i in  delsval:
+        delsql1 += "when " + str(i[1]) + " then " + "22 "
+        delsqlw += str(i[1]) + ", "
+    delsql1 += " end "
+    delsqlw = delsqlw[:-2]
+    delsqlw += " )"
+    delsql = delsqlf + delsql1 + delsqlw
+    cur.execute(delsql)
+    time_end = time.time()
+    print('2cost:', time_end - time_start)
+
+    # fix'数据
+    fixsqlf = "update web_cntex9014 "
+    fixsql1 = "set content=case cntenum "
+    fixsqlw = "where cntenum in ("
+    for i in  fixsval:
+        fixsql1 += "when " + i[2] + " then " + "'<Cnte> new  william cnte-testing-dsadsajfdfdkdasfdfdsfajidwiqnxahikfhufhwqjihoihfieowhefiqowfhiqhiqofhefiqfhihscnksnidfsfsdjfieif</Cnte>'"+ " "
+        fixsqlw += i[2] + ", "
+    fixsql1 += " end "
+    fixsqlw = fixsqlw[:-2]  # 字符串最后两个字符去掉
+    fixsqlw += " )"
+    fixsql = fixsqlf + fixsql1 + fixsqlw
+    cur.execute(fixsql)
+    time_end = time.time()
+    print('3cost:', time_end - time_start)
+
+
+    ###刷index文本
+    inxmid = "".join(map(lambda x: str(x), inxedit))
+    inexbuff = inxfron + inxmid + inxafter
+    indexf = open('./static/clients/clie001/linenum.txt', 'w+')
+    indexf.write(inexbuff)
+    indexf.close()
+
+
+
+
+
+
+
+
+
+
+20190418
+前端攻坚:
+水平滑动条: 当出现 overflow现象时,希望出现 水平滑动条出现在screen 下方, 而不是 最下面的body 底
+	所以最好的做法是 <body overflow-x:-moz-scrollbars-none; >
+	而不是 overflow-x:auto, 什么的
+关于 overflow  , 要求行内元素不自动换行显示
+	父节点添加 white-space:nowrap; 表示子节点,字符串内容都在一行上,直到遇上<br> 才换行
+	如果 不加上的话,,例如 <span> <div inline-block> 同一行显示,但是 当div 过长时, div会自动换行显示!!!
+关于 文本 显性显示全部空格!!
+	节点 加上 white-space:pre;
+滚动到光标位置!! (跳到历史保存的位置!!!)
+	先 blur 后 focus  ????
+	focus 只能一般只能focus没有 contenteditable 的元素,父元素 contenteditable, 子元素不能被成功focus !!
+	这个很好处理了 先获得光标位置的 element 元素!!
+	然后 获得 对应 的 offsetTop, offsetLeft, offsetParent, 然后转到 scrollTop, scrollLeft 坐标 AA BB
+	最后 body.scrollTop = AA body.scrollLeft = BB 成功跳转!
+	注意 offsetPrarent 与 offsetTop offsetLeft 的关系: https://blog.csdn.net/Inuyasha1121/article/details/49149725
+	之所以,本身的视野无法跳转的问题,在于整体的maintag 设置了 contenteditable, 然后作为 main 的子元素就不能好好被
+	focus 了!!!
+最后就是 background 的问题, 
+	主动改变main 父节点 width 便可以解决 ?? 这样需要处理的函数太复杂!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20180425 
+系统学习 重点 DOM !!  : https://www.w3schools.com/jsref/prop_document_activeelement.asp
+重点的 都 打上了 * 号
+首先 DOM 可以看作是 js 在html领域 的标准分支库, 属于 js 
+DOM attribute : 比如: conclick, id, class, type, style 等等!!
+DOM console 几个重点函数使用: 
+	console.log()打印 , 
+	console.time()计时开始, console.timeEnd()计时结束
+	console.trace() 跟踪 js 的调用!!		
+DOM dococument: 一个 html页面内容就是 一个 dicument
+	document.activeElement.tagName    当前被 focus 的 节点的 tag名 
+	document.addEventLister("click",function(){...})     : 动态给指定节点添加事件 onclick()
+	document.removeEventListener("mousemove", myFunction)   :   动态去除 添加的事件 !!
+	adoptNode()  : 从别的document 接受一个节点到本地的 document (比如从 iframe 里 加载的html页面 document)
+	anchors():  统计 document 有多少个 <a> 对象
+	applets:   统计有多少个 <applet>
+	baseURI:   获得当前网址
+	document.URL  :  当前网址  
+	documentURI:  跟 baseURI 一样,感觉
+	body:     <body>节点
+	document.open /write/close/   :相当于重绘 一次当前的docment了
+		open 意味着清空当前 document 所有内容, 然后 写入内容, 然后关闭 document 通道!
+		如果不open 前提下直接调用 write,  默认会还是会先执行 open 操作,
+		如果没有 close 操作, 多次write 的内容都会紧贴着
+	write 写入数据 ,写入的数据接着行写
+	writeln 另起一行,写入数据!!
+	cookie : 就是cookie
+	characterSet  : 编码: 例如 UTF-8
+	inputEncoding  :  也是编码
+	lastModified   :  最后修改时间
+	links  :   document 拥有的链接数
+	document.scripts  :   所有的 <script> 节点
+	head:  <head> 节点
+	images :   document 的所有 <img> 节点
+	document.embeds.length  :  <embed> 节点的个数
+	forms.length :   <form> 节点的个数 
+	document.title  :   <title> 的内容
+	createAttribute :  动态添加 attribute 使用比较绕,注意!!
+		var att = document.createAttribute("class");       // 动态添加 "class" attribute
+		att.value = "democlass"; 
+		h1.setAttributeNode(att);
+	createComment()   : 创建 <!--  -->  的笔记
+	createdocumentfragment()   :	这个是动态建立一些节点片段,然后修改后,可以插入,或者替换原来的!!!
+	createElement()  : 新建 节点
+	createEvent() :  创建事件, 跟 addEventLister 差不多...
+	createTextNode() : 创建了 字符串到节点里, 其实一串字符串的每个字符都可以被看作一个行内元素,(行内节点,没有tag标签那种)
+	defaultview: 获得 window object  不知道是啥,,
+	designMode:  document 可以编辑, 跟 attri  contenteditable 差不多的效果!! 
+	documentElement:  就是cocument的根节点 <HTML>
+	doctype: 就是 <!DOCTYPE html> 所说明的 html
+	documentMode : IE8+ 的一个特性,不知道表达啥,
+	document.domain:  这个页面所在服务器的主域名, 例如 www.baidu.com
+	document.fullscreenElement  :  取得正在fullscreen显示的 节点!!
+	document.fullscreenEnabled  :  document 是否允许fullscreen显示莫内容
+	getElementById()  :  根据 id attri 获得 节点 ,一般获得一个节点,所以 id 应该要唯一!
+	getElementsByClassName()  :  根据 class  attri 获得 节点, 获得节点 一般是 一堆节点 
+	getElementsByName()  :	根据 name  attri 获得 节点, 获得节点 一般是 一堆节点 
+	getElementsByTagName()  :  根据 tag 像<div> 什么的 获得节点  一般是 一堆节点
+	document.querySelector(".example").style.backgroundColor = "red"; 根据 example class 获取 第一个 节点
+	document.querySelectorAll(".example")  :   根据 class  attri 获得 节点, 获得节点 一般是 一堆节点
+	document.hasFocus()  :  页面是否被 focus  还有一个附加知识点: setInterval("myFunction()", 1) 值得注意!!!
+	document.readyState  :  获得 document 的加载准状况, 是否 complete
+	document.referrer   :  获得 访问当前 document 之前曾访问的 document, 即上一个打开页面的地址
+	document.renameNode(p, null, "h1")  :   改变 节点 的 tag名  这里是把节点 p  的tag 改为 和h1
+	implementation :  document 的 implementation  不知道是啥,,
+	strictErrorChecking   :   不知道是啥
+	document.importNode(h, true);   : 插入节点,  插入到 <body>最后的地方!!!
+	normalize():   removes empty Text nodes, and joins adjacent Text nodes.
+	execCommand() :  执行命令  !!!! 这里的 命令是重点, 有以下命令
+		command 	Specifies the name of the command to execute on the selected section.
+	
+			Legal values:
+			"backColor"
+			"bold"
+			"createLink"
+			"copy"
+			"cut"
+			"defaultParagraphSeparator"
+			"delete"
+			"fontName"
+			"fontSize"
+			"foreColor"
+			"formatBlock"
+			"forwardDelete"
+			"insertHorizontalRule"
+			"insertHTML"
+			"insertImage"
+			"insertLineBreak"
+			"insertOrderedList"
+			"insertParagraph"
+			"insertText"
+			"insertUnorderedList"
+			"justifyCenter"
+			"justifyFull"
+			"justifyLeft"
+			"justifyRight"
+			"outdent"
+			"paste"
+			"redo"
+			"selectAll"
+			"strikethrough"
+			"styleWithCss"
+			"superscript"
+			"undo"
+			"unlink"
+			"useCSS"
+		showUI 	A Boolean, specifies if the UI should be shown or not
+		value 	Some commands need a value to be completed
+	  例子:
+	  if (event.keyCode == 16) {
+		    // Execute command if user presses the SHIFT button:
+		    document.execCommand("bold");
+		  }
+DOM Element: document里的节点 就是element, 这里是对 element 操作的 api, 现在只笔记重点使用的 api
+	accessKey :  快捷键
+	addEventListener("click", function(){...});	:   给 element 添加 事件
+	removeEventListener("mousemove", myFunction)   :   去掉事件
+	appendChild() :  给节点插入一个子节点成员
+	attributes:   节点的属性   id  class  type style 什么的,,,
+	hasAttribute("onclick") :  是否含有  onclick  attri
+	hasAttributes()  :  是否含有任何的 attri
+	getAttributeNode("class").value:  获得 一个attri.然后得到他的 value
+	getAttribute("class") : 直接获得 attri 的 value 
+	setAttribute("class", "democlass");  设置 attri
+	setAttributeNode() : 设置 attri  用法:
+		var h1 = document.getElementsByTagName("H1")[0];   // Get the first <h1> element in the document
+		var att = document.createAttribute("class");       // Create a "class" attribute
+		att.value = "democlass";                           // Set the value of the class attribute
+		h1.setAttributeNode(att);                          // Add the class attribute to <h1>  
+	removeAttribute("class"):  去掉 class attri
+	removeAttributeNode() :  去掉 attri   用法:
+		var elmnt = document.getElementsByTagName("H1")[0];  // Get the first <h1> element in the document
+		var attr = elmnt.getAttributeNode("class");          // Get the class attribute node from <h1>
+		elmnt.removeAttributeNode(attr);                     // Remove the class attribute node from <h1>  
+	blur()  :   指定节点如果已经 focus状态, 这个可以取消focus
+	classlist:   一个 节点 可以有多个 class attri,  比如 <div class="a gg kk"..>, 有 a gg kk 3个class, classlist 凑齐了元素的所有
+	className:  设置 一个节点 只有一个class , 即使以前是多class 节点, 使用classname后, 覆盖成一个单class节点!! 
+	click :  对指定element 执行一次 click 事件
+	clientxxx
+		client 是 算上内空白padding 的element, client由边界border围着,border之外就是margin !! 
+		clientHeight:   height of a <XXX> element, including padding:
+		clientWidth:    width of a <XXX> element, including padding:
+		clientTop: 相当于 top border 的厚度
+		clientLeft:  相当于 left border 的厚度
+		getBoundingClientRect()  :   不知道得到什么
+	offsetxxx:
+		offset 算上padding 和 border边界的厚度
+		offsetHeight : height of a <XXX> element, including padding and border 
+		offsetWidth : width of a <XXX> element, including padding and border 
+*		offsetLeft: 距离参照对象的 左边位移
+			一般 相关节点 在 父节点内容,而不是和父节点同阶层,所以 offsetleft 宽度包含以下内容 
+    			left position(远处直到margin边界), and margin of the element
+    			the left padding, scrollbar and border (and margin) of the offsetParent element
+*		offsetTop:  距离参照对象的 顶端位移
+			一般 相关节点 在 父节点内容,而不是和父节点同阶层,所以 offsetleft 宽度包含以下内容 
+    			top position(远处直到margin边界), and margin of the element
+    			the top padding, scrollbar and border (and margin如果没有其他项都是0px,可能就算上这个margin) of the offsetParent element
+		offsetparent:  参照对象 没有特别设置,指的就是 <body>
+	scrollxxxx: 某些节点,在一些小窗口里难免会显示不出来而需要滑动条
+		scrollHeight: 其实就是这个显示不全的节点的 高度 包含这个节点的 height 和 padding
+		scrollWidth:  其实就是这个显示不全的节点的 宽度 包含这个节点的 width 和 padding
+		scrollIntoView: 在窗口里,一下子滑到要显示的节点所在!!
+			以上三者对应的 主角都是 这个显示不全的节点
+			例如: <div id="w"> <div id="a">dsds </div></div> w是窗口, a是显示bu全的节点
+			        //a节点 的 scrollwidth scrollhight
+				var elmnt = document.getElementById("a");
+				var y = elmnt.scrollHeight;
+				var x = elmnt.scrollWidth; 
+				//w窗口一下子滑到 显示 a节点的区域
+				var elmnt = document.getElementById("a");
+				elmnt.scrollIntoView();
+			就是说,即使窗口多个 显示不全的节点.滑动条会变长,是累加了多个显示不全的节点的 scrollheight/width 
+			但是针对 a 节点 scrollwidth scrollhight 并不会改变!!
+*		scrollTop: 滑动条上偏移
+*		scrollLeft: 滑动条下偏移
+			以上两者对应的 主角都是 小窗口
+			var elmnt = document.getElementById("myDIV");
+			var x = elmnt.scrollLeft;
+			var y = elmnt.scrollTop; 
+			一般来说,scrollLeft scrollTop 的值 都是 子节点所有内容所占的长宽减去窗口的长宽!!
+			但显然不是,还有很多不知道来自何处的附加数值
+*	child,node,elenment 区分:
+		childElementCount :  指定节点下 有多少个子节点!!
+		childNodes :    指定节点下 有的子节点都登记到一个数组上来
+		firstChild   :  第一个 子节点 不一定是element 可以使字符串
+		firstElementChild  :   第一个子节点
+		lastChild  :
+		lastElementChild  :
+		nextSibling :   下个节点??? 
+		nextElementSibling :  下个节点??
+		parentNode :  父节点 ?? 
+			In HTML, the document itself is the parent node of the HTML element, 
+			HEAD and BODY are child nodes of the HTML element.
+		parentElement:  父节点
+		previousSibling: 前一个节点
+		previousElementSibling 前一个节点??
+		getElementsByClassName  :  获得 含相同class属性 的所有 element
+		getElementsByTagName  :   获得 含相同 tag头 的所有 element
+		hasChildNodes()	: 是否含有子节点
+		removeChild() :  去掉子节点
+		replaceChild(): 替换节点
+			item.replaceChild(textnode, item.childNodes[0]); 
+			// Replace the first child node of <ul> with the newly created text node
+		cloneNode() 克隆节点
+		compareDocumentPosition():    比较节点的位置:
+	 		The possible return values would specify:
+			1: No relationship, the two nodes do not belong to the same document.
+			2: The first node (p1) is positioned after the second node (p2).
+			4: The first node (p1) is positioned before the second node (p2).
+			8: The first node (p1) is positioned inside the second node (p2).
+			16: The second node (p2) is positioned inside the first node (p1).
+			32: No relationship, or the two nodes are two attributes on the same element.
+	querySelector(".ooo") : 获得 class="000" 的 所有节点的第一个节点
+	querySelectorAll(".ooo") :  获得 class="000" 的 所有节点
+
+	insertAdjacentElement() : 节点 移位  inserts a the specified element into a specified position
+		Legal position values are:
+			"afterbegin"
+			"afterend"
+			"beforebegin"
+			"beforeend"
+		例如:	  var s = document.getElementsByTagName("span")[0];
+			  var h = document.getElementById("myH2");
+			  h.insertAdjacentElement("afterend", s);  //s 放到 h 之后
+	insertAdjacentHTML() :  节点 移位, 把某个html片段放到指定节点的相关位置
+		例如:
+		  var h = document.getElementById("myH2");
+		  h.insertAdjacentHTML("afterend", "<p>My new paragraph</p>");
+	insertAdjacentText()  :   把某段 text 字符串 放到指定节点的相关位置
+		例如: h.insertAdjacentText("afterend", "My inserted text"); 
+	insertBefore()  :    在父节点里操作, 把子节点A 放到 子节点B 之前
+		例如: list.insertBefore(newItem, list.childNodes[0])  父节点list , 子节点  newItem 放到 子节点 list.childNodes[0] 之前
+	innerHTML :   节点里所有内容,包括节点tag 都统一成字符串内容
+	innerText :   仅仅节点内的 字符串内容
+	lang :  直接得到节点语言属性 lang attri 值 例如 <div lang="en">  elmnt.lang 就是 en   
+	namespaceURI :   ??????  不知道是啥
+	nodeName  : 节点 的 tag 头名
+	nodeType  : 节点 的类型:
+		If the node is an element node, the nodeType property will return 1.
+		If the node is an attribute node, the nodeType property will return 2.
+		If the node is a text node, the nodeType property will return 3.
+		If the node is a comment node, the nodeType property will return 8.
+	nodeValue : 节点的内容 如果是element节点,具体是 仅接着的text文本内容
+	normalize() : 相邻的 多个text节点 合成一个tezt节点!!
+	style  : 设置 css 的!!
+	tabIndex    :  不知道是啥
+	tagname  :  就是 tagname
+	textContent  : 提取节点所有字符内容,不管是不是嵌入到子节点的文本,都提取出来,得到一个文本内容
+	title  : 获得  title attri 的内容
+
+DOM event: 事件 节点触发的事件, 就是我们接触的 onclick 什么的事件触发标记:
+	流媒体: <video> <audio>
+		abort事件: <video onabort="myFunction()"> 流媒体请求被拒绝后是事件 
+		ondurationchange :  流媒体事件相关 略
+		oncanplay :  视频准备好播放, 可执行的事件
+		oncanplaythrough:  不明所以 略
+		onended  :  流媒体结束的时候!!
+		onloadeddata : 当加载的内容可用时,一般指video 这些流媒体
+		onloadedmetadata : 流媒体的 meta数据加载好时候
+		onloadstart : 流媒体开始加载时
+		onpause :暂停
+		onplay : 开始播放
+		onplaying: 正在播放
+*		onprogress : 正在加载下载视频时候
+		onratechange: 播放速度改变
+		onseeked  : 拉进度条触发事件
+		onseeking  : 正在拉精度条触发事件
+		ontimeupdate : 改变进度条发生的事件
+		onstalled : 流媒体数据无法获得时候
+		onsuspend : 无法得到流媒体数据时候
+		onvolumechange : 音量改变事件!!
+		onwaiting : 等待时缓存事件
+		
+	onerror  : 当出现错误的时候
+	beforprint  /   afterprint:  略
+	animationxxxx事件, 略
+		event.animationName  属性: 动画事件的名字
+	onbeforeunload  : 如果不想加载时发生的事件, 不知道怎么测试..
+	onload : 当所指向的 节点 内容已经加载完毕 通常用在 body 节点
+	onunload :不加载内容时候
+
+	onmessage: 配合 eventsource使用的 一旦获得消息就触发的是事件
+	onopen : 配合 eventsource使用
+	onblur  :  失去focus 发生的事件
+	onfocus :  被focus 的时候  
+	onfocusin  : 将要得到 focus 的时候?
+	onfocusout : 将要推出 focus 的时候.
+	onhashchange  : hash 值改变的时候?
+	一般 <input> 使用到的
+		oninput : 当写入内容的时候!!
+		oninvalid : 当input 没有内容时,  例子:
+			<form action="/action_page.php" method="get">
+			  Name: <input type="text" oninvalid="alert('You must fill out the form!');" name="fname" required>
+			  <input type="submit" value="Submit">
+			</form>
+		onreset: 重置:
+			<form onreset="myFunction()">
+			  Enter name: <input type="text">
+			  <input type="reset">		//这是一个重置按钮
+			</form>
+		onsearch: 触发搜索
+			 <input type="search" onsearch="myFunction()"> 
+		onselect: 当文本内容被鼠标 括选时候
+		事件属性:
+			event.inputType : 输入内容的类型!!例如
+				"insertText" 正在输入文本
+				"deleteContentBackward"  breakspace 删除内容时  
+
+	change: 节点更改后事件 
+	触摸屏事件:
+		ontouchcancel : 触摸事件被打断时候
+		ontouchend :  触摸结束事件
+		ontouchmove : 触摸滑动事件
+		ontouchstart : 触摸开始事件
+*	鼠标点击操作
+		onclick: 点击
+		ondblclick 双击
+		onmousedown 
+		onmouseup
+		oncontextmenu 右键事件
+		onmouseenter : 当鼠标指向时触发
+		onmouseleave: 当鼠标离开时触发 配合 seenter 使用
+		onmouseover : 当鼠标指向时触发 (不知道有什么不同)
+		onmouseout : 当鼠标离开时候触发 (不知道有啥据别) 配合 over使用
+		onmousemove: 当鼠标在指定的 节点内移动时
+		onwheel : 滚轮事件
+		事件属性:
+			event.button: 那个按键:
+			  0 = The left mouse button
+			  1 = The middle mouse button
+			  2 = The right mouse button
+			event.buttons: 那个按键, 这里属性包含跟多按键编码??
+			event.clientX:
+			event.clientY: 鼠标当前的位置坐标!! 根据 窗口 The client area is the current window.
+			event.pageY
+			event.pageX; 鼠标当前的位置坐标  
+					The pageX property returns the horizontal coordinate 
+					(according to the document) of the mouse pointer when a mouse event was triggered.
+					The document is the web page.
+			event.deltaX : 滑轮事件
+			event.deltaY : 滑轮事件 普通鼠标就只有 Y 滑轮
+			event.deltaZ : 滑轮事件
+			event.deltaMode : 滑轮新式, 换页, 换像素点, 还是换行 ???
+			event.which : 表示点击了那个 鼠标按键
+*	键盘事件:
+		onkeydown 
+		onkeypress
+			Note: The onkeypress event is not fired for all keys (e.g. ALT, CTRL, SHIFT, ESC) in all browsers. 
+			To detect only whether the user has pressed a key, 
+			use the onkeydown event instead, because it works for all keys
+		onkeyup
+		事件属性:
+			event.which : 使用 unicode 表示按下了那个按键
+			event.location :  按键的键盘区域 : 数字小键盘,还是主键盘, 等等
+			event.altkey : 按下alt事件 
+			event.ctrlkey : 按下alt事件 
+			event.shiftKey : 按下shift事件
+			event.metaKey  :  meta 按键 ?? 不知道是哪个,,,
+			event.code : 按键码  按键的字符
+*			event.charCode : 按键码 转成的数字码
+				The charCode property returns the Unicode character code of the key that triggered the onkeypress event.
+				The Unicode character code is the number of a character (e.g. the number "97" represents the letter "a").
+				Tip: For a list of all Unicode characters, please study our Complete Unicode Reference.
+				Tip: If you want to convert the Unicode value into a character, use the fromCharCode() method.
+				Note: If this property is used on onkeydown or onkeyup events, the returned value is always "0".
+				Note: This property is read-only.
+				Note: The charCode property is not supported in IE8 and earlier. 
+					However, for these browser versions, you can use the keyCode property. Or, 
+					for a cross-browser solution, you could use the following code:
+					var x = event.charCode || event.keyCode; 
+						// Use either charCode or keyCode, depending on browser support
+				Tip: You can also use the keyCode property to detect special keys (e.g. "caps lock" or arrow keys).
+					However, both the keyCode and charCode property is provided for compatibility only. 
+					The latest version of the DOM Events Specification 
+					recommend using the key property instead (if available).
+				Tip: If you want to find out whether the "ALT", "CTRL", "META" or "SHIFT" key was pressed 
+					when a key event occured, use the altKey, ctrlKey, metaKey or shiftKey property.
+			event.key 按键码  read-only
+				Key identifiers are strings that identify keyboard buttons. 
+				The return value of this property can be a string of:
+				    A single character (like "a", "W", "4", "+" or "$")
+				    A multicharacter (like "F1", "Enter", "HOME" or "CAPS LOCK")
+				If you want to find out whether the "ALT", "CTRL", "META" or "SHIFT" key was pressed 
+				when a key event occured, use the altKey, ctrlKey, metaKey or shiftKey property.
+			event.keyCode  按键码  转成数字的
+				The keyCode property returns the Unicode character code of the key that triggered the onkeypress event, 
+				or the Unicode key code of the key that triggered the onkeydown or onkeyup event.
+				The difference between the two code types:
+				    Character codes - A number which represents an ASCII character
+				    Key codes - A number which represents an actual key on the keyboard
+				These types do not always mean the same thing; for example, 
+				a lower case "w" and an upper case "W" have the same keyboard code, 
+				because the key that is pressed on the keyboard is the same (just "W" = the number "87"), 
+				but a different character code because the resulting character is different 
+				(either "w" or "W", which is "119" or "87") - See "More Examples" below to better understand it.
+				Tip: To find out if the user is pressing a printable key (e.g. "a" or "5"), 
+					it is recommended to use this property on the onkeypress event. 
+					To find out if the user is pressing a function key 
+					(e.g. "F1", "CAPS LOCK" or "Home") use the onkeydown or onkeyup event.
+				Note: In Firefox, the keyCode property does not work on the onkeypress event 
+					(will only return 0). For a cross-browser solution, 
+					use the which property together with keyCode, e.g:
+				var x = event.which || event.keyCode;  
+					// Use either which or keyCode, depending on browser support
+				Tip: For a list of all Unicode characters, please study our Complete Unicode Reference.
+				Tip: If you want to convert the returned Unicode value into a character, use the fromCharCode() method.
+				Note: Both the keyCode and which property is provided for compatibility only. 
+					The latest version of the DOM Events Specification recommend using the key property 
+					instead (if available).
+				Tip: If you want to find out whether the "ALT", "CTRL", "META" or "SHIFT" key was pressed 
+					when a key event occured, use the altKey, ctrlKey, metaKey or shiftKey property.
+			event.getModifierState("CapsLock");  判断某些复合作用的按键状态是否在生效中, (不是判断按下了什么!!)
+				The getModifierState() method returns true if the specified modifier key was pressed, or activated.
+				Modifier keys that are activated only when they are being pressed down:
+				    Alt
+				    AltGraph
+				    Control
+				    Meta
+				    Shift
+				Modifier keys that are activated when they are clicked, and deactivated when they are clicked again:
+				    CapsLock	//大小写
+				    NumLock	//数字小键盘
+				    ScrollLock	//???
+*	drag:拖曳事件:
+		拖曳区域:
+			ondragenter : 当拖曳对象拖进这个区域时触发的事件
+			ondragleave  : 当拖曳对象被拖出这个区域时 触发的事件!!
+			ondragover : 正在拖曳对象 曾经经过这个拖曳区域时 区域触发的事件
+			ondrop :  拖曳结束, 接受释放的事件
+		拖曳对象  必须提添加上这个 attri draggable="true" 定义了一个拖曳对象
+			ondrop: 当拖曳对象被拖曳触发的事件
+			ondragstart: 表示这是一个可以被拖曳是对象,当拖曳发生时,发生的事件	
+			ondragend: 当结束时 发生的事件
+		以下是一个例子:
+		// 这是 一个拖曳区域
+		<div class="droptarget" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondragover="allowDrop(event)">
+		// 这是一个拖曳对象
+		  <p ondragstart="dragStart(event)" ondragend="dragEnd(event)" draggable="true" id="dragtarget">Drag me!</p>
+		</div>
+		// 这是第二个拖曳区域
+		<div class="droptarget" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+		<script>
+			function dragStart(event) {
+			  event.dataTransfer.setData("Text", event.target.id);
+			}
+			function dragEnd(event) {
+			}
+			function dragEnter(event) {
+			  if ( event.target.className == "droptarget" ) {
+			    document.getElementById("demo").innerHTML = "Entered the dropzone";
+			    event.target.style.border = "3px dotted red";
+			  }
+			}
+			
+			function dragLeave(event) {
+			  if ( event.target.className == "droptarget" ) {
+			    document.getElementById("demo").innerHTML = "Left the dropzone";
+			    event.target.style.border = "";
+			  }
+			}
+			
+			function allowDrop(event) {
+			  event.preventDefault();
+			}
+			
+			function drop(event) {
+			  event.preventDefault();
+			  var data = event.dataTransfer.getData("Text");
+			  event.target.appendChild(document.getElementById(data));
+			}
+		</script>
+	oncontextmenu : 唤起菜单时 的事件(右键事件!!)
+		可以给常规菜单添加自己 的 菜单命令  例如:
+		<div oncontextmenu="myFunction()" contextmenu="mymenu">
+		<p>Right-click inside this box to see the context menu!
+		<menu type="context" id="mymenu">
+		  <menuitem label="Refresh" onclick="window.location.reload();" icon="ico_reload.png"></menuitem>
+		  <menu label="Share on...">
+		  <menuitem label="Twitter" icon="ico_twitter.png" onclick="window.open('//twitter.com/intent/tweet?text=' + window.location.href);"></menuitem>
+		  <menuitem label="Facebook" icon="ico_facebook.png" onclick="window.open('//facebook.com/sharer/sharer.php?u=' + window.location.href);"></menuitem>
+		  </menu>
+		  <menuitem label="Email This Page" onclick="window.location='mailto:?body='+window.location.href;"></menuitem>
+		</menu>
+		</div>	
+	copy, cut  paste事件:就是执行标准右键菜单 对应按键 的事件
+		用法例如, <input type="text" oncopy="myFunction()" value="Try to copy this text">
+			 <input type="text" oncut="myFunction()" value="Try to cut this text">
+			 <input type="text" onpaste="myFunction()" value="Paste something in here">  
+	onshow :一般配合 <menu>使用,当菜单要被显示时候
+	onsubmit : 一般配合 <from> 事件,当表格内容要提交时候
+	ontoggle : 配合	<detail> 使用, 当显示一个词条详细解析时候	
+	transitionend : 变形事件,,,,????			
+	onoffline 当 浏览器离线时操作!!
+	ononline 浏览器上线时
+	onpagehide : 节点隐藏不可视时候
+	onpageshow : 节点可视时候
+	onresize : 浏览器窗口改变时候
+	onscroll : 当滑动条滑动时候
+	
+	其他事件属性:
+		event.bubbles  事件冒泡??
+		event.button: 那个按键
+		event.cancelable: 可取消的事件
+		event.currentTarget : 触发这个事件的 节点
+*		event.preventDefault() 阻止当前事件的默认操作事件
+		event.detail : 事件发生的统计次数,或者其他信息
+		event.elapsedTime :  动画事件运行的时间统计
+		event.eventPhase
+			A Number, representing which phase of the event flow is currently being evaluated
+			Possible values:
+				0. NONE
+				1. CAPTURING_PHASE - The event flow is in capturing phase
+				2. AT_TARGET - The event flow is in target phase
+				3. BUBBLING_PHASE - The event flow is in bubbling phase
+		event.isTrusted : 判断事件是否真实发生:
+			例如,真正的点击事件是 真实的,
+			通过调用函数模拟点击事件 是 假的
+		event.oldURL  /  event.newURL  : 与 hashchange 有关!! 不知道是啥,,,
+		event.persisted 	
+			The persisted property returns a Boolean value that indicates if the webpage is loaded directly from the server, 
+			or if the page is cached, when an onpageshow or onpagehide event occurs.
+		event.propertyName : TransitionEvent 用到的参数!!! 显示变形的参数是哪个
+			比如 width 变化了, 就是width在改变!!
+		event.relatedTarget : 事件发生的相关节点
+		event.target : 发生事件的节点
+		event.targetTouches : 多指触控,记录有多少个手指!! 触摸着指定的节点
+		event.touches: 多指触控,记录有多少个手指同时触摸 屏幕
+		event.screenX : 相对于电脑屏幕 的位置
+		event.screenY : 
+		event.stopImmediatePropagation(): 同一个事件有多个 事件触发函数时候,后面的触发函数将不会工作!!
+		event.stopPropagation() : 某些子节点 和 父节点 有相同的触发事件,所以点击子节点也会继续触发父节点的函数
+					  这个函数阻止 父节点函数及以后的触发!!	
+		event.timeStamp : 从 January 1, 1970 到现在的 毫秒 数 milliseconds
+		event.type : 显示当前什么事件!! 例如 onclick mouseup.....
+		event.view : 不知道是啥
+	
+	操作事件的api	
+		createEvent(): 建立事件
+			var x = document.createEvent("MouseEvent");
+			x.initMouseEvent("mouseover", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+			document.getElementById("myDiv").dispatchEvent(x);
+DOM screen:
+	screen.availHeight 电脑屏幕不含 win开始菜单烂 有效高度
+	screen.availWidth  电脑屏幕不含 win开始菜单烂 有效高度
+	screen.colorDepth 颜色深度 红绿蓝
+	screen.pixelDepth 像素点深度  24bit 16bit 8bit
+	screen.height : 电脑屏幕高度
+	screen.width :  电脑屏幕宽度
+DOM Window 一般来说浏览器显示页面的的区域就是我们说的 窗口
+	窗口的开关:
+		myWindow = window.open("", "myWindow", "width=400, height=200");  新建一个窗口
+		myWindow.close(); 关闭这个窗口
+		myWindow.closed  这个窗口的关闭状态
+	console 属于窗口成员,一般不需要 加上 window. 直接 console.log() 使用等等
+	window.defaultStatus  //可以自定义描述窗口的状态!!
+***	这里值得 讨论下 screen window frame document 的抽象关系
+		screen 就是 电脑屏幕, 
+		window 窗口是一个抽象概念,是一个数据, 承载窗口的载体 有两种: 浏览器显示页面的区域, html页面中嵌入 的 iframe 节点对象
+		document 就是页面内容文本,是 window 的成员.
+	window.frameElement: 如果当前 window 搭载在 iframe 上, 就返回这个 iframe 节点
+		否则,window是搭在浏览器上,返回null
+	window.length: 当前的document 的 iframe 的个数 提取到 window.length 数据里
+	window,frames[x] :  窗口数据包含着 document这个分数据, document 嵌入的 <iframe>对象会提取出来
+		也称为了窗口的 另外的分数据frames
+	window.history: 保存着窗口 岑经加载过的 document 网址
+		window.history.go(-2)  window加载曾经加载过的 往前第二个网页 的docment
+		window.history.forward() 加载往后的一个网页
+		window.history.back() 加载往前的一个网页
+	关于尺寸问题:
+*		window.innerWidth
+		window.innerHeight
+			Use the outerWidth and outerHeight properties to get the width/height of the browser window.
+			即浏览器的显示页面区域的大小,或者 iframe 节点显示内容区域的大小 (不包括 滑动条等其他!!)!!!
+		window.outerWidth;
+		window.outerHeight; 
+			Use the outerWidth and outerHeight properties to get the width/height of the browser window.
+			即浏览器的显示页面区域的大小,或者 iframe 节点显示内容区域的大小 
+			(包括浏览器的滑动条,菜单栏工具栏等,,,除了浏览器的顶部窗口控制栏,最大化,关闭,最小化那栏!!)!!!
+		window.pageXOffset
+		window.pageYOffset
+			窗口显示的页面内容有具体尺寸大小, pageoffset 就是 页面内容的偏移位置
+			例如 
+				window.scrollBy(100, 200);
+				此刻显示页面内容的偏移位置 pageXOffset pageYOffset 就是 X:100 y:200 pixl 的像素位置
+		window.screenLeft
+		window.screenTop
+			window outer 区域, 相对于电脑屏幕的偏移!!!
+		myWindow.screenX
+		myWindow.screenY
+		 	window outer 区域, 相对于电脑屏幕的偏移!!! 不知道有什么区别
+	window.parent :如果窗口的载体是 iframe, parent就是这个ifrane所在的父窗口 window		
+		一般直接  parent 使用,不需要加载 window. 前缀
+	window.screen : 就是之前讨论 的  DOM screen 电脑屏幕:
+		一般直接  screen 使用,不需要加载 window. 前缀
+	window.sessionStorage  会话信息存储
+		一般直接  sessionStorage 使用,不需要加载 window. 前缀
+	window.localStorage 当前窗口存储的临时数据的地方
+		一般直接  localStorage 使用,不需要加载 window. 前缀
+	window.Location  位置信息:比如 uri  经纬度等
+		一般直接  location 使用,不需要加载 window. 前缀
+	window.alert() 窗口通知
+		一般直接  alert 使用,不需要加载 window. 前缀
+	window.confirm() 也是窗口通知
+		一般直接  confirm 使用,不需要加载 window. 前缀
+		例如: confirm("Press a button!");
+	window.prompt() : 临时参数输入窗口 例如:
+		var person = prompt("Please enter your name", "Harry Potter");
+	window.name  窗口的名字
+	window.navigator 导航信息 例如关于 什么浏览器 浏览器版本之类
+		一般直接  navigator 使用,不需要加载 window. 前缀
+	window.opener : 窗口打开者 
+		myWindow = window.open(...)
+		myWindow.opener  指的是 打开 myWindow 窗口 的 父窗口对象
+	window.top
+		显示在顶层的窗口对象
+	window.self
+		窗口自己本身对象!!
+		window.top != window.self  检查顶层显示的窗口是不是当前窗口本身
+	window.status 窗口对象的状态:  用法例如
+		window.status = "Some text in the status bar!!";
+	window.btoa(str);  string to a base-64 encoded string
+	window.atob(enc);  a base-64 encoded string to string
+	Window.blur() : 取消 窗口的 focus
+	window.focus() : focus 窗口
+	window.setInterval() 设置定时事件
+	window.clearInterval() 取消定时事件
+	window.setTimeout() 设置超时事件
+	window.clearTimeout() 取消超时事件
+	window.getComputedStyle() 获得指定节点 最终演示的 指定的 css 属性,例如:
+		var elem = document.getElementById("test");
+		var theCSSprop = window.getComputedStyle(elem, null).getPropertyValue("background-color");
+	window.matchMedia() : 判断 window 显示大小是否达到目标
+		window.matchMedia("(max-width: 700px)").matches
+	window.moveBy(250, 250); 移动多少个像素点
+	Window.moveTo(250, 250); 移动到屏幕某处
+	window.scrollBy(100, 0): 滑动条滑动多少位置
+	window.scrollTo(500, 0); 滑动条滑动到某位置
+	window.resizeBy(): 缩放多少个像素点
+	window.resizeTo(): 缩放到某尺寸  
+	window.print(); 打印当前页面内容	
+DOM web stroge: 页面的 临时存储: localStorage sessionStorage
+	localStorage.key[x] 页面存储的 key 内容
+	localStorage.length : localStorage 内容成员
+	getItem(keyname) 	Returns the value of the specified key name
+	setItem(keyname, value) 	Adds that key to the storage, or update that key's value if it already exists
+		例如: localStorage.setItem("mytime", Date.now()); 
+		      sessionStorage.setItem("lastname", "Smith");
+	removeItem(keyname) 	Removes that key from the storage
+	clear() 	Empty all key out of the storage	
+	相关的: localStorage, sessionStorage 是属于 窗口的参数???
+	window.localStorage 	Allows to save key/value pairs in a web browser. Stores the data with no expiration date
+	window.sessionStorage 	Allows to save key/value pairs in a web browser. Stores the data for one session
+DOM style: 通过 dom 修改 css 内容!!!!
+	内容太多, 配合 css 一起学习讨论
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190427
+javascript jquery vue.js react angular.js 关系:
+javascript 原生语言
+jquery 简单底层封装的一套 js 库, 也可以认为是 伪原生语言
+vue.js, react, angular.js,  针对 大部分 情景特定 而封装的 js应用框架, 降低开发工作量
+所以 : javascript  jquery 需要 学习,
+框架的话 选流行的就好了, react 复杂适合做大型项目, vue轻量,还在发展, 大家的相当,react易于做移动端,但学习路线陡峭
+排除 angular,  react 和 vue 选, 目前认为 vue 合适
+bootstrap 是 css 模板,跟多现成的UI模块, 可以配合 js应用框架使用
+jquery 学习:
+使用jquery 需要加载库:
+	<head>	//加载本地的,需要先下载
+	<script src="jquery-3.3.1.min.js"></script>
+	</head>
+	<head>	//从cdn 上加载, 即从内容托管网站加载
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	</head> 
+分布加载jquery函数:
+	<head>  //注意放置顺序,因为决定了加载顺序
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="my_jquery_functions.js"></script>
+	</head> 
+语法:
+	快速学习例子:
+		$(this).hide() - hides the current element.
+		$("p").hide() - hides all <p> elements.
+		$(".test").hide() - hides all elements with class="test".
+		$("#test").hide() - hides the element with id="test".
+		$(document).ready(function(){  // jQuery methods go here...   } ); //注册了一个ready函数 当doc加载好,执行 function()
+	也可以这样注册一个事件函数:
+	 $(  function(){  // jQuery methods go here... }  ); 
+	注册一个ready事件函数,doc加载完就执行, ready事件函数的工作是 注册一个点击事件函数,
+		$(document).ready(function(){
+		  $("button").click(function(){
+		    $("p").hide();
+		  });
+		});
+		.ready() //注册 ready 事件函数
+		.click() //注册 点击 事件函数
+		.hide()  //直接执行的隐藏函数
+	选择器:
+		$("*") 	Selects all elements 	
+		$(this) 	Selects the current HTML element 	
+		$("p.intro") 	Selects all <p> elements with class="intro" 	
+		$("p:first") 	Selects the first <p> element 	
+		$("ul li:first") 	Selects the first <li> element of the first <ul> 	
+		$("ul li:first-child") 	Selects the first <li> element of every <ul> 	
+		$("[href]") 	Selects all elements with an href attribute 	
+		$("a[target='_blank']") 	Selects all <a> elements with a target attribute value equal to "_blank" 	
+		$("a[target!='_blank']") 	Selects all <a> elements with a target attribute value NOT equal to "_blank" 	
+		$(":button") 	Selects all <button> elements and <input> elements of type="button" 	
+		$("tr:even") 	Selects all even <tr> elements 	
+		$("tr:odd") 	Selects all odd <tr> elements
+		Selector 		Example 			Selects
+		* 			$("*") 				All elements
+		#id 			$("#lastname") 			The element with id="lastname"
+		.class 			$(".intro") 			All elements with class="intro"
+		.class,.class 		$(".intro,.demo") 		All elements with the class "intro" or "demo"
+		element 		$("p") 				All <p> elements
+		el1,el2,el3 		$("h1,div,p") 			All <h1>, <div> and <p> elements
+		  	  		 	
+		:first 			$("p:first") 			The first <p> element
+		:last 			$("p:last") 			The last <p> element
+		:even 			$("tr:even") 			All even <tr> elements
+		:odd 			$("tr:odd") 			All odd <tr> elements
+		  	  		 	
+		:first-child 		$("p:first-child") 		All <p> elements that are the first child of their parent
+		:first-of-type 		$("p:first-of-type") 		All <p> elements that are the first <p> element of their parent
+		:last-child 		$("p:last-child") 		All <p> elements that are the last child of their parent
+		:last-of-type 		$("p:last-of-type") 		All <p> elements that are the last <p> element of their parent
+		:nth-child(n) 		$("p:nth-child(2)") 		All <p> elements that are the 2nd child of their parent
+		:nth-last-child(n) 	$("p:nth-last-child(2)") 	All <p> elements that are the 2nd child of their parent, 
+									counting from the last child
+		:nth-of-type(n) 	$("p:nth-of-type(2)") 		All <p> elements that are the 2nd <p> element of their parent
+		:nth-last-of-type(n) 	$("p:nth-last-of-type(2)") 	All <p> elements that are the 2nd <p> element of their parent,
+							 		counting from the last child
+		:only-child 		$("p:only-child") 		All <p> elements that are the only child of their parent
+		:only-of-type 		$("p:only-of-type") 		All <p> elements that are the only child, 
+									of its type, of their parent
+		  	  	 
+		parent > child 		$("div > p") 			All <p> elements that are a direct child of a <div> element
+		parent descendant 	$("div p") 			All <p> elements that are descendants of a <div> element
+		element + next 		$("div + p") 			The <p> element that are next to each <div> elements
+		element ~ siblings 	$("div ~ p") 			All <p> elements that are siblings of a <div> element
+		  	  	 
+		:eq(index) 		$("ul li:eq(3)") 		The fourth element in a list (index starts at 0)
+		:gt(no) 		$("ul li:gt(3)") 		List elements with an index greater than 3
+		:lt(no) 		$("ul li:lt(3)") 		List elements with an index less than 3
+		:not(selector) 		$("input:not(:empty)") 		All input elements that are not empty
+		  	  		 
+		:header 		$(":header") 			All header elements <h1>, <h2> ...
+		:animated 		$(":animated") 			All animated elements
+		:focus 			$(":focus") 			The element that currently has focus
+		:contains(text) 	$(":contains('Hello')") 	All elements which contains the text "Hello"
+		:has(selector) 		$("div:has(p)") 		All <div> elements that have a <p> element
+		:empty 			$(":empty") 			All elements that are empty
+		:parent 		$(":parent") 			All elements that are a parent of another element
+		:hidden 		$("p:hidden") 			All hidden <p> elements
+		:visible 		$("table:visible") 		All visible tables
+		:root 			$(":root") 			The document's root element
+		:lang(language) 	$("p:lang(de)") 		All <p> elements with a lang attribute value starting with "de"
+		  	  	 
+		[attribute] 		$("[href]") 			All elements with a href attribute
+		[attribute=value] 	$("[href='default.htm']") 	All elements with a href attribute value equal to "default.htm"
+		[attribute!=value] 	$("[href!='default.htm']") 	All elements with a href attribute value 
+									not equal to "default.htm"
+		[attribute$=value] 	$("[href$='.jpg']") 		All elements with a href attribute value ending with ".jpg"
+		[attribute|=value] 	$("[title|='Tomorrow']") 	All elements with a title attribute value 
+									equal to 'Tomorrow', or starting with 'Tomorrow' 
+									followed by a hyphen
+		[attribute^=value] 	$("[title^='Tom']") 		All elements with a title attribute value starting with "Tom"
+		[attribute~=value] 	$("[title~='hello']") 		All elements with a title attribute value containing 
+									the specific word "hello"
+		[attribute*=value] 	$("[title*='hello']") 		All elements with a title attribute value containing 
+									the word "hello"		  	  	 
+		:input 			$(":input") 			All input elements
+		:text 			$(":text") 			All input elements with type="text"
+		:password 		$(":password") 			All input elements with type="password"
+		:radio 			$(":radio") 			All input elements with type="radio"
+		:checkbox 		$(":checkbox") 			All input elements with type="checkbox"
+		:submit 		$(":submit") 			All input elements with type="submit"
+		:reset 			$(":reset") 			All input elements with type="reset"
+		:button 		$(":button") 			All input elements with type="button"
+		:image 			$(":image") 			All input elements with type="image"
+		:file 			$(":file") 			All input elements with type="file"
+		:enabled 		$(":enabled") 			All enabled input elements
+		:disabled 		$(":disabled") 			All disabled input elements
+		:selected 		$(":selected") 			All selected input elements
+		:checked 		$(":checked") 			All checked input elements
+					
+	注册事件的函数,一般有: 
+		Mouse Events 	Keyboard Events 	Form Events 	Document/Window Events
+		click 		keypress 		submit 		load
+		dblclick 	keydown 		change 		resize
+		mouseenter 	keyup 			focus 		scroll
+		mouseleave 	  			blur 		unload
+		hover()
+		mouseup
+		mousedown
+		
+		hover例子: The first function is executed when the mouse enters the HTML element, 
+		and the second function is executed when the mouse leaves the HTML element:
+			 $("#p1").hover(function(){
+			  alert("You entered p1!");
+			},
+			function(){
+			  alert("Bye! You now leave p1!");
+			});
+		一个普遍通用注册函数  on(): 例如
+			$("p").on("click", function(){
+			  $(this).hide();
+			}); 
+ 		      再例如,符合注册
+			$("p").on({
+			  mouseenter: function(){
+			    $(this).css("background-color", "lightgray");
+			  },
+			  mouseleave: function(){
+			    $(this).css("background-color", "lightblue");
+			  },
+			  click: function(){
+			    $(this).css("background-color", "yellow");
+			  }
+			});
+		一般注册事件: 
+		bind() 			Deprecated in version 3.0. Use the on() method instead. Attaches event handlers to elements
+		blur() 			Attaches/Triggers the blur event
+		change() 		Attaches/Triggers the change event
+		click() 		Attaches/Triggers the click event
+		dblclick() 		Attaches/Triggers the double click event
+		delegate() 		Deprecated in version 3.0. Use the on() method instead. Attaches a handler to current, 
+					or future, specified child elements of the matching elements
+		die() 			Removed in version 1.9. Removes all event handlers added with the live() method
+		error() 		Removed in version 3.0. Attaches/Triggers the error event
+		focus() 		Attaches/Triggers the focus event
+		focusin() 		Attaches an event handler to the focusin event
+		focusout() 		Attaches an event handler to the focusout event
+		hover() 		Attaches two event handlers to the hover event
+		keydown() 		Attaches/Triggers the keydown event
+		keypress() 		Attaches/Triggers the keypress event
+		keyup() 		Attaches/Triggers the keyup event
+		live() 			Removed in version 1.9. Adds one or more event handlers to current, or future, selected elements
+		load() 			Removed in version 3.0. Attaches an event handler to the load event
+		mousedown() 		Attaches/Triggers the mousedown event
+		mouseenter() 		Attaches/Triggers the mouseenter event
+		mouseleave() 		Attaches/Triggers the mouseleave event
+		mousemove() 		Attaches/Triggers the mousemove event
+		mouseout() 		Attaches/Triggers the mouseout event
+		mouseover() 		Attaches/Triggers the mouseover event
+		mouseup() 		Attaches/Triggers the mouseup event
+		off() 			Removes event handlers attached with the on() method
+		on() 			Attaches event handlers to elements
+		one() 			Adds one or more event handlers to selected elements. 
+					This handler can only be triggered once per element
+		$.proxy() 		Takes an existing function and returns a new one with a particular context
+		ready() 		Specifies a function to execute when the DOM is fully loaded
+		resize() 		Attaches/Triggers the resize event
+		scroll() 		Attaches/Triggers the scroll event
+		select() 		Attaches/Triggers the select event
+		submit() 		Attaches/Triggers the submit event
+		toggle() 		Removed in version 1.9. Attaches two or more functions to toggle between for the click event
+		trigger() 		Triggers all events bound to the selected elements
+		triggerHandler() 	Triggers all functions bound to a specified event for the selected elements
+		unbind() 		Deprecated in version 3.0. Use the off() method instead. 
+					Removes an added event handler from selected elements
+		undelegate() 		Deprecated in version 3.0. Use the off() method instead. 
+					Removes an event handler to selected elements, now or in the future
+		unload() 		Removed in version 3.0. Attaches an event handler to the unload event		
+		这些是 特殊的事件函数和对象,不是注册函数
+		event.currentTarget 	The current DOM element within the event bubbling phase
+		event.data 		Contains the optional data passed to an event method when the current executing handler is bound
+		event.delegateTarget 	Returns the element where the currently-called jQuery event handler was attached
+		event.isDefaultPrevented() 		Returns whether event.preventDefault() was called for the event object
+		event.isImmediatePropagationStopped() 	Returns whether event.stopImmediatePropagation() was called for the event object
+		event.isPropagationStopped() 		Returns whether event.stopPropagation() was called for the event object
+		event.namespace 	Returns the namespace specified when the event was triggered
+		event.pageX 		Returns the mouse position relative to the left edge of the document
+		event.pageY 		Returns the mouse position relative to the top edge of the document
+		event.preventDefault() 	Prevents the default action of the event
+		event.relatedTarget 	Returns which element being entered or exited on mouse movement
+		event.result 		Contains the last/previous value returned by an event handler triggered by the specified event
+		event.stopImmediatePropagation() 	Prevents other event handlers from being called
+		event.stopPropagation() 		Prevents the event from bubbling up the DOM tree, 
+							preventing any parent handlers from being notified of the event
+		event.target 		Returns which DOM element triggered the event
+		event.timeStamp 	Returns the number of milliseconds since January 1, 1970, when the event is triggered
+		event.type 		Returns which event type was triggered
+		event.which 		Returns which keyboard key or mouse button was pressed for the event
+	效果函数:
+		hide() and show()
+		toggle()  //when hiding show, when showing hide
+		fadeIn( speed,callback ) //显示	
+		fadeOut( speed,callback ) //隐去
+		fadeTogglee(speed,callback)// when in out,  when out in  
+		fadeTo(speed,opacity,callback)
+			//speed:values: "slow", "fast", or milliseconds. 
+			//callback function to be executed after the fading completes.
+			//opacity: fading to a given opacity 透明程度(value between 0 and 1)
+		slideDown(speed,callback);	//下拉抽屉
+		slideUp(speed,callback);	//上拉抽屉
+		slideToggle(speed,callback);	//when down uo , when up down
+			//speed:values: "slow", "fast", or milliseconds. 
+			//callback function to be executed after the fading completes.
+		animate({params},speed,callback); //动画效果
+			//params parameter defines the CSS properties to be animated.
+			//speed:values: "slow", "fast", or milliseconds. 
+			//callback function to be executed after the fading completes.
+			例子:
+			$("button").click(function(){
+			  $("div").animate({
+			    left: '250px',
+			    opacity: '0.5',
+			    height: '150px',
+			    width: '150px'
+			  });
+			});  
+		stop() : 停止动画效果!!
+		还有:
+		delay() 	Sets a delay for all queued functions on the selected elements
+		dequeue() 	Removes the next function from the queue, and then executes the function
+		finish() 	Stops, removes and completes all queued animations for the selected elements
+		queue() 	Shows the queued functions on the selected elements
+		clearQueue() 	Removes all remaining queued functions from the selected elements
+	链式执行函数:
+		例如:
+		 $("#p1").css("color", "red").slideUp(2000).slideDown(2000); //先改css,然后uo,最后dowm
+		又例如:
+		 $("#p1").css("color", "red")
+		  .slideUp(2000)
+		  .slideDown(2000); 
+	用于 html 函数  set  get:
+		text() - Sets or returns the text content of selected elements
+		html() - Sets or returns the content of selected elements (including HTML markup)
+		val() - Sets or returns the value of form fields
+			无参数,获得数据, 有参数设置数据
+		例如:
+			  $("#test1").text("Hello world!");
+			  $("#test2").html("<b>Hello world!</b>");
+			  $("#test1").text();
+			  $("#test2").html();
+		attr() - method is used to get set attribute values.
+			 $("#w3s").attr("href")	//get
+
+			 $("#w3s").attr({	//set
+			    "href" : "https://www.w3schools.com/jquery/",
+			    "title" : "W3Schools jQuery Tutorial"
+			  }
+		
+			  $("#w3s").attr("href", function(i, origValue){   //set
+			    return origValue + "/jquery/";
+			  })
+	用于 html 函数  add remove:	
+		append() - Inserts content at the end of the selected elements
+		prepend() - Inserts content at the beginning of the selected elements
+		after() - Inserts content after the selected elements
+		before() - Inserts content before the selected elements
+		例子:
+			$("p").prepend("Some prepended text."); 
+			var txt1 = "<p>Text.</p>";               // Create element with HTML 
+			var txt2 = $("<p></p>").text("Text.");   // Create with jQuery
+			var txt3 = document.createElement("p");  // Create with DOM
+			txt3.innerHTML = "Text.";
+			$("body").append(txt1, txt2, txt3);      // Append the new elements 
+		remove() - Removes the selected element (and its child elements)
+		empty() - Removes the child elements from the selected element
+		例子:
+			$("#div1").remove(); //removes the selected element(s) and its child elements.
+			$("#div1").empty();  //removes the child elements of the selected element(s).
+			$("p").remove(".test"); //removes all <p> elements with class="test"
+			$("p").remove(".test, .demo");  //removes all <p> elements with class="test" or class="demo"
+	用于 html 函数  修改 css:
+		addClass() - Adds one or more classes to the selected elements
+		removeClass() - Removes one or more classes from the selected elements
+		toggleClass() - Toggles between adding/removing classes from the selected elements
+		css() - Sets or returns the style attribute			
+		例子:
+			$("h1, h2, p").addClass("toblue"); // all <h1> <h2> <p> add class toblue
+			$("p").css("background-color"); //return   background-color
+			$("p").css("background-color", "yellow"); //set  background-color
+			$("p").css({"background-color": "yellow", "font-size": "200%"}); //mul set
+		一般DOM 和 css api:
+		addClass() 	Adds one or more class names to selected elements
+		after() 	Inserts content after selected elements
+		append() 	Inserts content at the end of selected elements
+		appendTo() 	Inserts HTML elements at the end of selected elements
+		attr() 	Sets or returns attributes/values of selected elements
+		before() 	Inserts content before selected elements
+		clone() 	Makes a copy of selected elements
+		css() 	Sets or returns one or more style properties for selected elements
+		detach() 	Removes selected elements (keeps data and events)
+		empty() 	Removes all child nodes and content from selected elements
+		hasClass() 	Checks if any of the selected elements have a specified class name
+		height() 	Sets or returns the height of selected elements
+		html() 	Sets or returns the content of selected elements
+		innerHeight() 	Returns the height of an element (includes padding, but not border)
+		innerWidth() 	Returns the width of an element (includes padding, but not border)
+		insertAfter() 	Inserts HTML elements after selected elements
+		insertBefore() 	Inserts HTML elements before selected elements
+		offset() 	Sets or returns the offset coordinates for selected elements (relative to the document)
+		offsetParent() 	Returns the first positioned parent element
+		outerHeight() 	Returns the height of an element (includes padding and border)
+		outerWidth() 	Returns the width of an element (includes padding and border)
+		position() 	Returns the position (relative to the parent element) of an element
+		prepend() 	Inserts content at the beginning of selected elements
+		prependTo() 	Inserts HTML elements at the beginning of selected elements
+		prop() 		Sets or returns properties/values of selected elements
+		remove() 	Removes the selected elements (including data and events)
+		removeAttr() 	Removes one or more attributes from selected elements
+		removeClass() 	Removes one or more classes from selected elements
+		removeProp() 	Removes a property set by the prop() method
+		replaceAll() 	Replaces selected elements with new HTML elements
+		replaceWith() 	Replaces selected elements with new content
+		scrollLeft() 	Sets or returns the horizontal scrollbar position of selected elements
+		scrollTop() 	Sets or returns the vertical scrollbar position of selected elements
+		text() 	Sets or returns the text content of selected elements
+		toggleClass() 	Toggles between adding/removing one or more classes from selected elements
+		unwrap() 	Removes the parent element of the selected elements
+		val() 	Sets or returns the value attribute of the selected elements (for form elements)
+		width() 	Sets or returns the width of selected elements
+		wrap() 	Wraps HTML element(s) around each selected element
+		wrapAll() 	Wraps HTML element(s) around all selected elements
+		wrapInner() 	Wraps HTML element(s) around the content of each selected element
+		
+ 	用于 html 的 Dimensions  : margin border pading elementcontent
+		width()		the width of an element (excludes padding, border and margin).
+		height()	the height of an element (excludes padding, border and margin)
+			除了 element 也可以描述 $(document)  $(window)
+		innerWidth()	the width of an element (includes padding).
+		innerHeight()	the height of an element (includes padding)
+		outerWidth()	the width of an element (includes padding and border)
+		outerHeight()	the height of an element (includes padding and border)
+		outerWidth(true)	the width of an element (includes padding, border, and margin).
+		outerHeight(true)	the height of an element (includes padding, border, and margin).
+		另外, 只有 width() height()  添加参数,可以设置 ,
+		其他都一般都不建议设置!! 因为不知到参数都分布给 elementcontent ,psdding, border 等多少长度
+	用于 HTML DOM Traversing : 就是关于节点的 父子关系和 移动 ??
+		(Ancestors)	
+		parent()	//返回父节点	(Ancestors)
+		parents()	//返回所有扣扣相嵌的父节点们!! 返回是一个数组还是字典  ?? 
+		parentsUntil("div")  //返回所有扣扣相嵌的父节点们!!知道遇到div父节点,但不包括这个div父节点 返回是一个数组还是字典  ?? 
+		(Descendants)
+		children()	// returns all direct children of the selected element.
+				//
+			 $("div").children("p.first");  // returns all <p> elements with the class name "first", 
+							// that are direct children of <div> (不包括子节点的子节点)
+		find()		//The find() method returns descendant elements of the selected element, 
+				//all the way down to the last descendant. (包括子节点的子节点)
+			 $("div").find("span");  //返回所有 <span> 节点 包括搜索 子节点的子节点!!
+		(Siblings)
+		siblings()  //returns all sibling elements of the selected element
+			$("h2").siblings() //返回所有 跟 <h2> 同阶层的节点!!
+			$("h2").siblings("p");  //返回所有 跟 <h2> 同阶层的<p>节点!
+		next()	// 同阶层的下一个节点
+		nextAll() // 同阶层的后面的所有节点
+		nextUntil("h6")  //同阶层的后面的所有节点直到第一个 遇到的 <h6>节点(不包括这个<h6>节点)
+		prev()		// 同阶层的上一个节点
+		prevAll()	// 同阶层的前面的所有节点
+		prevUntil("h6")	//同阶层的前面的所有节点直到第一个 遇到的 <h6>节点(不包括这个<h6>节点)
+		此外还有:
+		add() 	Adds elements to the set of matched elements
+		addBack() 	Adds the previous set of elements to the current set
+		andSelf() 	Deprecated in version 1.8. An alias for addBack()
+		closest() 	Returns the first ancestor of the selected element
+		contents() 	Returns all direct children of the selected element (including text and comment nodes)
+		each() 		Executes a function for each matched element
+		end() 		Ends the most recent filtering operation in the current chain, 
+				and return the set of matched elements to its 	previous state
+		filter() 	Reduce the set of matched elements to those that match the selector or pass the function's test
+			 $(selector).filter(criteria,function(index))
+				criteria  筛选条件,
+				function(index)  筛选出来的成员每个都得执行一次 这个函数!!
+		has() 		Returns all elements that have one or more elements inside of them
+		is() 		Checks the set of matched elements against a selector/element/jQuery object, 
+				and return true if at least one of these elements matches the given arguments
+		map() 		Passes each element in the matched set through a function, 
+				producing a new jQuery object containing the return values
+		offsetParent() 	Returns the first positioned parent element
+		slice() 	Reduces the set of matched elements to a subset specified by a range of indices
+	用于 HTML DOM, Filtering 筛选
+		$("div").first();  //第一个 <div> 节点
+		$("div").last();   //最后一个 <div> 节点
+		$("p").eq(1);   // 选取 第二个 <p> 节点 , 参数1代表第二个, 所以从 0 开始, 0代表第一个
+		$("p").filter(".intro"); //返回所 所有带有 class=intro 的 <p>节点
+		$("p").filter(".intro").eq(0); //返回所 带有 class=intro 的第一个 <p>节点
+		$("p").not(".intro"); //返回所 所有不带 class=intro 的 <p>节点
+	专门用于 ajax 的 jquery 模块
+		$(selector).load(URL,data,callback); 
+			url, 加载文本的路径
+			data, 加载文本申请所用到的 参数
+			callback, 回调函数
+			$("#div1").load("demo_test.txt"); //加载 txt文本所有内容到 div1 的节点里
+			$("#div1").load("demo_test.txt #p1"); //加载 txt文本的 id=p1 的节点内容到 div1节点里
+		$.get(URL,callback); // GET REQUEST
+			例如:
+			  $.get("demo_test.asp", function(data, status){
+			    alert("Data: " + data + "\nStatus: " + status);
+			  }); 
+		$.post(URL,data,callback); // POST REQUEST
+			$("button").click(function(){
+			  $.post("demo_test_post.asp",
+			  {
+			    name: "Donald Duck",
+			    city: "Duckburg"
+			  },
+			  function(data, status){
+			    alert("Data: " + data + "\nStatus: " + status);
+			  });
+			}); 
+			//把数据 post 到 server 当成功收到反馈数据时 使用 alert 把反馈显示出来
+		此外还有:
+		$.ajax() 	Performs an async AJAX request
+		$.ajaxPrefilter() 	Handle custom Ajax options or modify existing options 
+					before each request is sent and before they are processed by $.ajax()
+		$.ajaxSetup() 	Sets the default values for future AJAX requests
+		$.ajaxTransport() 	Creates an object that handles the actual transmission of Ajax data
+		$.get() 	Loads data from a server using an AJAX HTTP GET request
+		$.getJSON() 	Loads JSON-encoded data from a server using a HTTP GET request
+		$.parseJSON() 	Deprecated in version 3.0, use JSON.parse() instead. 
+				Takes a well-formed JSON string and returns the resulting JavaScript value
+		$.getScript() 	Loads (and executes) a JavaScript from a server using an AJAX HTTP GET request
+		$.param() 	Creates a serialized representation of an array or object 
+				(can be used as URL query string for AJAX requests)
+		serialize() 	Encodes a set of form elements as a string for submission
+		serializeArray() 	Encodes a set of form elements as an array of names and values
+		注册事件函数:
+		ajaxComplete() 	Specifies a function to run when the AJAX request completes
+		ajaxError() 	Specifies a function to run when the AJAX request completes with an error
+		ajaxSend() 	Specifies a function to run before the AJAX request is sent
+		ajaxStart() 	Specifies a function to run when the first AJAX request begins
+		ajaxStop() 	Specifies a function to run when all AJAX requests have completed
+		ajaxSuccess() 	Specifies a function to run when an AJAX request completes successfully
+	专门用于 jquery 与 冲突:
+		jQuesy 使用 $ 代替 jQuery, 当其他js应用库和框架要使用到 $ 便会冲突,
+		这时我们可以这样子, $.noConflict(); 释放 $ 符号的捆绑, 之后要使用jQuery时,只能这样
+		例如: jQuery("div").first();
+**	关于 filter function的问题
+		以下例子, 不知道是如何使用 filter ,和 this 指针的问题!!!
+		// $("#myDIV *") 取得了所有内容加入列表
+		//.filter(function) 循环取出列表每一个对象 执行一次 filter 里的 function 函数!!
+		$(document).ready(function(){
+		  $("#myInput").on("keyup", function() {
+		    var value = $(this).val().toLowerCase();
+		    $("#myDIV *").filter(function() {
+		      $("#myInput").toggle($("#myInput").text().toLowerCase().indexOf(value) > -1)
+		    });
+		  });
+		});
+
+		<input id="myInput" type="text" placeholder="Search..">
+
+		<div id="myDIV">
+		  <p>I am a paragraph.</p>
+		  <div>I am a div element inside div.</div>
+		  <button>I am a button</button>
+		  <button>Another button</button>
+		  <p>Another paragraph.</p>
+		</div>
+	其他  Miscellaneous Methods
+		data() 	Attaches data to, or gets data from, selected elements
+		each() 	Execute a function for each matched element
+		index() 	Search for a given element from among the matched elements
+		$.param() 	Create a serialized representation of an array or object 
+				(can be used as URL query string for AJAX requests)
+		removeData() 	Removes a previously-stored piece of data
+		size() 	Removed in version 3.0. Use the length property instead
+		toArray() 	Retrieve all the DOM elements contained in the jQuery set, as an array
+	关于 jquery 库的属性,自身信息
+		context 	Removed in version 3.0. Contains the original context passed to jQuery()
+		jquery 	Contains the jQuery version number
+		jQuery.fx.interval 	Change the animation firing rate in milliseconds
+		jQuery.fx.off 	Globally disable/enable all animations
+		jQuery.support 	A collection of properties representing different browser features or bugs 
+				(Intended for jQuery's internal use)
+		length 	Contains the number of elements in the jQuery object
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190429
+vue.js
+在 html xml 文本里: Vue.js uses double braces {{ }} as place-holders for data.
+简单例子1:
+	<head>
+		<meta charset="utf-8">
+		<title>Vue 测试实例 - 菜鸟教程(runoob.com)</title>
+		<script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+	</head>
+	<body>
+	<div id="vue_det">
+	    <h1>site : {{site}}</h1>
+	    <h1>url : {{url}}</h1>
+	    <h1>{{details()}}</h1>
+	</div>
+	<script type="text/javascript">
+	    var vm = new Vue({
+	        el: '#vue_det',
+	        data: {
+	            site: "菜鸟教程",
+	            url: "www.runoob.com",
+	            alexa: "10000"
+	        },
+	        methods: {
+	            details: function() {
+	                return  this.site + " - 学的不仅是技术，更是梦想！";
+	            }
+	        }
+	    })
+	</script>
+	</body>
+	vm 实例化 内容直接填充指定地方
+简单例子2:
+	<div id="vue_det">
+	    <h1>site : {{site}}</h1>
+	    <h1>url : {{url}}</h1>
+	    <h1>Alexa : {{alexa}}</h1>
+	</div>
+	<script type="text/javascript">
+	// 我们的数据对象
+	var vdata = { site: "菜鸟教程", url: "www.runoob.com", alexa: 10000}
+	var vm = new Vue({
+	    el: '#vue_det',
+	    data: vdata
+	})
+	vm.site = "Runoob"
+	</script>
+	这时, vdata链接到 vm, 当 vm.site改变时候,意味着 vdata.site 也改变 因为他们是同个东西,并同时改变 html 的显示
+	vm.$data 就是指 vdata 参数
+	vm.$el   就是指 <div id="vue_det"> 这个节点 (document.getElementById('vue_det'))!!!
+模板语法!!
+	注意 要是 v-xxx  {{}} 的生效, 必须对 这些语法所在的 父div 建立一个vue对象, 就是对 <div id="app"> 建立一个 new vue !!
+	上述使用的是 文本插值的模板语法 {{ }} , 又更多方便的 模板插值语法!!
+	直接在 直接在 {{ }} 文本插值模板上使用 JavaScript 表达式!!! 在 v-XXX上使用js表达式子
+		<div id="app">
+		    {{5+5}}<br>
+		    {{ ok ? 'YES' : 'NO' }}<br>
+		    {{ message.split('').reverse().join('') }}
+		    <div v-bind:id="'list-' + id">菜鸟教程</div>
+		</div>
+		.........    
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    ok: true,
+		    message: 'RUNOOB',
+		    id : 1
+		  }
+		})
+		</script>
+	html节点插值模板:
+		<div id="app">
+		    <div v-html="message"></div>
+		</div>
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    message: 
+		  }
+		})
+		</script>
+		实际得到的显示结果是:
+		<div id="app">
+		    <div>
+			'<h1>菜鸟教程</h1>'
+		    </div>
+		</div>			
+	属性节点插值模板:
+		<style>
+		.class1{
+		  background: #444;
+		  color: #eee;
+		}
+		</style>
+		.....
+		<div id="app">
+		  <label for="r1">修改颜色</label><input type="checkbox" v-model="use" id="r1">
+		  <br><br>
+		  <div v-bind:class="{'class1': use}">
+		    v-bind:class 指令	//点击checkbox 改变这里的颜色!!
+		  </div>
+		</div>
+		..........    
+		<script>
+		new Vue({
+		    el: '#app',
+		  data:{
+		      use: false
+		  }
+		});
+		</script>
+	指令插值模板:  v-if  if判断指令
+		<div id="app">
+		    <p v-if="seen">现在你看到我了</p>
+		</div>
+		......    
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    seen: true
+		  }
+		})
+		</script>
+	参数插值模板:	v-bind 动态更新属性参数 ,例如 class href 什么的
+		<div id="app">
+		    <pre><a v-bind:href="url">菜鸟教程</a></pre>
+		</div>
+		    
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    url: 'http://www.runoob.com'
+		  }
+		})
+		</script>
+		v-bind 缩写:
+			<a v-bind:href="url"></a>    等于 <a :href="url"></a>
+		例子1:
+		<div id="app">
+		  <div v-bind:class="classObject"></div>	//相当于 class="active text-danger"
+		</div>
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    classObject: {
+		      active: true,
+		      'text-danger': true
+		    }
+		  }
+		})
+		</script>
+		例子2:
+		<div id="app">
+		  <div class="static"		//相当于 class="static active text-danger"
+		     v-bind:class="{ active: isActive, 'text-danger': hasError }"> 
+		  </div>
+		</div>
+		
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    isActive: true,
+			hasError: true
+		  }
+		})
+		</script>
+
+	用于 实现 静听事件 的 v-on
+		<a v-on:click="doSomething">
+		<form v-on:submit.prevent="onSubmit"></form>  .prevent 修饰符告诉 v-on 指令对于触发的事件调用 event.preventDefault()：
+		例子:
+		<div id="app">
+		    <p>{{ message }}</p>
+		    <button v-on:click="reverseMessage">反转字符串</button>
+		</div>    
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    message: 'Runoob!'
+		  },
+		  methods: {
+		    reverseMessage: function () {
+		      this.message = this.message.split('').reverse().join('')
+		    }
+		  }
+		})
+		</script>
+		v-on 缩写 :  <a v-on:click="doSomething"></a>  等于 <a @click="doSomething"></a>
+		事件修饰符: 例如:
+			<!-- 阻止单击事件冒泡 -->
+			<a v-on:click.stop="doThis"></a>
+			<!-- 提交事件不再重载页面 -->
+			<form v-on:submit.prevent="onSubmit"></form>
+			<!-- 修饰符可以串联  -->
+			<a v-on:click.stop.prevent="doThat"></a>
+			<!-- 只有修饰符 -->
+			<form v-on:submit.prevent></form>
+			<!-- 添加事件侦听器时使用事件捕获模式 -->
+			<div v-on:click.capture="doThis">...</div>
+			<!-- 只当事件在该元素本身（而不是子元素）触发时触发回调 -->
+			<div v-on:click.self="doThat">...</div>
+			<!-- click 事件只能点击一次，2.1.4版本新增 -->
+			<a v-on:click.once="doThis"></a>
+		按键修饰符:  Vue 允许为 v-on 在监听键盘事件时添加按键修饰符：
+			<!-- 只有在 keyCode 是 13 时调用 vm.submit() -->
+			<input v-on:keyup.13="submit">
+			记住所有的 keyCode 比较困难，所以 Vue 为最常用的按键提供了别名：
+			全部的按键别名：
+			    .enter    .tab    .delete (捕获 "删除" 和 "退格" 键)
+			    .esc    .space    .up    .down    .left
+			    .right    .ctrl    .alt    .shift    .meta
+
+			<!-- 同上 -->
+			<input v-on:keyup.enter="submit">
+			<!-- 缩写语法 -->
+			<input @keyup.enter="submit">
+	v-model: v-model 指令用来在 input、select、textarea、checkbox、radio 等表单控件元素上创建双向数据绑定，
+		根据表单上的值，自动更新绑定的元素的值。 和 v-bind 相似,但又不是v-bind
+		<div id="app">
+		    <p>{{ message }}</p>
+		    <input v-model="message">
+		</div>    
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    message: 'Runoob!'
+		  }
+		})
+		</script>
+		关于 v-model 更深入的讨论 : 配合表格讨论!!
+		v-model 针对的是 html 特定的模块,不可能是自定义的
+		例如  <input type="checkbox" id="checkbox" v-model="checked">
+		        <label for="checkbox">{{ checked }}</label>
+		v-model只能等于 checked , 不能等于 checkeeeed ,等自定义的量!!!
+		因为 checked 才能被 <input type="checkbox"> 识别
+		而 checked 本身也可以作为参数 传递到 vue 和 {{}} 里
+		更多 v-model 的内容需要深入 关于 vue 的表格控制!!
+		v-model 也可以有修饰符号!!!
+ 
+	过滤器 " | " 符号, 凡是 vue 语法的地方都适用,例如:
+		{{ message | capitalize }}
+		<div v-bind:id="rawId | formatId"></div>
+		过滤器本身是一个 js 函数,例如:
+		<div id="app">
+		  {{ message | capitalize }}
+		</div>
+		    
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    message: 'runoob'
+		  },
+		  filters: {
+		    capitalize: function (value) {
+		      if (!value) return ''
+		      value = value.toString()
+		      return value.charAt(0).toUpperCase() + value.slice(1)
+		    }
+		  }
+		})
+		</script>
+		过滤器可以串联  	 {{ message | filterA | filterB }}
+		过滤器是 JavaScript 函数，因此可以接受参数：  {{ message | filterA('arg1', arg2) }}
+	vs-if: 条件语句:
+		例如:
+		<div id="app">
+		    <div v-if="type === 'A'">
+		      A
+		    </div>
+		    <div v-else-if="type === 'B'">
+		      B
+		    </div>
+		    <div v-else-if="type === 'C'">
+		      C
+		    </div>
+		    <div v-else>
+		      Not A/B/C
+		    </div>
+		</div>    
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    type: 'C'
+		  }
+		})
+		</script>
+		在text模板上 也可以这样作用,例如:
+		<div id= "app">
+		  {{#if ok}}
+		  <h1>Yes</h1>
+		  {{/if}}
+		</div>
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    ok: true
+		  }
+		})
+		</script>
+	v-show:
+		<div id="app">
+		    <h1 v-show="ok">Hello!</h1>
+		</div>		
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    ok: true
+		  }
+		})
+		</script>
+	v-for : 两种主要方式!!, 
+		1,循环 template 仅限于 <template>节点
+		<ul>
+		  <template v-for="site in sites">
+		    <li>{{ site.name }}</li>	   //循环的时候, 这两部分<li> 一同循环,
+		    <li>--------------</li>
+		  </template>
+		</ul>
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    sites: [
+		      { name: 'Runoob' },
+		      { name: 'Google' },
+		      { name: 'Taobao' }
+		    ]
+		  }
+		})
+		</script>
+			结果:
+			<ul>
+				<li>Runoob</li> 
+				<li>--------------</li>
+				<li>Google</li> 
+				<li>--------------</li>
+				<li>Taobao</li> 
+				<li>--------------</li>
+			</ul>
+		2, 其他循环: 
+		<div id="app">
+		  <ul>
+		    <li v-for="(value, key, index) in object">
+		     {{ index }}. {{ key }} : {{ value }}	//循环的使用 整个<li> 包括<li>头, 一起循环
+		    </li>
+		  </ul>
+		</div>
+		<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    object: {
+		      name: '菜鸟教程',
+		      url: 'http://www.runoob.com',
+		      slogan: '学的不仅是技术，更是梦想！'
+		    }
+		  }
+		})
+			结果:
+			<ul>
+				<li>0. name : 菜鸟教程</li>
+				<li>1. url : http://www.runoob.com</li>
+				<li>2. slogan : 学的不仅是技术，更是梦想！</li>
+			</ul>
+		关于v-for 更多灵活用途,需要实践
+	vue 的 computed 和 methods 和 watch
+		computed和 medthods都是 定义各种执行函数的地方,但是 computed 把数据都放到魂存里,速度更快..
+		watch 是设置监视一个参数,当参数发生改变时候,执行中断函数
+	
+	vue.component 组件: vue组件 很庞大的概念,需要好好实践
+		vue.componet(tagname, {} ) 是全局组件
+		vue{ component:{"tagname":ddd}} 是动态组件
+		Prop 传递数据
+	vue 自定义的指令 即 自定义 节点上的 v-XXXXX attri 很庞大的概念,需要好好实践
+		Vue.directive(..)
+	Vue.js 路由:是另一个独立的插件模块
+	vue 混入,,,实践了解!!
+	vue ajax 实践了解
+	vue 响应接口 ??
+	注意这些需要实践来理解的内容 需要好好实践!!
+
+
+
+
+
+
+
+
+
+
+
+
+20190501
+react: 简单学习一下
+	包含
+	<head>
+		<script src="https://cdn.staticfile.org/react/16.4.0/umd/react.development.js"></script>
+		<script src="https://cdn.staticfile.org/react-dom/16.4.0/umd/react-dom.development.js"></script>
+		<script src="https://cdn.staticfile.org/babel-standalone/6.26.0/babel.min.js"></script>
+	</head>
+	将元素渲染到 DOM 中 ReactDOM.render
+		<script type="text/babel" >
+		const element = <h1>Hello, world!</h1>;  //这种在 <script> 里 写出 xml 感觉的内容是 jsx 
+		ReactDOM.render(
+		    element,
+		    document.getElementById('example')   //渲染到 <div id =example>节点里
+		);
+		</script>
+		// ReactDOM.render 直接把 example节点的所有内容 去掉,替换成 element 的内容 
+	jsx:  在 <script> 里 写出 xml 感觉的内容是 jsx ,而这些jsx 最终会渲染到 DOM 上成为真正的 html 内容
+ 		JSX 中使用 JavaScript 表达式。表达式写在花括号 {} 中 例如:
+			ReactDOM.render(
+			    <div>			//这段都是同一个 jsx 段 内容
+			      <h1>{1+1}</h1>		//这段都是同一个 jsx 段 内容
+			    </div>			//这段都是同一个 jsx 段 内容
+			    ,
+			    document.getElementById('example')
+			);
+		JSX 表示样式:			
+			var myStyle = {
+			    fontSize: 100,
+			    color: '#FF0000'
+			};
+			ReactDOM.render(
+			    <h1 style = {myStyle}>菜鸟教程</h1>,	//放到 {} 里
+			    document.getElementById('example')
+			);
+		JSX 注释:
+			ReactDOM.render(
+			    <div>
+			    <h1>菜鸟教程</h1>
+			    {/*注释...*/}			//放到 {} 里
+			     </div>,
+			    document.getElementById('example')
+			);
+		jsx 数组:
+			var arr = [
+			  <h1>菜鸟教程</h1>,
+			  <h2>学的不仅是技术，更是梦想！</h2>,
+			];
+			ReactDOM.render(
+			  <div>{arr}</div>,			//放到 {} 里
+			  document.getElementById('example')
+			);
+	组件:
+		使用函数定义一个组件:
+			function HelloMessage(props) {
+			    return <h1>Hello World!</h1>;
+			}
+			 
+			const element = <HelloMessage />;
+			 
+			ReactDOM.render(
+			    element,
+			    document.getElementById('example')
+			);
+		也可以使用 ES6 class 来定义一个组件:
+			class Welcome extends React.Component {
+			  render() {
+			    return <h1>Hello World!</h1>;
+			  }
+			}
+			 
+			const element = <HelloMessage />;
+			 
+			ReactDOM.render(
+			    element,
+			    document.getElementById('example')
+			);
+		组件的传递参数:
+			function HelloMessage(props) {
+			    return <h1>Hello {props.name}!</h1>;
+			}
+			 
+			const element = <HelloMessage name="Runoob"/>;	 //传递参数
+			 
+			ReactDOM.render(
+			    element,
+			    document.getElementById('example')
+			);
+		符合组件:
+			function Name(props) {
+			    return <h1>网站名称：{props.name}</h1>;
+			}
+			function Url(props) {
+			    return <h1>网站地址：{props.url}</h1>;
+			}
+			function Nickname(props) {
+			    return <h1>网站小名：{props.nickname}</h1>;
+			}
+			function App() {
+			    return (
+			    <div>
+			        <Name name="菜鸟教程" />		//组件1
+			        <Url url="http://www.runoob.com" />	//组件2
+			        <Nickname nickname="Runoob" />		//组件3
+			    </div>
+			    );
+			}
+			 
+			ReactDOM.render(
+			     <App />,
+			    document.getElementById('example')
+			);
+	React State 和 Props  map()  注意要实践学习
+	react 组件  实践学习!!! 
+	react使用 ajax 还是使用jquery的模块
+	react refs 的使用!!!
+http://www.ruanyifeng.com/blog/2015/03/react.html	//react主要概念参考
+
+
+
+
+
+
+
+
+
+
+20190501
+bootstrap
+注意 bootstrap是一个 显示样式库, 使得通过设定好的 class就可以 简单定义样式!!
+但是 这些加载的样式,最后还是经过一遍 js 才能成功初始化成功 !! ,
+所以要么在 body 的最后加载 bootstrap 的实实例化 js ,或者在 <head>上加上,不然,bootstrap加载不会成功 !!!!
+加载 <body> 底 可以加快加载速度!!
+还有注意避免和 bootstrap 共用 class 名字,
+bootstrap 只适合对 有限的 内容使用bs样式, 对于递增的,数量变化的内容做bs样式, 
+	bootstrap 监视资源和压力可能会增大,影响性能所以不适合!!! 
+
+bootstrap 4 用到的 头:
+	<!-- 新 Bootstrap4 核心 CSS 文件 -->
+	<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+	  
+	<!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
+	<script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+	
+	<!-- popper.min.js 用于弹窗、提示、下拉菜单 -->
+	<script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+	
+	<!-- 最新的 Bootstrap4 核心 JavaScript 文件 -->
+	<script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script> 
+	bootstrap.js 会对指定的模块实现监视并实时响应,所以 其他库例如 jquery 改变了 本来节点的 bootstrap样式,
+	bootstrap也会自动更新!!! 
+bootstrap 网格
+	row col
+bootstrap 文本处理:
+	特定的 <tag> 或者 特定的 class 拼合渲染文本样式,排版 
+bootstrap 一些代表意义的颜色:
+	.text-muted, .text-primary, .text-success, .text-info, .text-warning, 
+	.text-danger, .text-secondary, .text-white, .text-dark and .text-light:
+比较大几率会用上的有:
+	bootstrap 按钮,比较实用
+	Bootstrap4 进度条
+https://www.runoob.com/try/bootstrap/layoutit/    // bootstrap 可视化页面样式编辑工具
+
+
+
+
+
+
+
+
+20190503
+react 插件, vue插件
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			 	
+	
+
+
+
+
+
+
+
+
+
+
+
 
 
 ?????????????????????????????????????

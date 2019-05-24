@@ -12324,9 +12324,9 @@ vue.js
 	var vdata = { site: "菜鸟教程", url: "www.runoob.com", alexa: 10000}
 	var vm = new Vue({
 	    el: '#vue_det',
+	vm.site = "Runoob"
 	    data: vdata
 	})
-	vm.site = "Runoob"
 	</script>
 	这时, vdata链接到 vm, 当 vm.site改变时候,意味着 vdata.site 也改变 因为他们是同个东西,并同时改变 html 的显示
 	vm.$data 就是指 vdata 参数
@@ -12673,6 +12673,100 @@ vue.js
 	vue ajax 实践了解
 	vue 响应接口 ??
 	注意这些需要实践来理解的内容 需要好好实践!!
+https://www.jianshu.com/p/89fae6aa143f   // h5 大前端
+深入vue:  prop  emit   (state 是 react 的!!)
+	就是 把 组件标签 v-bind 的参数, 传回到组件本身执行处理
+	还有注意到一点,虽然,最终显示的是 new vue 生成的内容,但是 原始的内容仍然显示着存在着!!
+	注意两个典型的例子!!!
+	例子1:
+		<div id="app">
+			<ol>
+		    <todo-item v-for="item in sites" v-bind:todo="item"></todo-item>
+		  	</ol>
+		</div>
+
+		Vue.component('todo-item', {
+		  props: ['todo'],
+		  template: '<li>{{ todo.text }}</li>'
+		})
+		new Vue({
+		  el: '#app',
+		  data: {
+		    sites: [
+		      { text: 'Runoob' },
+		      { text: 'Google' },
+		      { text: 'Taobao' }
+		    ]
+		  }
+		})
+		首先 new Vue,会使用组件的temple 替换指定标签 <todo-item>
+		替换时候, 遇到v-for, 表示其实有多个 <todo-item>标签需要替换
+		遇到 v-bind, 表示 把 v-for中的 item 内容 以todo的名字 传递给 组件,
+		组件直接或获取 todo的 内容 修改 temple 最后成功替换掉 <todo-item占位>
+	例子2:
+		<div id="app">
+			<div id="counter-event-example">
+			  <p>{{ total }}</p>
+			  <button-counter v-on:increment="incrementTotal"></button-counter>
+			  <button-counter v-on:increment="incrementTotal"></button-counter>
+			</div>
+		</div>
+		
+		Vue.component('button-counter', {
+		  template: '<button v-on:click="incrementHandler">{{ counter }}</button>',
+		  data: function () {
+		    return {
+		      counter: 0
+		    }
+		  },
+		  methods: {
+		    incrementHandler: function () {
+		      this.counter += 1
+		      this.$emit('increment')
+		    }
+		  },
+		})
+		new Vue({
+		  el: '#counter-event-example',
+		  data: {
+		    total: 0
+		  },
+		  methods: {
+		    incrementTotal: function () {
+		      this.total += 1
+		    }
+		  }
+		})
+		首先 new Vue,会使用组件的temple 替换指定标签 <button-counter>
+		然而所谓替换,只是显示上的替换,注意到 button 上有 v-on:click, 注册了点击函数
+		而 <button-counter>上有 v-on:increatment 也注册了一个函数,
+		而 <buton> 只是 在显示上 替换了 <button-counter>,但  <button-counter> 并没有消失!!! 
+		就是说 html从 :
+			<div id="counter-event-example">
+			  <p>{{ total }}</p>
+			  <button-counter v-on:increment="incrementTotal"></button-counter>
+			  <button-counter v-on:increment="incrementTotal"></button-counter>
+			</div>
+		变成了:
+			<div id="counter-event-example">
+			  <p>{{ total }}</p>
+				<button v-on:click="incrementHandler">{{ counter }}</button>
+				<button v-on:click="incrementHandler">{{ counter }}</button>
+			</div>
+		但其实真正的关系是:
+			<div id="counter-event-example">
+			  <p>{{ total }}</p>
+			  <button-counter v-on:increment="incrementTotal">
+			      <button v-on:click="incrementHandler">{{ counter }}</button>
+			  </button-counter>
+			  <button-counter v-on:increment="incrementTotal">
+			      <button v-on:click="incrementHandler">{{ counter }}</button>
+			  </button-counter>
+			</div>
+		点击button 触发了 v-on:click,  而 click中的 $emit 又触发了 <button-counter v-on:increment="incrementTotal">
+			所以最后total发生了改变
+	
+
 
 
 
@@ -12774,7 +12868,7 @@ react: 简单学习一下
 			    document.getElementById('example')
 			);
 		符合组件:
-			function Name(props) {
+			function Name(props) {				//这里的prop 就是从 父组件传递过来的的数据
 			    return <h1>网站名称：{props.name}</h1>;
 			}
 			function Url(props) {
@@ -12798,10 +12892,291 @@ react: 简单学习一下
 			    document.getElementById('example')
 			);
 	React State 和 Props  map()  注意要实践学习
-	react 组件  实践学习!!! 
+		例子1:
+		class Clock extends React.Component {		//使用 es6 的 class 标准来建立一个 组件
+		  constructor(props) {
+		    super(props);
+		    this.state = {date: new Date()};		//当前组件的 state, 其实是一个字典列表
+		  }
+		 
+		  render() {
+		    return (
+		      <div>
+		        <h1>Hello, world!</h1>
+		        <h2>现在是 {this.state.date.toLocaleTimeString()}.</h2>   // 使用当前组件的 state
+		      </div>					//当前组件的state,只由当前组件来调用
+		    );
+		  }
+		}
+		 
+		ReactDOM.render(
+		  <Clock />,
+		  document.getElementById('example')
+		);
+
+		例子2: 
+		关于生命周期的问题
+		function FormattedDate(props) {		//组件 FormattedDate  接受父组件传递过来的数据 props
+		  return <h2>现在是 {props.date.toLocaleTimeString()}.</h2>;
+		}
+		 
+		class Clock extends React.Component {	//组件 clock
+		  constructor(props) {
+		    super(props);
+		    this.state = {date: new Date()};	//给 组件 state 变量组,添加 data 成员
+		  }
+		 
+		  componentDidMount() {			//当 组件被成功 加载,即 <clock/> 成功render后,执行的加载函数 
+		    this.timerID = setInterval(		//这里 是设置一个定时函数
+		      () => this.tick(),
+		      1000
+		    );
+		  }
+		 
+		  componentWillUnmount() {		//当组件 即将被卸载时, 执行的卸载函数
+		    clearInterval(this.timerID);	//这里是 注销定时函数
+		  }
+		 
+		  tick() {				//定时函数
+		    this.setState({
+		      date: new Date()
+		    });
+		  }
+		 
+		  render() {				//被 render 返回的 jsx
+		    return (
+		      <div>
+		        <h1>Hello, world!</h1>
+		        <FormattedDate date={this.state.date} /> //传递参数到 子组件
+		      </div>					 //特别注意 定时函数会 周期改变date, 当data变量被改变时, 
+		    );						 //会自动更新 页面html显示,不需要手动处理!!
+		  }
+		}
+		 
+		function App() {
+		  return (
+		    <div>
+		      <Clock />		//这里表示的是第一个组件
+		      <Clock />		//第二个组件
+		      <Clock />		//第三个组件
+		    </div>
+		  );
+		}
+		
+		ReactDOM.render(<App />, document.getElementById('example'));
+		首先, 三个 <Clock/> 是分别各自独立建立起,意味他们的行为相互独立!!
+		也就是说,他们的 所有参数搜各自独立, 他们的定时函数事件都各顾各的
+		React是通过创建虚拟DOM 然后将虚拟DOM生成真实的DOM 最后插入到页面中，
+		而React生命周期中render方法的作用就是将虚拟DOM渲染成真实DOM
+
+	state 和 props
+		搜是 字典列表方式 来存放数据.	
+		组件操作自己的参数 是 state 参数,
+		父组件 传递数据到 子组件, 子组件用 props 承接.
+	prop是,有数据类型的验证处理!!
+		例子:
+		var title = "菜鸟教程";
+		// var title = 123;
+		var MyTitle = React.createClass({
+		  propTypes: {
+		    title: React.PropTypes.string.isRequired,	//验证 props.title 的数据类型
+		  },
+		 
+		  render: function() {
+		     return <h1> {this.props.title} </h1>;
+		   }
+		});
+		ReactDOM.render(
+		    <MyTitle title={title} />,			//这里是传递全局数据 title 到 组件 Mytitle 的props.title
+		    document.getElementById('example')
+		);
+		这里首先 传递群居全局数据 title 到 组件 Mytitle, Mytitle会对数据验证格式,
+		没有问题,就渲染到 jsx 然后输出到 exampke即节点 下!!! (注意不是替换 example节点 !!!)
+	react 触发事件的写法. 	
+		在这里有一个 bind(this) 需要讨论!!
+		先讨论 This 的含义: This 指向的是当前调用者!!
+			const jerry = {
+			 sayThis: function () {
+			 console.log(this); // `this` 指向什么？
+			  },
+			
+			 exec: function (cb) {
+			 cb();
+			  },
+			
+			 render: function () {
+			 this.exec(this.sayThis);
+			  },
+
+			 exec2: function (cb) {
+			 this.sayThis();
+			  },
+
+			 render2: function () {
+			 this.exec2(this.sayThis);
+			  },
+		
+			 render3: function () {
+			 this.exec(this.sayThis.bind(this));
+			  },
+
+			}
+			
+			jerry.sayThis(); // jerry
+				首先, 调用者是 jerry, 所以表示为 jerry调用了log,自然This指的就是 jerry
+			var1 = jerry.sayThis    var1();  // window
+				首先,我们执行的是 var1(),谁调用未知? 所以默认指向是 全局对象即 window 调用
+				var1只是执行了 jerry的sayThis函数, 不能说执行了某某的函数,所以调用者就变成是某某
+				var1执行的 jerry的sayThis函数, 但是没有表达是谁作为调用者执行,
+				所以调用者未知,默认指向 window !!! 所以 log(This)指出是 window全局对象执行的函数 
+			jerry.render();  // window
+				首先, 调用者是 jerry, 所以可以表示为 jerry调用了reander函数,
+				所以 this.xexc 中this指jerry, this.sayThis 中 this 也指jerry
+				于是变成了 jerry.exec(jerry.sayThis), 这一步说明了是jerry在调用自己的函数exec(),所以调用者是jerry
+				这里传递了一个实参数 jerry.sayThis, 这里是 把jerry的sayThis函数 的指针传递到 exec上! 
+				exec 得到了一个函数指针而已, 同时exec的调用者是 jerry
+				然而 cb() 只是执行这个 函数指针的函数, 只是知道要执行这个函数,却没有被告知要以那个调用者身份来执行
+				cb() 不等于 jerry.sayThis(), 而是等于 jerry的sayThis函数这个函数指针位置的函数被执行了,并没有指出调用者!!
+				所以 最后, 执行 jerry的sayThis函数 的调用者未知, 默认指向全局!!
+			jerry.render2();  // jerry
+				首先, 调用者是 jerry, 所以可以表示为 jerry调用了reander2函数,
+				所以 this.xexc 中this指jerry, this.sayThis 中 this 也指jerry
+				于是变成了 jerry.exec2(jerry.sayThis), 这一步说明了是jerry在调用自己的函数exec2(),所以调用者是jerry
+				这里传递了一个实参数 jerry.sayThis, 这里是 把jerry的sayThis函数 的指针传递到 exec2上! (虽然没有用上)
+				exec2 得到了一个函数指针而已, 同时exec的调用者是 jerry
+				所以 exec2 的 this.sayThis(); this 指的就是 jerry
+				所以这一步又变成了 jerry.sayThis() 这一步说明了是jerry在调用自己的函数sayThis(),所以调用者是jerry
+			jerry.render3();  // jerry
+				首先, 调用者是 jerry, 所以表示为 jerry调用了reander3函数,
+				所以 this.xexc 中this指jerry, this.sayThis.bind(this) 中 this 也指jerry
+				于是变成了 jerry.exec(jerry.sayThis.bind(jerry)), 
+					这一步说明了是jerry在调用自己的函数exec(),所以调用者是jerry
+					注意到, 我们传递的实参数 jerry.sayThis.bind(jerry),这是一个函数.
+					jerry.sayThis.bind(jerry) 得到了一个函数指针, 但是这个函数指针比较特别,明确指定调用者是jerry
+					就是说:
+					jerry.sayThis 得到的是个通用函数指针,没有指定调用者
+					jerry.sayThis.bind(jerry) 得到一个特殊的函数指针, 指定了函数调用者!!
+					于是 cb() 就等于 jerry.sayThis() 表示调用者 jerry 执行了 jerry的sayThis函数 
+		react 设置事件函数,本质上就是 上述讨论的 cb() 的问题,事件函数需要指定的 调用者,
+			例如 直接 onclick={aaa}, aaa只是一个函数指针,没有指定调用者
+			要遵循 js this指针和函数调用的这些特殊规则, 所以就需要 添加 bind(this)定位!!
+			jsx 的{}填充的本质上跟js 函数传递实参数到形参数一个道理!
+		当然还有箭头函数的定义 !!!!!! (略)  
+			(js es6 添加的好多新特性就是,什么 class 箭头函数什么的,,)
+
+	react 简化的 if语句 使用  && 符号!!
+	react 使用 mao() key value 列表 的一个综合例子:
+		function Blog(props) {
+		  const sidebar = (
+		    <ul>
+		      {props.posts.map((post) =>	//map 循环的使用
+		        <li key={post.id}>
+		          {post.title}
+		        </li>
+		      )}
+		    </ul>
+		  );
+		  const content = props.posts.map((post) =>
+		    <div key={post.id}>
+		      <h3>{post.title}</h3>
+		      <p>{post.content}</p>
+		    </div>
+		  );
+		  return (
+		    <div>
+		      {sidebar}
+		      <hr />
+		      {content}
+		    </div>
+		  );
+		}
+		 
+		const posts = [
+		  {id: 1, title: 'Hello World', content: 'Welcome to learning React!'},
+		  {id: 2, title: 'Installation', content: 'You can install React from npm.'}
+		];
+		ReactDOM.render(
+		  <Blog posts={posts} />,
+		  document.getElementById('example')
+		);
 	react使用 ajax 还是使用jquery的模块
+		一个典型的例子!!
+		class UserGist extends React.Component {
+		  constructor(props) {
+		      super(props);
+		      this.state = {username: '', lastGistUrl: ''};
+		  }
+		 
+		 
+		  componentDidMount() {
+		    this.serverRequest = $.get(this.props.source, function (result) {
+		      var lastGist = result[0];
+		      this.setState({
+		        username: lastGist.owner.login,
+		        lastGistUrl: lastGist.html_url
+		      });
+		    }.bind(this));	//这里之所以 bind(this),因为 function (result) {..},本身只是一个单纯函数指针变量,没有强调用者
+		  }			//如果没有调用者, 函数里的 this.setstate 的this就是并没有指代.
+		 			//这里 bind(this) 本质是bind( 当前的 UserGist ) (因为可以有多个相互独立的个体 UserGist)
+		  componentWillUnmount() {
+		    this.serverRequest.abort();
+		  }
+		 
+		  render() {
+		    return (
+		      <div>
+		        {this.state.username} 用户最新的 Gist 共享地址：
+		        <a href={this.state.lastGistUrl}>{this.state.lastGistUrl}</a>
+		      </div>
+		    );
+		  }
+		}
+		 
+		ReactDOM.render(
+		  <UserGist source="https://api.github.com/users/octocat/gists" />,
+		  document.getElementById('example')
+		);
+		先从 https://api.github.com/users/octocat/gists 获得信息,(并没有跳转页面,就是ajax 方式获得)
+		然后渲染出一个局部显示部分:
+		<div>octocat 用户最新的 Gist 共享地址：
+			<a href="https://gist.github.com/6cad326836d38bd3a7ae">https://gist.github.com/6cad326836d38bd3a7ae</a>
+		</div>	
 	react refs 的使用!!!
+		例子:
+		<div id="example"></div>
+		
+		<script type="text/babel">
+		class MyComponent extends React.Component {
+		  handleClick() {
+		    // 使用原生的 DOM API 获取焦点
+		    this.refs.myInput.focus();			//直接就可以操作实体DOM <input>
+		  }
+		  render() {
+		    //  当组件插入到 DOM 后，ref 属性添加一个组件的引用于到 this.refs
+		    return (
+		      <div>
+		        <input type="text" ref="myInput" />	//添加的 ref属性
+		        <input
+		          type="button"
+		          value="点我输入框获取焦点"
+		          onClick={this.handleClick.bind(this)}
+		        />
+		      </div>
+		    );
+		  }
+		}
+		 
+		ReactDOM.render(
+		  <MyComponent />,
+		  document.getElementById('example')
+		);
+		</script>
+
 http://www.ruanyifeng.com/blog/2015/03/react.html	//react主要概念参考
+https://blog.csdn.net/xiangzhihong8/article/details/81812418   //react naive 3方库
+wepack 打包前端业务 js  利器
+https://www.v2ex.com/t/237501 	//第三方 和 dom vdom 的操作!!
+
 
 
 
@@ -12847,16 +13222,82 @@ bootstrap 一些代表意义的颜色:
 	bootstrap 按钮,比较实用
 	Bootstrap4 进度条
 https://www.runoob.com/try/bootstrap/layoutit/    // bootstrap 可视化页面样式编辑工具
-
-
-
-
-
+http://www.360doc.com/content/16/0129/07/13518188_531384175.shtml   //会考虑到的 组件库
 
 
 
 20190503
-react 插件, vue插件
+react 插件? vue插件?  实验!!!
+使用node.js组建前后端测试环境
+	先建立 nodejs 文件目录作为测试目录
+然后安装更新 nodejs 等等....  各种问题,百度就不记录了!!
+npm install -g cnpm --registry=https://registry.npm.taobao.org	 //使用国内镜像
+cnpm install npm -g --registry=https://registry.npm.taobao.org
+
+william@william-HP:~/full_stack/nodejs$ cnpm
+/usr/bin/env: "node": 没有那个文件或目录
+william@william-HP:~/full_stack/nodejs$ sudo ln -s /usr/bin/nodejs /usr/bin/node
+
+npm set registry https://registry.npm.taobao.org # 注册模块镜像
+npm set disturl https://npm.taobao.org/dist # node-gyp 编译依赖的 node 源码镜像
+npm cache clean # 清空缓存
+
+然后分别建立 vue 工程 实验 和react工程实验,
+发现,搜是node后端先渲染好 vue 和 react 发客户端, 并不是都发客户端,让客户端处理!!
+my_app react 项目
+my_project vue 项目
+hello   vue cordova构造多平台 项目!!
+
+测试 cordova 需要 android sdk  Gradle  java1.8
+gradle 根据官方推荐 使用 sdkmen 工具安装,详细看官方
+
+
+需要 android sdk, 所以需要安装了 android studio 后,
+安装 android studio, 官网下载,然后解压到 /opt/ 目录下
+第一次打开,通过 sdk manager 添加需要的 
+	sdk platform, sdk build-tools, sdk emulator, sdk platform-tools, sdk tools
+	android support Repository
+然后 ~/.bashrc 添加环境参数: 并更新
+# android studio
+export PATH=/opt/android-studio/bin:$PATH
+export ANDROID_HOME=/home/william/Android/Sdk/
+export PATH=$ANDROID_HOME/platform-tools:$PATH 
+export PATH=$ANDROID_HOME/tools:$PATH
+export PATH=$ANDROID_HOME/tools/bin:$PATH
+装好 可以直接使用 paltform-tools  adb
+小米6s 打开调试 并接通 adb!!
+	进入开发者模式 位置：设置->我的设备->全部参数 连续点击五次MIUI版本，进入开发者模式 (这时才会出现开发者选项!!)
+	enable Diag usb port
+	拨号键盘，输入*#*#717717#*#*即可启用USB调试口，再次输入就可关闭USB调试口	(或者会open dia failed,但是没有影响) 
+	在电脑Ubuntu端，正确设置udev权限，通过adb devices能够看见Android设备
+	设置开发者选项
+	位置：设置->更多设置->开发者选项
+		打开USB调试
+		打开USB安装
+		打开USB调试(安全设置)
+		关闭启用MIUI优化
+然后 adb devices 发现 设备 no permissions   需要设置 udev
+	lsusb: 发现  Bus 001 Device 017: ID 18d1:8xxx Google Inc.  //是小米6
+	sudo vim /etc/udev/rules.d/70-android.rules //添加
+ 		SUBSYSTEM=="usb",ATTRS{idVendor}=="18d1",ATTRS{idProduct}=="8xxx",MODE="0666"
+	sudo chmod a+rx /etc/udev/rules.d/70-android.rules
+	sudo service udev restart重启udev
+	重启 adb server
+		adb kill-server
+		adb start-server
+	重新插入小米6
+adb devices  unauthorized 问题:
+	小米6点击弹出窗口 允许密钥链接调试
+	
+
+然后就是测试 vue 的手机app 
+	sudo npm install -g cordova	//安装 cordova
+	cordova create hello com.example.hello HelloWorld  //新建helloworld 项目	
+	cd hello
+	cordova platform add android	//添加 android 平台
+	cordova platform ls		//可以看到此项目都支持哪些平台!!
+	cordova build android		//为 android 平台,编译出安装包
+	然后就是使用adb 安装手机上面!!
 
 
 
@@ -12865,21 +13306,623 @@ react 插件, vue插件
 
 
 
+20190504
+备注: git clone --depth 1 https://.....      //获得最新分支!!!,而不是所有内容都下载!!!
 
+必须对 vue 或者 react 做详细的测试评估, 特别是结合 bootstrap jquery 复合使用!!
+分别建立的 vue react 的实验页面,验证多库的冲突问题!
+先处理vue:
+首先是 vue + bootstrap 
+	head 的时候就分别先后添加 css:bootstrap,  js:jquery,popper,bootstrap,vue 实现各种初始化,
+	bootstrap提供了 多种样式,使用 class 选择,
+	而vue 可以控制是否使用指定的 bootstrap class:
+	比如:
+	<body>
+	<div id="app">
+		<div class="container">		
+		  <h2>按钮样式</h2>
+		  <button type="button" v-bind:class="{btn: isactive, 'btn-primary': iscolor}" >基本按钮</button>
+		</div>
+	</div>
+	<script>
+		new Vue({
+		  el: '#app',
+		  data: {
+		    isactive: true,
+		    iscolor: true
+		  }
+		})
+	</script>
+	</body>
+	其中 container btn btn-primary 是 bootstrap 的样式, 
+	v-bind:class="{btn: isactive, 'btn-primary': iscolor}" 本身就不被 html 识别
+	通过 new vue 解析成 class="btn btn-primary" 然后被识别,才能挂上 bootstrap的样式
+另外最为合适的 vue+bootstrap组件库 : https://bootstrap-vue.js.org/docs/components/form-radio
 
+按钮弹窗,抽屉弹窗 :
+	按钮弹窗直接用 show hide 功能, 或者toogle 显示在指定 zindex上. 同样是 absolute 的位置
+	注意这种弹窗就不要使用
 
-
-
-
-
-
-
+搜索框:
+	遇到了 this.$http.jsonp... 这是插件 vue-resource 的内容!!需要加载 vue-resource.js
+	this.$http.jsonp  使用了 $ 符号,而我们又跟 jquery的 $ 同框,所以似乎并不冲突!!
+	<li v-for="(value,index) in okl" >{{ value }}</li> 出现了不能解析内容到 {{}}里情况
+		具体是在于 使用 conponent 无法 解析数据到 {{}} ???
+		卧操, {{ }} 根本就没有渲染出来!!!
+		原因是 和 django 的 {{ }} 冲突了 !!!!
+		使用:
+			<div id="app1">
+			{% verbatim myblock %}
+			{{ message1 }}
+			{% endverbatim myblock %}
+			</div>
+		这样django 就不会 分析 {{}}, 而是把中间的代码不处理全部发出 !!
+		注意不管你 {{}} 卸载 html上 还是 <script> 还是某个 字符串变量 aa="this is {{}}",
+		django都会 识别出来替换掉,所以,必须处处都 加上 免解析处理
+		注意,这 {{}} django只是检测 html 文件上的 , 独立的js文件输出时候,不会检查{{}}
+		
+	需要列表 去掉黑点, 左对齐!! 这样设置 css
+		#li {list-style-type:none; color:#000000;}
+		#ul {margin:0; padding:0; text-align:left;}
+	还有发现 <li v-for="(value,index) in myData" .... <li>会根据 myData 的变化及时更新增删多行内容,
+		不需要自己写个函数 手动更新 <li>
+收藏目录:
+	使用滑入抽屉的形式!!! 参考 : https://blog.csdn.net/sinat_30122989/article/details/78172479
+	位置一般要 absolute + zindex !!!  relative + zindex 不管用!!!
+	目录树模块 vue-ztree
 
 
 			 	
 	
 
 
+
+
+
+
+
+
+
+20190514
+这里处理了一下 react 的方案:
+使用 ant design 可以解决大部分ui 样式问题:https://ant.design/components/auto-complete-cn/
+	搜索框:可以参考 ant design : autocomplete
+	行号跳转可以参考: ant design : InputNumber 
+	缩略树展示框 卡片 card 方式
+	tree 也有,,,, ant design
+	tab 适合做 用户资料页面
+	drawer 抽屉 也合适做 右下角弹出选项卡!!!!! 和 搜索的下拉框
+	Message全局提示  感觉有用!!
+	还有通知提醒框!!!
+	进度条
+	弹出气泡确认框
+	锚点可能也有用
+	backtop 这种快速定位可能有用
+注意 antd 网上大多数是 npm 加载 配合node.js使用!!
+	就是说样式什么的 都在后端处理后 把结果发到前端
+	但是我们使用 django, 不希望再配合一个关于app渲染的node后端.
+	所以希望 react antd 的渲染工作,全部在浏览器上完成!!
+	因此关于 node 后端的一些写法就完全不适合了!!比如 import 什么的 !!!
+	以下是一个完全在浏览器渲染的页面 例子 :https://segmentfault.com/q/1010000014591841/a-1020000014629140
+	<!DOCTYPE html>
+	<html>	
+	<head>
+	  <meta charset="UTF-8">
+	  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+	  <title>Antd</title>
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.3.2/umd/react.production.min.js"></script>
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.3.2/umd/react-dom.production.min.js"></script>
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+	  <!-- monent 必须在 antd 之前,否则 babel解析后面 <script>文本 会指出 antd not defined -->
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/moment.min.js"></script>
+	  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/antd/3.4.3/antd.min.css" />
+	  <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/3.4.3/antd.min.js"></script>
+	</head>
+	<body>
+	  <div id="message1">xx</div>
+	  <script type="text/babel">
+	    ReactDOM.render(
+	      <div>
+	        <antd.Button type="primary">Primary</antd.Button>
+	        <antd.Button>Default</antd.Button>
+	        <antd.Button type="dashed">Dashed</antd.Button>
+	        <antd.Button type="danger">Danger</antd.Button>
+	        <antd.Input placeholder="Basic usage" />
+	        <antd.Switch defaultChecked />
+	        <antd.TimePicker defaultOpenValue={moment('00:00:00', 'HH:mm:ss')} />
+	      </div>
+	    , document.getElementById('message1'));
+	  </script>
+	</body>	
+	</html>
+关于 react 的 样式设置:
+	方式一, 直接写到 jsx
+	如何自定义设置样式!!!! 	注意jsx 设置样式问题 , 所有jsx 内部设置 样式设置都差不多这样!!
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              width: '100%',
+              borderTop: '1px solid #e8e8e8',
+              padding: '10px 16px',
+              textAlign: 'right',
+              left: 0,
+              background: '#fff',
+              borderRadius: '0 0 4px 4px',
+            }}
+	方式二. 写成全局变量被 jsx使用
+	const uio= {color: '#eee',}
+	class...{
+	....
+	   <button style={uio}>
+	...
+	}
+	方式三, 使用css的, 即 react渲染完, html css 再渲染一次
+
+	<style>	#bbb {color:#eee; }  </style>
+	
+	class...{
+	....
+	   <button id="bbb">
+	...
+	}
+注意插入人家的代码, 也要对应取得人家的 css, 不然无法工作!!!
+jsx 对应的 css 属性名称:
+"alignItems",			"alignSelf",			"backfaceVisibility",		"backgroundColor",		
+"borderBottomColor",		"borderBottomLeftRadius",	"borderBottomRightRadius",	"borderBottomWidth",
+"borderColor",			"borderLeftColor",		"borderLeftWidth",		"borderRadius",
+"borderRightColor",		"borderRightWidth",		"borderStyle",			"borderTopColor",
+"borderTopLeftRadius",		"borderTopRightRadius",		"borderTopWidth",		"borderWidth",
+"bottom",			"color",			"flex",				"flexDirection",
+"flexWrap",			"fontFamily",			"fontSize",			"fontStyle",
+"fontWeight",			"height",			"justifyContent",		"left",
+"letterSpacing",		"lineHeight",			"margin",			"marginBottom",
+"marginHorizontal",		"marginLeft",			"marginRight",			"marginTop",
+"marginVertical",		"opacity",			"overflow",			"padding",
+"paddingBottom",		"paddingHorizontal",		"paddingLeft",			"paddingRight",
+"paddingTop",			"paddingVertical",		"position",			"resizeMode",
+"right",			"rotation",			"scaleX",			"scaleY",
+"shadowColor",			"shadowOffset",			"shadowOpacity",		"shadowRadius",	
+"textAlign",			"textDecorationColor",		"textDecorationLine",		"textDecorationStyle",
+"tintColor",			"top",				"transform",			"transformMatrix",
+"translateX",			"translateY",			"width",			"writingDirection"
+不会组动加 px 的属性:
+columnCount  			fillOpacity  			flex  				flexGrow  
+flexShrink  			fontWeight  			lineClamp  			lineHeight  
+opacity  			order  				orphans  			strokeOpacity  
+widows  			zIndex  			zoom 
+
+abt 按钮的 颜色是默认的 官方开放改变!!!, 如果需要自定颜色的话,需要自己加上一层封装来改变, 不过测试结果是,动画效果稍慢:
+	例如:
+	jsx:
+	    <a ID="JumpLine" style={{ marginRight:25, }}>
+	      <antd.Button size='large' style={{ width:100,  }} type="primary" >
+		Jump</antd.Button>
+	    </a>
+	css:
+		#JumpLine button {
+		  border-color: #5f8;
+		  background-color: #5f8;
+		}
+		#JumpLine button:hover , #JumpLine button:focus {
+		  border-color: #0f3;
+		  background-color: #0f3;
+		}
+		#JumpLine button:active, #JumpLine button.active {
+		  border-color: #0b0;
+		  background-color: #0b0;
+		}
+动态显示 和隐藏组件
+	因为按需求,遮罩一个组件的操作相当复杂和需要花时间去研究,所以,建议直接去掉整个组件比较实际!!
+	使用&&条件函数  {this.state.showSearch && <> </>}
+	如果 && 左侧条件为真,就显示右侧的 jsx 部分  <></> 注意,右侧的jsx 必须是一个总节点,而不是多个分散节点
+	{this.state.showSearch && <sradfg/>}  正确
+	{this.state.showSearch && <div> <aa/> <ui></ui> </div>} 正确
+	{this.state.showSearch && <aa/> <ui></ui> } 错误!
+	{this.state.showSearch && <div><Complete /><br/></div> } 正确
+	但是这种做法不提倡,因为不是真的隐藏,而是删掉,重新新建一个的方式!!!
+	
+react 操作不同的 实例化组件 的行为!!
+	第一个 通过父子关系: props  父向子传递参数,传递函数
+		class App extends React.Component {
+		....
+		  closeDrawer = () =>{
+		    this.setState({
+		      visible: false,
+		    });
+		  };
+		  render() {
+			  <SaveEdit CloseDrawer={this.closeDrawer} />		//传递一个函数指针
+		  }
+		}
+		class SaveEdit extends React.Component {
+		...
+		  render() {
+			    <antd.Button size='large' icon='close' type="danger"
+				onClick={
+				  () => {
+				    //console.log('this is:', this.state.name);
+				    this.props.CloseDrawer();		//执行了这个函数指针
+		 		}}
+			    ></antd.Button>
+		....
+		}	
+		有趣的是, 传递一个函数指针时的写法仅仅是传递指针而已, 应该是没有指定调用者的
+		但是 函数本身使用大量this 指针,所以需要指定调用者,而实际上,调用者也被正确指出
+		但是,this.props.CloseDrawer(); 执行, this.props. 的行为除了取出指针外,还指定了调用者
+	第二个 通过父子关系: props  子向父传递参数, (父给子一个函数指针,子给这个函数提供自己的内容数据)
+		class Parent extends Component{
+		  state = {
+		    msg: 'start'	//父本身数据
+		  };
+  
+		  transferMsg(msg) {
+		    this.setState({
+		      msg		//父给子的 函数
+		    });
+		  }
+		
+		  render() {
+		    return <div>
+		        <p>child msg: {this.state.msg}</p>
+		        <Child_1 transferMsg = {msg => this.transferMsg(msg)} />
+		      </div>;
+		  }
+		}
+		
+		class Child_1 extends Component{
+		  componentDidMount() {
+		    setTimeout(() => {
+		      this.props.transferMsg('end')	//子修改了父的数据
+		    }, 1000);
+		  }
+		
+		  render() {
+		    return <div>
+		      <p>child_1 component</p>
+		    </div>
+		  }
+		}	
+	第三个就是跨层级通讯, 通过 层层相传,或者官方不推荐的全局变量content
+	第四个就是 订阅模式!! 使用 event.js ??
+
+关于 react 和 原生js html dom 混合使用的 拓展!!!
+	首次发现 react 是异步更新的,就好像是弄了一个额外线程来解析的样子,
+		主程序把react的内容扔给线程就接着后面的工作.
+		所以 发现,react的内容还没有渲染出来, 主程序却跑到后面的 js代码想操作还不存在的实体 DOM 是失败的!!!
+	此外各自组件只能 修改自己的 state 数据!! 父组件传递过来的 props 数据,是无法修改的.
+		只能获得 一般参与处理自己的 state 数据!!
+		同样,子组件传到 父组件的 数据, 父组件也无法修改,只能获得来参与处理父组件自己的state 数据!!
+		而且修改组件的数据 也很讲究 this.setstate({}),才可以改 !!!, 并不是简单的 = 赋值!!
+	state 数据一般联系 着 jsx ,一旦 state数据改变,相关的 jsx 部分会重新渲染,最终修改实体 DOM
+		注意到 jsx 改变,一般只是更改与  state 变化的部分, 并不一定就是重新渲染生成实体 DOM 来代替旧的!!
+		比如一个react 渲染出 input:
+			<div id='ddd' style="display:block;">
+			  <input type="text" placehold="input here " class="ant-input" value=''>
+  			</div>
+		但我们输入: william好帅
+		实际DOm 被改为:
+			<div id='ddd' style="display:block;">
+			  <input type="text" placehold="input here " class="ant-input" value='william好帅'>
+  			</div>
+		但通过 react 修改 state 来改变 placehold 为 : ilovryou
+		react会 渲染并修改 这个input的placehold, 所以 imput其他地方都没有改变 我们输入的 value='william好帅' 没有删掉
+		假如 react会 渲染重新生成替换 input, 那么 我们输入的 value='william好帅' 就不再存在!!.
+		在这里, react 没有重新生成替换, 只是针对性地改掉 placehold 这一小属性!!
+	关于 js 和 react 混合使用, 注意, react 本身的 js 程序, 
+		在 react 组件里的事件函数,不一定就是操作 state 数据, 操作实体 DOM 内容没有问题!!
+		这里操作的实体DOM 就是直接实体操作,不绕进jsx的虚拟DOM操作
+		例如:
+		  ShSearch = (phld) => {
+			var ff = document.getElementById('Dsch');
+			if (ff.style.display =='none' ){
+			    ff.style.display ='block';	
+			}else{
+			    ff.style.display ='none';	
+			}
+		  }; 
+		这里就是 操作 react 渲染出来的 实体 DOM, 当然只要是实体DOM,不管是不是react渲染出来的都可以这样操作!!
+		然后 也可以是 jsx 声明的 事件函数, 也可以链接到 原生的js函数:
+		例如:
+		jsx:     <antd.Button type="primary" onClick={thu} >Primary</antd.Button>
+		<script>
+			function thu (){
+				console.log('huij');
+				var jj = document.getElementById('originandjsx')
+				jj.setAttribute("contenteditable", "true");
+				jj.innerHTML = "hello world!!"	
+			};
+		</script>
+		前提是,实体DOM完全渲染出来了, 事件函数 和 DOM 的链接关系才生效
+
+做搜索框遇到的一些坑!!!!
+	首先,注意复习 position , 一般的节点是 static流, static流的 z-index 等是不生效的
+		特别注意嵌套关系的理解:
+		例如
+		    <div id='1'>
+		        <div id='2'>
+		            <div id='3'>   </div>
+		        </div>
+		        <div id='4'>
+		        </div>
+		    </div>
+		假如只有 div1 定义了 position:fiex, top:10 px, zindex=10 那么只是 div1 是 flex 定位!!
+			而相对位置 top 取自设定, 其他取自 div1 本来相对<body> static定位应该所在的位置	
+			div234 是 static定位 !!!, 注意, 不过,div234是 以 div1为参考点,的 static 定位!!!
+			而且依然处于 z-index:10 层
+			而不是以原来 <body> 为参考点的 static 定位,
+		如果这时, div3 又定义了 position:fiex, top:13 px, zindex=20 那么 div3 也是 flex 定位!!
+			而相对位置 top 取自设定, 其他取自 div3 本来相对<div1> static定位应该所在的位置
+		像这样子的 位置嵌套关系,同样适应于 relative, absolute,!!
+		还有一个 特别 严重的问题 zIndex 层概念 是 相对
+			div1 z-index=10 相对 body 的第 10 层,
+			div3 z-index=20 相对 div1 的第 20 层, 意味着相对 body的第 30 层 吧.
+			
+	然后是 发现 行内元素, span, a 什么的, 
+		overflow: hidden 无效 	超出显示
+		verticalAlign: 'bottom',  无效  文字向下对齐
+		textOverflow: 'ellipsis',  无效  超出的文字 以... 显示
+		这些无效的操作,都需要使用一个块元素封装并设置在块元素上,才生效!! 例如 <div><span></span></div>
+		
+ant-design 的一些坑, 
+autocomplete 生成的 下拉栏在 body底部的位置, 独立出 autocomplete,相关节点!!
+	而且 position 是absolute, 我的搜索框是 fixed 定位, 所以 一滑动鼠标, 对应的下拉栏便被滑走!!!
+	如何 使得 下拉栏也是flxed 不被滑走. autocomplete 设置 dropdownClassName="dsds" 属性,
+	然后 css 加入  body .dsds { position: fixed, } 便可以!!
+	注意 .dsds { position: fixed, } 这样不行!!, 
+	例如 
+		<div class="aa bb cc">
+		.aa { position: fixed; }
+		.bb { position: absolute; }
+		究竟选.aa 还是 .bb ,并不确定,一般选最新设置的!!但谁是最新的,在 react 渲染框架来看,并不知道
+		但是  body .aa { position: fixed; } 比以上优先级都高 !!!, 所以最后是 fixed 
+	很骚的 react 换 style方式: 目的认清 react 函数调用 和 jsx 互用关系
+		class Topsearch extends React.Component {
+		  state = { ......
+			    schrlt:true,	//state变量
+			    winstyle: 1,	//state变量
+		  	  };
+		  schrltdisplay = () =>{		//定义函数 (注意是 箭头函数的定义方式)
+		    if (this.state.schrlt == true){
+		        this.setState({ schrlt:false, });
+		    }else{
+		        this.setState({ schrlt:true, });
+		    };
+		    console.log(this.state);
+		  };
+		
+		  changewin = () =>{			//定义函数.
+		    if (this.state.winstyle == 1){
+		        this.setState({ winstyle: 2, });
+		    }else if (this.state.winstyle == 2) {
+		        this.setState({ winstyle: 3, });
+		    }else{
+		        this.setState({ winstyle: 1, });
+		    }
+		    console.log(this.state);
+		  };
+		
+		  ......
+		
+		  render() {
+		    const Style1 = {
+		       display: this.state.schrlt?'block':'none', width: '100%', background: '#5b6',
+		       overflow: 'auto',
+		       height: (this.state.winstyle ==1 )?'50px':((this.state.winstyle == 2 )?'500px':'1000px'),
+		    };
+		
+		    return (
+		      <div style={{width:'100%',}}>
+		      ......
+		         <div style={{ ...}} onClick={this.changewin} ><span  style={{ }}> 第 45 个结果, 共 156703918332231312312312414131 个结果</span></div>	
+			            <antd.Button  size="large" style={{width: 40, }} type="primary" icon="down" onClick=		{this.schrltdisplay}/>
+				    
+		      ......
+		      <div contenteditable='true' style={Style1} > helloeworkd  </div>
+		      {/* <div>jsx 的注释长这样子通过插入大括号符号,在里面注释 </div>*/}
+		      </div>
+		    );
+		  }
+		这里定义的 onClick={this.schrltdisplay} onClick={this.changewin} 都没有 bind(this),是因为使用箭头函数有同样效果!!
+		特别注意 const Style1 设置 变量 (不是state变量),使用了 ? : 运算, 就是说,可以使用运算
+
+	接着就是 react 上 使用 js 的 const 变量 与 继承 的骚规则!!,特别是用在递归函数上...
+
+javascript 语法:
+	a || b，如果a不存在，则返回b。a && b，如果a存在，则返回b，否则返回a。
+	以下内容会被当成false处理："" , false , 0 , null , undefined , NaN ,  注意：字符串"false"也会被当做true处理
+	例子:
+		b=0,c=Number.NaN,d=1,e="Hello"  a || b && c || d && e  
+		表达式从左往右执行，先&&后||
+		(b && c) 得到 b 变成 a || b || d %% e 
+		(a || b) 得到 a 变成 a || d && e
+		(d && e) 得到 e 斌成 a || e  返回 a
+	关于变量  var let const   ES6标准
+		var 通用的变量, 存在变量提升:即之后声明定义的变量,在之前的函数也可以调用!!
+		let 定义的变量 是 {} 区域性特质的, 在一个函数里定义的let, 只能在该函数生效,
+			同 {}区域 不允许重复声明
+			不存在变量提升, 区域内,let 定义的变量与区域外 var定义的变量同名, 区域内值认可 let 变量
+			var tmp = 123;
+			if (true) {
+			  tmp = 'abc'; // 出错,因为 {} 区域定义了 let tmp, 所以不会调用 var tmp,而 let tmp 不存在变量提升!!
+			  let tmp;
+			}
+			es6 规定 区块中存在let和const命令，这个区块对这些命令声明的变量，从一开始就形成了封闭作用域。
+			凡是在声明之前就使用这些变量，就会报错。
+			if (true) {
+			  // TDZ开始
+			  tmp = 'abc'; // ReferenceError	//此区域只认 let tmp,  let tmp 声明前使用会报错
+			  console.log(tmp); // ReferenceError	
+			
+			  let tmp; // TDZ结束
+			  console.log(tmp); // undefined	//虽然声明 let tmp ,但 tmo 未赋值!!
+			
+			  tmp = 123;
+			  console.log(tmp); // 123
+			}
+			还有: let x = x; //报错, =后面使用了x, 这里算 let x 未声明前使用x
+		const 声明一个只读的常量。一旦声明，常量的值就不能改变。
+			所以const一旦声明变量，就必须立即初始化，不能留到以后赋值,
+				const foo; 报错!! 
+			const 只在声明所在的块级作用域内有效
+			const实际上保证的，并不是变量的值不得改动，而是变量指向的那个内存地址所保存的数据不得改动。
+			对于简单类型的数据（数值、字符串、布尔值），值就保存在变量指向的那个内存地址，因此等同于常量。
+			对于复合类型的数据（主要是 对象 和 数组），变量指向的内存地址，保存的只是一个指向实际数据的指针，
+			const只能保证这个指针是固定的（即总是指向另一个固定的地址），
+			至于它指向的数据结构是不是可变的，就完全不能控制了 ! !
+				const foo = {};
+
+				// 为 foo 添加一个属性，可以成功
+				foo.prop = 123;
+				foo.prop // 123
+
+				// 将 foo 指向另一个对象，就会报错
+				foo = {}; // TypeError: "foo" is read-only
+			如果真的想将对象冻结, 应该使用 Object.freeze 方法。
+				对象冻结,只是 不能添加或者删除属性, 但是属性还是可以修改的
+				const foo = Object.freeze({ prop:123, bell:345});
+				// 常规模式时，下面一行不起作用；
+				// 严格模式时，该行会报错
+				foo.font = 123;		//添加 font 属性不起作用, 或者报错
+				foo.prop = 100;		//起作用
+			将对象彻底冻结的函数, 对象成为真正意义上的 常量对象:
+				var constantize = (obj) => {
+				  Object.freeze(obj);
+				  Object.keys(obj).forEach( (key, i) => {
+				    if ( typeof obj[key] === 'object' ) {
+				      constantize( obj[key] );
+				    }
+				  });
+				};
+		关于 变量 和 {} 拓展:
+			var ui = {qw:123, qe:456, qr:789, ii:{qew:1231, qee:4561, qer:7891 } }
+			var { qe, ev, ii } = ui
+				//注意第二行, {} 相当于 让 ui的qe 传递给{}的 qe, ui的ii传递给{} ii, ui没有ev,所以就没有传递
+				//注意名字一定要 一样才可以 传递!!
+			qe = 9
+				//ui.qe是一个数, 所以拷贝了一个数到 {}的qe, ui.qe 和 qe 其实是两个不一样的变量
+				//{}的 qe = 9 , 并不影响 ui.qe,
+			console.log( ui.qe, qe  )   // 456 9
+			
+			ii.qer = 999
+				//ui.ii是一个数组/对象, 所以拷贝了这个数组/对象的指针 到 {}的ii, ui.ii 和 ii 虽然是两个不一样的变量
+				//但是两者内容都是指向同一个 数组/对象 的指针!!
+			console.log( ui.ii.qer,  ii.qer  )   // 999 999
+
+			ii.ppp = 1000
+				//ui.ii 和 ii 的内容都是指向同一个 数组/对象 的指针!!
+				//所以通过其中一方增加这个对象的一个属性, 另一方也可以看到!!!
+			console.log( ui.ii.ppp,  ii.ppp  )   // 1000  1000
+			当然, 这些关系 不止体现在 var , const let, 同样道理, 只是使用 const/let 定义,还得遵守 const/let 的规则 !!
+			
+
+	
+		关于 一个复合例子!!!
+			const x = 3;			//全局的 x 常量
+			const gData = [];		//gData 存放 一个数组/对象位置指针,这个位置是不改变
+			var use = 5;			//一个 全局变量
+			const generateData = () => {
+			  const tns = gData;		//一个区域常量tns, 是 gDAta 的内容不变,即固定指向同一个位置
+			  for (let i = 0; i < x; i++) {		//其实每次循环,都打开一个新的 {}区域,而 i 也是新建的,只属于这个区域
+			    const key = 3;			//仅这次循环建立的新区域建立一个常量 key 3
+			    tns.push({ title: key, key, use }); //注意 这里 push, 是把 key 的内容拷贝到一个新的变量然后压入 数组里
+				tns[0].title = 11		//所以 数组里的新的 普通变量 key,title, use都是可更改的 
+				tns[0].key = 77			//不可更改是只是数组的 位置!!
+			  }					//通过 const,发现 gData,跟 tns 其实共同 指向 同一个数组
+			  tns[1].title = 22
+			  tns[1].key = 88
+			  tns[1].use =555
+			};
+			generateData(z);
+			console.log(gData);
+			gData[2].title = 34;
+			gData[2].key = 99;
+			console.log(gData[2].title);
+		另一个:
+			var obj = {
+		            id: null,
+		            name: '',
+		        };
+			var str = [];
+			for (var i = 0; i < 5; i++) {
+			    obj.id = i;
+			    obj.name = 'name_' + i;
+			    str.push(obj);		//特别注意是 push 例子, 建立一个新变量,保存 obj的 地址 
+			    console.info(obj);		//所以虽然 最后 str 里有三个变量,但都是指向同一个obj 的指针!
+			}
+			console.info(str);
+
+		ES6 一共有 6 种声明变量的方法: var命令和function命令。let和const命令，import命令和class命令。
+		
+
+ 
+
+
+
+
+
+
+
+
+20190521
+react 的 优化:
+	首先要认识到, 每一次 setstate, class 的render 都会执行一次, 最后生成实体内容填充/替代rom 相关内容!!!
+	注意,并不是生成的实体dom完全替换现有实体DOM全部,而是只替换当中的被涉及的部分,
+	但是 每次都得执行一次 render 的内容,所以 对react 的优化主要还是减少render 的运算!!
+		首先 render 里 jsx 调用函数问题,三种方式:
+		第一种
+		constructor() {
+			handleAA = this.handleA.bind(this)	//这种可以
+		}
+		handleA(){.....}
+		handleAAA = this.handleA.bind(this)	//这种也可以
+		render (....
+		  onClick= {this.handleAA}	// bind()在 render 外 执行了, 之后每次 render 都不需要执行 bind(), 提高效率
+		  onClick= {this.handleAAA}	// bind()在 render 外 执行了, 之后每次 render 都不需要执行 bind(), 提高效率
+		第二种
+		  onClick= {this.handleA.bind(this)} // bind() 都在 render里执行一次, 效率不高!!
+		第三种:
+		handleB = () => {.....}
+		render (....
+		  onClick= {this.handleB}   //这里是直接为这次render新建一个函数 handleB 然后执行, 所以降低效率
+		  onClick= {()=>this.handleA()}   //这里是直接为这次render新建一个函数 handleA 然后执行,而不是指向已存在的函数执行, 所以降低效率	
+ 	除了 优化事件函数色执行, 在render里头 , 应该尽可能地减少变量的定义,因为每次render 都会重新生成新变量!!
+	使用 key 识别 同类组件, react 这样可以减少 render 的计算量, 只计算识别的组件,其他组件不变!! key是唯一的,注意!!!!!
+	使用 redux 时,使用上 reselect 处理
+	由于 react 遵随 父子通讯, 跨组件通讯 需要使用 
+		redux https://juejin.im/post/5b755537e51d45661d27cdc3
+		http://www.ruanyifeng.com/blog/2016/09/redux_tutorial_part_one_basic_usages.html 
+
+
+
+浏览问题:
+<div id="blockmenu" style="position:fixed; top:0px; left:0px; width:1%; height:100%; background-color:#f1e; overflow:hidden; ">
+  <div id="blockmenu4" style="width:170%; height:100%; background-color:#f1e; overflow-y:scroll; ">
+    <div style="width:100%; height:100px; background-color:#a39; border-bottom: 2px solid #eee; "></div>
+    <div style="width:100%; height:100px; background-color:#a39; border-bottom: 2px solid #eee; "></div>
+  </div>
+</div>
+
+<div id="viewblock" style="position:fixed; top:0px; left:2%; width:98%; height:100%; background-color:#cdc; overflow:auto; ">
+
+<div class="main" onmousedown="mousd(event)" onmousemove="mousm(event)" onmouseup="mousu(event)" onkeypress="keypress(event)" onkeydown="keydown(event)" onkeyup="keyup(event)" contenteditable="true" style="background-color:#ccc">
+这里的 特点是 侧栏只永远只不论伸缩占据 1% 屏幕空间, 而 viewblock 也是,不论伸缩,永远占据 98%
+但是 侧栏里的块边框和 scrollbars隐藏做得并不是太好. 不同 pc 屏幕和浏览器,效果可能就不一样!!
+还有 border 使用有规则!! 用border的时候,用不了 border-bottom 等单边设置!!
+对于特殊屏幕, 16:9 什么的, 1% 的或者显得特别宽,所以需要使用 px 尺度, 
+而 px 尺度, 需要有以下要求:
+	侧栏隐藏 scrollbar	
+	视窗 width 沾满屏幕! 不论是什么程度的 伸缩 
+	ctrl+滑轮 -> 触发一个document 监听事件 -> dedux传递 -> block this.setstate
+还有 vhvw的尺度,但是跟 % 尺度没有什么区别!!
+总之,我们要处理复杂的 div尺寸变化问题!!!
+当 ctrl + 滑轮时候, div 可以及时调整, 这时我们可以使用 calc css3属性
+例如 width: calc(100vw - 20px + 0.75vw);	//参数和符号之间必须有一个空格!!
+我的浏览器 一般 滑动条是 0.75 vw,
+还有一个的就是子 div 自动撑开父div的行行为!!  使用 float??
+
+
+
+攻克 redux, 还有 css 的layout 问题!!!!
 
 
 

@@ -18451,25 +18451,432 @@ bga封装, 丝印边界不能与芯片的边界重合!!!!!
 		pcb元器件间距 rules-placement-componont clearance 控制
 		Q快捷键 切换 mil mm 
 
-	加工能力: 
-		孔 0.2mm 
-		丝印 5mil
-		10mil 理论可走1A
-		5mil 作为信号足以!!
-	多层pcb布线:
-	bga ddr 布线
-	1.先把bga 的针的线引出,注意, 外层两排可以直接引出,内层,必须即时过孔到别层引出
-	2,连线, 注意过孔严格控制路线,所有线路只允许 相同对 top-bottom-top 过孔,当然可以 TOP-secondsignallay-bottom-top
-	  即过空的来回距离要一致! 因为要减少等长难度!!
-	3,修线, 帮助跟好地等长!!
-	4,等长
-	虽然说成功等长了!!但是 后面发现 步骤出错了,所以还得重新布
-	先划分出模块的大致布置, 根据 飞线的位置大致布置
-	先 BGA( MCU 的EMCP) 的 都要先放置 去噪电容,先连接电源和参考大致布置划出逃逸线!!!!!
-	划出逃逸线的 规则, 一般底层 不布线,因为要放去噪电容, 顶层 出外两圈的线, 次信号层布 次两圈的线,此类推!!!
-	然后开始 先布 ddr, 边补边等长等长!!
-https://zhidao.baidu.com/question/1987998141612946107.html      过孔设置问题
+	加工工艺 
+		一般工艺
+			孔 0.2mm 
+			丝印 5mil
+			10mil 理论可走1A
+			5mil 作为信号足以!!
+			0.15孔径过孔,不要超过1.2mm板厚
+			0.2mm孔径最好配合0.4盘经,配合0.3也可以,不过偏极限
+		过孔盲埋孔类型:
+		https://zhidao.baidu.com/question/1987998141612946107.html      过孔设置问题
+			普通孔, 压合一次,然后全部通孔,也可以对 最外围层做激光镭射孔,(镭射的能立只能穿一层孔)
+			一阶孔, 压合一次,做通孔或者镭射孔, 然后再 补压合一次外层,然后做通孔或者镭射孔
+			二阶孔, 压合一次,做通孔或者镭射孔, 补压合一次外层,然后做通孔或者镭射孔, 再补压合一次外层,然后做通孔或者镭射孔
+			三阶孔, 压合一次,做通孔或者镭射孔, 补压合一次外层,然后做通孔或者镭射孔, 
+				再补压合一次外层,然后做通孔或者镭射孔,再补压合一次外层,然后做通孔或者镭射孔,
+			四阶孔, .......以此类推
+			也就是, 压合的次数决定了是多少阶孔, 每次压合的层数没有规定,每次压合多少层都打算压合一次!!
+		注意工艺与成本的问题
+			6层板,通孔,100x100 mm^2 加工 1000多
+			6层板,一阶孔, 100X100 mm^2  淘宝5000多, 加上盘中孔, 6000多 
+				遇到一个全自己生产不外包的 汇合 pcb 3600 可以做 
+			6层板,二阶孔以上 ,不敢想
 
+	多层pcb布线:
+	1.先把bga 的针的线引出,注意, 外层两排可以直接引出,内层,必须即时过孔到别层引出
+	  必须分好理清线路的出走区域!!!一般 bga的引线都有一定的布置规律,
+	  比如 左上方是 普通通讯线,右上方是lcd,cam,左下方是sdcard 一般gpio
+	  右下方是 ddr 
+	  最后 bottom 层,尽量不要布线!!	
+	2,优先 ddr 布线, 注意严格控制等长的线路,过孔的高度页次数都与等长有影响,等长线路应该严控对等过空次数或者总高度
+	  因为成本问题,必选向通孔板看齐,不做复杂盲埋孔的板,要做最多也只能是一阶孔的板子
+	  布线,主要找出最大长度线作为其他喜爱线路等长的参照,
+	  布线时结合等长一起操作 !!!,具体情况具体分析,也可以先布后等长
+	  最后 bottom 层,尽量不要布线!!
+	3,需要放置电源滤波电容,因此 bga背后尽量不布线, 还要划分出电源区域!!!
+	4,布线等长 emmc, sdcard camera lcd 模块!!
+	5,布线一般线路 和电源
+	6,检查和铺桐
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190406
+树莓派3b+
+本地电脑作为 dhcp 节点 连接 树莓派:
+	sudo apt-get install isc-dhcp-server
+	sudo vi /etc/default/isc-dhcp-server 添加:网卡
+		INTERFACES="enp0s25"
+	sudo vi /etc/dhcp/dhcpd.conf 修改
+		# A slightly different configuration for an internal subnet.
+		subnet 10.5.5.0 netmask 255.255.255.0 {
+		  range 10.5.5.26 10.5.5.30;
+		#  option domain-name-servers ns1.internal.example.org;
+		#  option domain-name "internal.example.org";
+		  option subnet-mask 255.255.255.0;
+		  option routers 10.5.5.1;
+		  option broadcast-address 10.5.5.255;
+		  default-lease-time 600;
+		  max-lease-time 7200;
+		}
+	sudo service isc-dhcp-server restart	启动
+	sudo netstat -uap 查看 端口
+	发现 没有 dhcpd 失败!!
+
+ubuntu下如何扫描局域网下的ip地址
+sudo apt-get install nmap
+nmap -v -sP 192.168.100.0/24
+
+
+官方镜像烧写命令:
+sudo apt-get install gddrescue xz-utils
+unxz ubuntu-mate-18.04.2-beta1-desktop-armhf+raspi-ext4.img.xz
+sudo ddrescue -D --force ubuntu-mate-18.04.2-beta1-desktop-armhf+raspi-ext4.img /dev/sdb
+通用烧写命令:
+sudo dd bs=4M if=2018-10-09-raspbian-stretch.img of=/dev/sdb
+
+
+关于安装镜像和 hdmi lcd 驱动的问题!!!!!
+ubuntu18(x64) 可成功 安装hdmilcd驱动, (只是配置而已,不是真正意义上的安装)
+	参考 7inch hdmi dispaly-B 用户手册
+	config.txt
+	max_usb_current=1
+	hdmi_force_hotplug=1
+	config_hdmi_boost=7
+	hdmi_group=2
+	hdmi_mode=1
+	hdmi_mode=87
+	hdmi_drive=1
+	hdmi_cvt 800 480 60 6 0 0 0
+ubuntu18 虽然已安装了ssh,但是默认是不可用的!!!, 需要首次启动重新配置ssh 才可以使用
+	sudo systemctl enable ssh.service
+	sudo dpkg-reconfigure openssh-server
+	sudo service sshd start
+目前新版kali(x64) ssh默认可用,但是添加了一般不完整的配置信息 hdmi lcd 后会崩溃 
+	最新测试,config.txt 完整添加后 可以运行 (未接hdmi测试)
+	max_usb_current=1
+	hdmi_force_hotplug=1
+	config_hdmi_boost=7
+	hdmi_group=2
+	hdmi_mode=1
+	hdmi_mode=87
+	hdmi_drive=1
+	hdmi_cvt 800 480 60 6 0 0 0
+	注意到,首次启动,不能接着 hdmi启动,不然崩溃 !!必须开机稳定以后,插入hdmi 便看到输出
+	首次启动之后就可以 接着hdmi上电板子了
+kali设置 蓝牙键盘!!
+	远程ssh root toor后,	
+	sudo service bluetooth start 开启蓝牙服务,  kali默认不开启蓝牙
+	bluetoothctl	打开蓝牙命令窗
+		power on  蓝牙模块上电
+		agent on  蓝牙设备的代理服务启动,就是负责管理多个蓝牙链接设备同时运作的后台功能
+		default-agent  默认代理功能,就是说 service bluetooth start 自动启动 power on, agent on
+		sacn on  扫描蓝牙设备
+		pair  60:73:00:0D:0E:51 配对蓝牙设备,然后设备输入pin码配对. 注意 配对成功不意味 就是链接可用
+		connect 60:73:00:0D:0E:51 连接设备 , 当设备还处于配对广播时,才有机会链接成功
+			链接成功时,  ServicesResolved: yes   Connected: yes
+			[bluetooth] 命令行前缀会变成 链接设备的 [bluetooth 3.0 keyboard] 的前缀 
+		pairable on 设备处于可接受外部配对的请求 的状态
+		discoverable	设备处于可被外部设备发现 的状态
+		remove 60:73:00:0D:0E:51 移除配对成功的设备
+			注意当设备处于 非配对广播期, 连接成功的设备很容易下线,下线后,设备主动连接回来会被拒绝
+			导致超时低功耗后,重新工作的蓝牙建键盘无法连接回来
+			需要 让外部设备 开配对广播, kali再主动 connect 回去,非常不合理
+		trust 60:73:00:0D:0E:51 把外部设备假如信任名单,这时,如果跟外部设备断开,外部设备主动接回来将允许
+			这样就不怕意外断开,因为会自动重链成功
+		exit 会离开bluetoothctl 并关闭蓝牙
+		quit 只是推出 bluetoothctl 蓝牙后台运行
+	然而 sudo service bluetooth start , bluetoothctl  这些设置都不会 让蓝牙开机默认启动, 
+	蓝牙开机启动 设置 update-rc.d bluetooth enable
+		这意味着 开机自动 sudo service bluetooth start 因为设置过 default-agent
+		所以 自动 power on, agent on
+		由于 pair 成功的设备 又加入了 trust 名单
+		所以外部设备在非配对广播期间 要 连接到 kali ,kali 允许
+		例如, 板子上电后,不一会 蓝牙键盘就自动可用了!!!!!
+	
+备份已有的 sd 卡镜像!!! (备份ubuntu18mate为例子)
+不是 传统的 dd 操作,而是巧妙地把有效数据拉出来 备份!!
+https://blog.csdn.net/zhufu86/article/details/78821056  通过 pc 来备份 sd卡
+http://www.cnblogs.com/haochuang/p/6066532.html	在树莓派自身上进行备份!!
+我们通过 pc 来备份!!!
+首先需要 工具:
+	sudo apt-get install dosfstools
+	sudo apt-get install dump
+	sudo apt-get install parted
+	sudo apt-get install kpartx
+建立一个backup文件目录
+sudo fdisk -l	 查看sd卡挂载 /dev/sdx
+df -h 查看实际sd卡有效内容大小
+一般 树莓派 的 sd卡有 连两个分区!! 放置/boot 内容分区 和 根目录/分区!
+一般 插入电脑时,会自动挂载,没有就自己手动挂载例如:
+	yang@debian:~/backupimg$ sudo mount -t vfat -o uid=yang,gid=yang,umask=0000 /dev/sdb1 ./src_boot/ 
+	yang@debian:~/backupimg$ sudo mount -t ext4 /dev/sdb2 ./src_Root/
+	注意 uid gid 是把这个分区的读写权限赋予 uid gid 对应用户
+生成一个空镜像 bs=1M 表示 1024KB 大小的块 bs=1MB 表示 1000KB 大小的块 , 我们要6G的镜像, 所以count=6000 :
+	sudo dd if=/dev/zero of=ubuntu18-20190408-backup.img bs=1M count=6000
+给img文件分区
+注意 从 之前的 fdisk -l  df -h 获得 基本的块信息,扇区信息
+	sudo parted ubuntu18-20190408-backup.img --script -- mklabel msdos		
+	sudo parted ubuntu18-20190408-backup.img --script -- mkpart primary fat32 2048s 409599s
+	sudo parted ubuntu18-20190408-backup.img --script -- mkpart primary ext4 409600s -1	//注意ext4 不要写错
+	//由于分区大小小于2TB 所以使用 msdos 分区表,>2TB 使用 gpt 分区表
+	我们 fdisk -l  df -h 看到的分区信息, 备份镜像分区最好严格跟随
+	第一个分区 从 sector2048 到 sector409599   数字加s 表示以sector(扇区)为单位分区,一sector等于512KB
+	剩下的 sector 都为第二分区
+	查看分区情况:
+	sudo parted raspberrypi.img     进入命令行
+	(parted) print free   查看分区
+	(parted) quit	离开命令行
+挂载这个img
+	sudo losetup -f --show ubuntu18-20190408-backup.img
+	/dev/loop1
+获取挂载分区:
+	yang@debian:~/backupimg$ sudo kpartx -va /dev/loop1 
+		add map loop1p1 (252:0): 0 407552 linear /dev/loop1 2048
+		add map loop1p2 (252:1): 0 11878400 linear /dev/loop1 409600
+	ls /dev/mapper/loop0p*
+		/dev/mapper/loop1p1  /dev/mapper/loop1p2
+格式化挂载分区:
+	sudo mkfs.vfat -n system-boot /dev/mapper/loop1p1	//vfat设置 LABEL 参数 -n
+		mkfs.fat 3.0.26 (2014-03-07)
+		mkfs.fat: warning - lowercase labels might not work properly with DOS or Windows
+		unable to get drive geometry, using default 255/63	
+			//这里只是说ioctl获取不到HDIO_GETGEO命令之后参数,所以固定每磁道63个扇区
+			//应该没有什么大问题
+	sudo mkfs.ext4 -L writable /dev/mapper/loop1p2		//vfat设置 LABEL 和 ext4 的 的参数不一样,草 这里是 -L
+		mke2fs 1.42.9 (4-Feb-2014)
+		Discarding device blocks: 完成                            
+		文件系统标签=
+		OS type: Linux
+		块大小=4096 (log=2)
+		分块大小=4096 (log=2)
+		Stride=0 blocks, Stripe width=0 blocks
+		371680 inodes, 1484800 blocks
+		74240 blocks (5.00%) reserved for the super user
+		第一个数据块=0
+		Maximum filesystem blocks=1522532352
+		46 block groups
+		32768 blocks per group, 32768 fragments per group
+		8080 inodes per group
+		Superblock backups stored on blocks: 
+			32768, 98304, 163840, 229376, 294912, 819200, 884736
+		
+		Allocating group tables: 完成                            
+		正在写入inode表: 完成                            
+		Creating journal (32768 blocks): 完成
+		Writing superblocks and filesystem accounting information: 完成 
+挂载分区:
+	~~/backup$ sudo mount -t vfat -o uid=infortech-ubuntu-1404,gid=infortech-ubuntu-1404,umask=0000 /dev/mapper/loop1p1 ./system-boot/ 
+	~~/backup$ sudo mount -t ext4 /dev/mapper/loop1p2 ./writable/
+备份boot: 单纯 cp
+	~~/backup$ sudo cp -rfp /media/infortech-ubuntu-1404/system-boot/* ./system-boot/
+备份根目录/: dump/restore方法
+	 首先对目标挂载点设置合适的权限，并清空
+	~~/backup$ sudo chmod 777 writable
+	~~/backup$ sudo chown infortech-ubuntu-1404.infortech-ubuntu-1404 writable
+	~~/backup$ sudo rm -rf ./writable/*
+	~~/backup$ cd writable/
+	dump/restore备份过程, dump 会提取合法的文件, restore到当前文件夹
+	~~/backup/writable$ sudo dump -0uaf - /media/infortech-ubuntu-1404/writable | sudo restore -rf -
+  DUMP: Date of this level 0 dump: Mon Apr  8 15:07:20 2019
+  DUMP: Dumping /dev/sdc2 (/media/infortech-ubuntu-1404/writable) to standard output
+  DUMP: Label: writable
+  DUMP: Writing 10 Kilobyte records
+  DUMP: mapping (Pass I) [regular files]
+  DUMP: mapping (Pass II) [directories]
+  DUMP: estimated 4469782 blocks.
+  DUMP: Volume 1 started with block 1 at: Mon Apr  8 15:08:06 2019
+  DUMP: dumping (Pass III) [directories]
+  DUMP: dumping (Pass IV) [regular files]
+  DUMP: Volume 1 completed at: Mon Apr  8 15:09:52 2019
+  DUMP: Volume 1 4481330 blocks (4376.30MB)
+  DUMP: Volume 1 took 0:01:46
+  DUMP: Volume 1 transfer rate: 42276 kB/s
+  DUMP: 4481330 blocks (4376.30MB)
+  DUMP: finished in 106 seconds, throughput 42276 kBytes/sec
+  DUMP: Date of this level 0 dump: Mon Apr  8 15:07:20 2019
+  DUMP: Date this dump completed:  Mon Apr  8 15:09:52 2019
+  DUMP: Average transfer rate: 42276 kB/s
+  DUMP: DUMP IS DONE	//表示备份成功!!
+备份根目录/: tar 方法 (当dump/restore失败时可选): https://blog.csdn.net/zhufu86/article/details/78821056
+这时候整个备份就已经完成了。不过此时的img文件即使写入到空白SD卡里面也是无法启动的，因为Raspbian启动要对应分区的PARTUUID，
+所以我们还要修改目标img文件里的如下两个文件：
+	~~/backup/writable$ cd ../
+	~~/backup/$ sudo blkid
+	.....
+/dev/sdc1: SEC_TYPE="msdos" LABEL="system-boot" UUID="842D-48B7" TYPE="vfat" 
+/dev/sdc2: LABEL="writable" UUID="7505d087-bb96-4d42-8d51-a146069608c7" TYPE="ext4" 
+/dev/mapper/loop1p1: SEC_TYPE="msdos" LABEL="boot" UUID="C998-E14D" TYPE="vfat" 
+/dev/mapper/loop1p2: UUID="ab9f42bb-bb7f-48f5-956a-2c4eb1ecd284" TYPE="ext4" 
+	对比 sdc 和 loop1 的 各个标签 !!!!!
+	修改 两个文件:
+	sudo vi system-boot/cmdline.txt 
+		的 root=LABEL=
+	sudo vi writable/etc/fstab
+	(由于我 分区的时候 LABEL搜设置后原来的,所以 并不用改,但这里必须重视!!)
+	
+最后卸载 所有加载:
+	sudo umount system-boot/ writable/	//卸载分区路径映射
+	sudo kpartx -d /dev/loop1	//卸载分区信息
+	sudo losetup -d /dev/loop1	//卸载 img 镜像的加载!!!!
+备份完成!!!
+成功测试, 成功显示, 成功实现之前ubuntu18设置的 william ssh hdmi 等等
+注意此刻备份系统根目录只有 备份镜像设置的6GB 但是可以通过 raspi-config先未使用的分区空间expand 扩展进来 
+
+备份kali镜像:
+发现有不小不一样的地方:
+直接从分区直接从 速sd卡 sector 1 开始使用,按道理应该是 sector 2048 等以后的!!
+分区都没有laber 直接使用 /dev/mmcblk0 挂载!! mkfs 不需要加 label
+成功测试,注意,需要使用 raspi-config 扩容分区, kali没有这指令,需要安装
+参考 https://www.cnblogs.com/small-gray/p/5392044.html   //还有其他kali的必要工作!!!
+首次安装东西,需要下update 软件源
+apt-get update
+apt-get install triggerhappy lua5.1  alsa-utils		//raspi-config
+wget http://archive.raspberrypi.org/debian/pool/main/r/raspi-config/raspi-config_20151019_all.deb
+dpkg -i raspi-config_20151019_all.deb		//注意 只有 20151019 功能齐全,新版本都没有扩容功能!!!!
+还是安装了 kaii 全家桶后重新备份一次吧,,,,
+apt-get install kali-linux-all
+出错:
+错误:1 http://mirrors.neusoft.edu.cn/kali kali-rolling/main arm64 webshells all 1.1-0kali0
+  无法连接上 localhost:80 (::1)。 - connect (111: 拒绝连接) 无法连接上 localhost:80 (127.0.0.1)。 - connect (111: 拒绝连接)
+E: 无法下载 http://localhost/  无法连接上 localhost:80 (::1)。 - connect (111: 拒绝连接) 无法连接上 localhost:80 (127.0.0.1)。 - connect (111: 拒绝连接)
+E: 有几个软件包无法下载，要不运行 apt-get update 或者加上 --fix-missing 的选项再试试？
+其实安装包已经下载完了,就是莫名要连接本地的:80端口? 跳不过去
+网上说要加代理: 才可以连接 本地:80端口
+vi /etc/apt/apt.conf  添加
+	Acquire::http::proxy "http://localhost:80/";
+然后 apt-get upgrade 出错,,,还是无法连接本地:80端口,所以 怀疑不是所谓代理问题,撤回代理设置重新 upgrade
+然后重新 apt-get install kali-linux-all 居然跳过去了!!!
+
+备份 raspiberry 自带系统
+我操,使用GPT分区表 和 PARTUUID 挂载 的内容, 改过来msdos分区表 和 LABEL 挂载的不知道能否成功
+proc            /proc           proc    defaults          0       0
+LABEL=boot  /boot           vfat    defaults          0       2
+LABEL=rootfs  /               ext4    defaults,noatime  0       1
+# a swapfile is not a swap partition, no line here
+#   use  dphys-swapfile swap[on|off]  for that
+估计就是 rootfs 分区表的问题, 换了fstab  cmdline.txt  LABEL 加载 不成功
+换了 /dev/mmcblk0 加载成功,但是 卡在了 w1 驱动的加载!!!!, 但是系统已经起来,可以使用ssh了!!!
+注意,桌面也启动了,但是只能通过远程桌面登录: 自带的vnc 好像是不能启动的!!!
+远程桌面启动问题:
+	树莓派安装 rdp 协议的远程桌面!!!
+	sudo apt-get install xrdp tightvncserver
+	安装后 sudo /etc/init.d/xrdp restart 
+	netstat -tnl  3350 3380 22 三个端口
+ubuntn 使用自带的运程桌面软件即可 注意是 rdp 协议!!
+
+
+
+
+
+git断点续存(没有用貌似):
+git clone获取比较大的源码时, 不能断点续传, 比较恼火.
+可以使用 git fetch 解决:
+
+     mkdir common
+
+     cd common
+
+     git init
+
+     git fetch http://android.git.kernel.org/common.git
+
+     传完后,
+
+     git branch -a
+
+     git checkout remotes/....
+
+如果中间断掉了, 可以直接进入common目录, 继续git fetch就可以续传了.
+git clone --depth 1 http......		//表示取得最新分支的代码 !!!!
+
+直接修改 kernel 内核驱动 似乎相当困难,
+需要 知道 树莓派提供的 gpio接口 并认识 驱动使用的方法,寻找修改驱动的机会
+树莓派不提供 硬件资料,所以看起来无法二次开发驱动
+	通用 gpio 树莓派似乎,做了一套通用接口 gpiozero python软件来控制!!
+	所以去掉了繁琐的 设备驱动加载调用操作等!!!!
+	还有所有通用针都支持pwm输出,pwm输出并不存在与几个特定的针上!!! 这个非常惊讶!!
+	gpio zero 允许二次开发参考: https://gpiozero.readthedocs.io/en/stable/development.html
+	感觉还是没有找到改驱动的突破口!!
+不知道启动流程, 无法二次开发 bootloader uboot
+目标知道 多核启动的驱动,多核发工作驱动,
+还有需要好好巩固学过的驱动知识,似乎忘了好多!!
+
+
+编译内核, 期待获得更多有效信息!!!!
+官方github 提供的 编译工具:
+如果pc机是64位,就用 64位的编译工具链,
+如果pc机是32位,就用 32位的编译工具链,
+但是!!官方提供的工具链都是编译出 32位树莓派内核的,不能编译出64位树莓派内核!!!
+使用官方 4.9 的工具 可以成功编译,成功运行,注意编译出来的 zImage 名字改为 kernel.img 放入 /boot区
+按照官方教程编译内核,成功!!!!!
+https://www.raspberrypi.org/documentation/linux/kernel/building.md
+官方还有一个叫 kernel7.img的内核镜像,不知道是什么鬼,
+
+编译 x64 系统 重点参考
+https://github.com/pluhuxc/pluhuxc.github.io/blob/master/_posts/2018-12-18-make-a-raspberrypi64system.md
+
+
+
+
+扩容 sd 分区!!!
+步骤1: 重新启动你的电脑，不要启动X windows
+步骤2: $ sudo df -h
+你应该会看到/ 挂载于rootfs（已使用97％左右）。
+步骤3: $ sudo fdisk /dev/mmcblk0
+命令：按P（印刷）
+你应该会看到三个分区，现在把分区2的信息写下来（/dev/mmcblk0p2）。
+命令：按d（删除分区2）
+命令：按p（印刷）
+现在应该会看到2个分区
+命令：按n（加分区）
+选择P (主要)
+於分区2选择2
+第一空格输入原来分区2的开始位置
+最后的空格输入默认值
+命令：按p（印刷）
+你应该會看到分区2填满所有空间
+命令：按w（保存）
+
+步驟4: $sudo reboot
+重新启动后，使用resize2fs来修复分区2
+
+步驟5: $ sudo resize2fs /dev/mmcblk0p2
+等待约2-3分钟
+
+步驟6: $ sudo df -h
+你应该會看到 / 挂载於rootfs（如果你使用8G SD卡，现在只会有22％的使用）
+
+这样你便可以善用SD卡余下的空间了。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190504 
+harmony !! 问题
+重新编译 bootstrap
+	sudo /opt/sam-ba_3.1.4/sam-ba -p serial:ttyACM0:115200 -b sama5d2-xplained -a serialflash -c erase
+
+	sudo /opt/sam-ba_3.1.4/sam-ba -p serial:ttyACM0:115200 -b sama5d2-xplained -a serialflash -c writeboot:/home/infortech-ubuntu-1404/1tb_disk/SAMA5D2/source/at91bootstrap/binaries/sama5d2_xplained-dataflashboot-uboot-3.8.7.bin
+
+	sudo /opt/sam-ba_3.1.4/sam-ba -p serial:ttyACM0:115200 -b sama5d2-xplained -a serialflash -c write:/home/infortech-ubuntu-1404/1tb_disk/temp/harmony.bin:0x00008000
+重新编译 bootstrap make ARCH=arm menuconfig  可以设置烧录地址 0x26f00000
 
 
 

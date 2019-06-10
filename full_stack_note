@@ -12780,7 +12780,7 @@ https://www.jianshu.com/p/89fae6aa143f   // h5 大前端
 
 
 20190501
-react: 简单学习一下
+react学习:
 	包含
 	<head>
 		<script src="https://cdn.staticfile.org/react/16.4.0/umd/react.development.js"></script>
@@ -13000,13 +13000,13 @@ react: 简单学习一下
 			 console.log(this); // `this` 指向什么？
 			  },
 			
-			 exec: function (cb) {
-			 cb();
-			  },
-			
-			 render: function () {
-			 this.exec(this.sayThis);
-			  },
+				 exec: function (cb) {
+				 cb();
+				  },
+				
+				 render: function () {
+				 this.exec(this.sayThis);
+				  },
 
 			 exec2: function (cb) {
 			 this.sayThis();
@@ -13016,9 +13016,9 @@ react: 简单学习一下
 			 this.exec2(this.sayThis);
 			  },
 		
-			 render3: function () {
-			 this.exec(this.sayThis.bind(this));
-			  },
+				 render3: function () {
+				 this.exec(this.sayThis.bind(this));
+				  },
 
 			}
 			
@@ -13043,7 +13043,7 @@ react: 简单学习一下
 				所以 this.xexc 中this指jerry, this.sayThis 中 this 也指jerry
 				于是变成了 jerry.exec2(jerry.sayThis), 这一步说明了是jerry在调用自己的函数exec2(),所以调用者是jerry
 				这里传递了一个实参数 jerry.sayThis, 这里是 把jerry的sayThis函数 的指针传递到 exec2上! (虽然没有用上)
-				exec2 得到了一个函数指针而已, 同时exec的调用者是 jerry
+				exec2 得到了一个函数指针而已, 同时exec2的调用者是 jerry
 				所以 exec2 的 this.sayThis(); this 指的就是 jerry
 				所以这一步又变成了 jerry.sayThis() 这一步说明了是jerry在调用自己的函数sayThis(),所以调用者是jerry
 			jerry.render3();  // jerry
@@ -13057,6 +13057,12 @@ react: 简单学习一下
 					jerry.sayThis 得到的是个通用函数指针,没有指定调用者
 					jerry.sayThis.bind(jerry) 得到一个特殊的函数指针, 指定了函数调用者!!
 					于是 cb() 就等于 jerry.sayThis() 表示调用者 jerry 执行了 jerry的sayThis函数 
+			总的来说,XX()里的参数只是传递一个地址,并没有附加传递调用者的信息,
+				即() 内的 .点运算符号 并不会也不是传递调用者信息的,例如, XX(A.kk)
+				并没有 A 并不是调用者, A不过是告知 kk 函数的位置!!
+				而调用者信息体体现在 ()外的 .点运算符号 即 B.XX(A.kk)
+				这里清晰地传递了 调用者是 B
+				但是注意在 () 里, 是可以使用 .bind()函数 来设置传递调用者信息
 		react 设置事件函数,本质上就是 上述讨论的 cb() 的问题,事件函数需要指定的 调用者,
 			例如 直接 onclick={aaa}, aaa只是一个函数指针,没有指定调用者
 			要遵循 js this指针和函数调用的这些特殊规则, 所以就需要 添加 bind(this)定位!!
@@ -13635,6 +13641,7 @@ react 操作不同的 实例化组件 的行为!!
 		前提是,实体DOM完全渲染出来了, 事件函数 和 DOM 的链接关系才生效
 
 做搜索框遇到的一些坑!!!!
+position 和 zindex 
 	首先,注意复习 position , 一般的节点是 static流, static流的 z-index 等是不生效的
 		特别注意嵌套关系的理解:
 		例如
@@ -13645,12 +13652,12 @@ react 操作不同的 实例化组件 的行为!!
 		        <div id='4'>
 		        </div>
 		    </div>
-		假如只有 div1 定义了 position:fiex, top:10 px, zindex=10 那么只是 div1 是 flex 定位!!
+		假如只有 div1 定义了 position:fixed, top:10 px, zindex=10 那么只是 div1 是 flex 定位!!
 			而相对位置 top 取自设定, 其他取自 div1 本来相对<body> static定位应该所在的位置	
 			div234 是 static定位 !!!, 注意, 不过,div234是 以 div1为参考点,的 static 定位!!!
 			而且依然处于 z-index:10 层
 			而不是以原来 <body> 为参考点的 static 定位,
-		如果这时, div3 又定义了 position:fiex, top:13 px, zindex=20 那么 div3 也是 flex 定位!!
+		如果这时, div3 又定义了 position:fixed, top:13 px, zindex=20 那么 div3 也是 flex 定位!!
 			而相对位置 top 取自设定, 其他取自 div3 本来相对<div1> static定位应该所在的位置
 		像这样子的 位置嵌套关系,同样适应于 relative, absolute,!!
 		还有一个 特别 严重的问题 zIndex 层概念 是 相对
@@ -13919,15 +13926,846 @@ react 的 优化:
 例如 width: calc(100vw - 20px + 0.75vw);	//参数和符号之间必须有一个空格!!
 我的浏览器 一般 滑动条是 0.75 vw,
 还有一个的就是子 div 自动撑开父div的行行为!!  使用 float??
+onresize ,, 貌似只对窗口,,body有效, div不是窗口,所以无效??
+ document.getElementById('viewblock').scrollWidth 可能就是我们需要 内容总宽度
+如何 替换 width , 才是我们这个问题的解决方案!!
+子元素撑开父元素的参考: https://my.oschina.net/jingyao/blog/777252 似乎把嗯没有什么用!!
+	知道了一个可能的方案, 补充添加一个子节点  <div style="clear: both;"></div>
+目前认为可以不resize,就不resize,实现填充溢出 width ,不过好像不可能!!
+ 
+
+需要攻克 redux, 还有 css 的layout 问题!!!!
 
 
 
-攻克 redux, 还有 css 的layout 问题!!!!
 
 
 
 
 
+
+
+
+
+
+20190526
+重点 css 补充: overflow 与 scroll 与 width 与 XXXWidth
+关于 隐藏 显示 和 边界 和 溢出 的概念:
+例子1: 
+	div2 是 div1 的内容嗯,
+	div3, div4 是 div2 的内容,
+	以下图表示当 div1.style.width = div2.style.width = div3.style.width = div4.style.width
+	假如 div1.style.width:250px, 
+	那么 div2.style.width:100% / 250px, (这里的100% 相当于 100% X div1.style.width)
+	     div3.style.width:100% / 250px, (这里的100% 相当于 100% X div2.style.width)
+	     div4.style.width:100% / 250px, (这里的100% 相当于 100% X div2.style.width)
+------------------div1--------------------------------
+|-------------------div2-----------------------------|
+||---------------------div3-------------------------||
+|||                                                |||
+||--------------------------------------------------||
+||                                                  ||
+||---------------------div4-------------------------||
+|||                                                |||
+|||                                                |||
+||--------------------------------------------------||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+|----------------------------------------------------|
+------------------------------------------------------
+
+例子2: 
+	div1.style.width = div2.style.width
+	div3.style.width = 400px > div2.style.width
+	div4.style.width = 200px < div2.style.width
+	div2.overflow = div1.overflow = none
+	由于, div2.overflow:none；div2 对溢出不处理, 所以 div3 直接溢出到 div1, 
+	由于, div1.overflow:none；div1也对溢出不处理. 所以div3 溢出的内容, 继续溢出到 body,
+	所以 body 上能看到 div1, 和 div3 溢出在 body上的内容 !!
+------------------div1--------------------------------
+|-------------------div2-----------------------------|
+||---------------------div3-------------------------||-----------------
+|||                                                 ||                |
+||--------------------------------------------------||-----------------
+||                                                  ||
+||---------------------div4--------------------     ||
+|||                                           |     ||
+|||                                           |     ||
+||---------------------------------------------     ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+||                                                  ||
+|----------------------------------------------------|
+------------------------------------------------------
+
+例子3:
+	div1.style.width = div2.style.width
+	div3.style.width = 400px > div2.style.width
+	div4.style.width = 200px < div2.style.width
+	div2.overflow:auto, div1.overflow = none
+	由于, div2.overflow:auto；所以 div3 没有直接溢出,而是隐藏在 div2 未显示的区域,
+	div2会多出一个 scrollbar, 滑动可以继续看到div3未显示的内容.,div2隐藏的区域的 background 依然是 div2 的background
+	div3 没有直接溢出,所以不会溢出到 div1  
+	所以 div1 上的内容 只有等尺寸的div2, 没有其他, 所以没有内容溢出 
+	不管 div1.overflow:none 还是 auto, 都无所谓 
+	所以 body上 只看到 div1 
+------------------div1--------------------------------
+|-------------------div2-----------------------------| - - - - - - - - -
+||---------------------div3-------------------------||-----------------|
+|||                                                 ||                |
+||--------------------------------------------------||-----------------|
+||                                                  ||
+||---------------------div4--------------------     ||                 |
+|||                                           |     ||
+|||                                           |     ||                 |
+||---------------------------------------------     ||
+||                                                  ||                 |
+||                                                  ||
+||                                                  ||                 |
+||                                                  ||
+|| ===========div2scroll===========                 ||                 |
+|----------------------------------------------------| - - - - - - - - -
+------------------------------------------------------
+
+
+例子4:
+	div1.style.width = div2.style.width
+	div3.style.width = 400px > div2.style.width
+	div4.style.width = 200px < div2.style.width
+	div2.overflow:none, div1.overflow = auto
+	由于, div1.overflow:none；所以 div3 直接溢出到 div1
+	由于, div1.overflow:auto；所以 div3 没有继续从 div1 溢出,而是显示在 div1 的隐藏区域
+	div1 多了一个 scrollbar, 滑动可以看到 显示在 div1 上的  div3溢出内容.
+	div1 隐藏区域的 background 依然是 div1 的background
+	div3 没有直接溢出,所以不会溢出到 div1  
+	所以 div1 上的内容 只有等尺寸的div2, 还有溢出的 div3 内容 
+	div3 溢出内容没有溢出到 body,
+	所以 body上 只看到 div1 , 滑动 div1 的 scrollbar 才能看到溢出的 div3
+
+------------------div1-------------------------------- - - - - - - - - -
+|-------------------div2-----------------------------|
+||---------------------div3-------------------------||-----------------|
+|||                                                 ||                |
+||--------------------------------------------------||-----------------|
+||                                                  ||
+||---------------------div4--------------------     ||                 |
+|||                                           |     ||
+|||                                           |     ||                 |
+||---------------------------------------------     ||
+||                                                  ||                 |
+||                                                  ||
+||                                                  ||                 |
+||                                                  ||
+||                                                  ||                 |
+|----------------------------------------------------|
+|  ===========div2scroll===========                  |                 |
+------------------------------------------------------ - - - - - - - - -
+
+例子5:
+	div1.style.width = div2.style.width
+	div1.style.height > div1.style.height
+	div3.style.width = 400px > div2.style.width
+	div4.style.width = 200px < div2.style.width
+	div2.overflow:auto, div1.overflow = auto
+	由于, div2.overflow:auto；所以 div3 没有直接溢出,而是隐藏在 div2 未显示的区域,
+	div2会多出一个 scrollbar, 滑动可以继续看到div3未显示的内容.,div2隐藏的区域的 background 依然是 div2 的background
+	然而 div2 比 div1 高,div2 的 scrollbar 在 div2底部, 属于是溢出的部分
+	div3 溢出但处在div2的 隐藏区,所以没有溢出到 div1
+	div2 溢出, 但是 div1.overflow = auto ,所以, div2溢出部分显示在 div1 的隐藏区, 
+	div1会多出一个scrollbar, 滑动可看 div2 的隐藏部分! 
+	所以 div1 的隐藏区只用 div2的溢出部分, 没有div3 的 !!!
+	所以 body上 只看到 div1 ,
+	但是 滑动 div1 的scroll 才可以看到 div2 的scroll, 滑动 div2的 scroll, 才可以看到隐藏的 div3 部分
+------------------div1----------------------------------
+|-------------------div2-----------------------------  | - - - - - - - - -
+||---------------------div3-------------------------|--|----------------- |
+|||                                                 |  |                |
+||--------------------------------------------------|--|----------------- |
+||                                                  | d|
+||---------------------div4--------------------     | i|                  |
+|||                                           |     | v|
+|||                                           |     | 1|                  |
+||---------------------------------------------     | s|
+||                                                  | c|                  |
+||                                                  | r|
+||                                                  | o|                  |
+||                                                  | l|
+||                                                  | l|                  |
+||                                                  |  |
+--------------------------------------------------------                  |
+ |                                                  |  |
+||                                                  |                     |
+ |                                                  |  |
+||                                                  |                     |
+ | ===========div2scroll===========                 |  |
+|---------------------------------------------------- - - - - - - - - - - -
+                                                       |
+- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+例子6:
+	div1.style.width = div2.style.width
+	div1.style.height > div1.style.height
+	div3.style.width = 400px > div2.style.width
+	div4.style.width = 200px < div2.style.width
+	div2.overflow:auto, div1.overflow = none
+	由于, div2.overflow:auto；所以 div3 没有直接溢出,而是隐藏在 div2 未显示的区域,
+	div2会多出一个 scrollbar, 滑动可以继续看到div3未显示的内容.,div2隐藏的区域的 background 依然是 div2 的background
+	然而 div2 比 div1 高,div2 的 scrollbar 在 div2底部, 属于是溢出的部分
+	div3 溢出但处在div2的 隐藏区,所以没有溢出到 div1
+	div2 溢出, div1.overflow = none ,所以, div2 直接溢出到 body  
+	所以 body上 能看到 div1 , 还能看到 溢出的 div2
+	但是 直接滑动溢出显示 div2 的scroll 可以看到隐藏的 div3 部分
+------------------div1--------------------------------
+|-------------------div2-----------------------------| - - - - - - - - -
+||---------------------div3-------------------------||----------------- |
+|||                                                 ||                |
+||--------------------------------------------------||----------------- |
+||                                                  ||
+||---------------------div4--------------------     ||                  |
+|||                                           |     ||
+|||                                           |     ||                  |
+||---------------------------------------------     ||
+||                                                  ||                  |
+||                                                  ||
+||                                                  ||                  |
+||                                                  ||
+||                                                  ||                  |
+||                                                  ||
+------------------------------------------------------                  |
+ |                                                  |
+ |                                                  |                   |
+ |                                                  |
+ |                                                  |                   |
+ | ===========div2scroll===========                 |
+ ---------------------------------------------------- - - - - - - - - - -
+
+例子7: (最后讨论下 hidden, hidden 和 auto 就差是否多了个scrollbar的问题!!) 
+	div1.style.width = div2.style.width
+	div3.style.width = 400px > div2.style.width
+	div4.style.width = 200px < div2.style.width
+	div2.overflow:hidden, div1.overflow = none
+	由于, div2.overflow:hidden；所以 div3 没有直接溢出,而是隐藏在 div2 未显示的区域,
+	div2并不会多出一个 scrollbar, 所以永远无法看到 div2 的隐藏区, 永远无法看到 div3 隐藏在 div2 的溢出内容
+	div3 没有直接溢出,所以不会溢出到 div1  
+	所以 div1 上的内容 只有等尺寸的div2, 没有其他, 所以没有内容溢出 
+	不管 div1.overflow:none 还是 auto, 都无所谓 
+	所以 body上 只看到 div1 
+	并且再无可能看到 div3 的隐藏的溢出内容
+------------------div1--------------------------------
+|-------------------div2-----------------------------| - - - - - - - - - 
+||---------------------div3-------------------------||----------------- |
+|||                                                 ||                | 
+||--------------------------------------------------||----------------- |
+||                                                  ||
+||---------------------div4--------------------     ||                  |
+|||                                           |     ||
+|||                                           |     ||                  |
+||---------------------------------------------     ||
+||                                                  ||                  |
+||                                                  ||
+||                                                  ||                  |
+||                                                  ||
+||                                                  ||                  |
+|----------------------------------------------------| - - - - - - - - -
+------------------------------------------------------
+
+最后:
+	width 是 我们设置 的div 的 宽度
+	scrollWidth : 是 div 还有隐藏内容的情况下, 所以内容,堆加所得到的 div 应该需要的 宽度!!
+
+现在需要监视每一行, 当行内容太大,我们需要自动扩展行长度,而且所有行长度都需要一样!!
+	onresize() 不行,只能监听窗口, window, body, 对 div 无动于衷
+	MutationObserver : 好像对于 scrollWidth 什么的不起作用,只对可以显性的修改有感应!!, 甚至对 style的改变无动于衷.
+	好像没有什么简单方法监听 scrollwidth ,
+	所以目前 折中方法是 使用 body onresize  先设置一下style.width = 600px, 然后在设置成 可获得的 scrollWidth
+	之所以 先 style.width = 600px 是因为, width永远只会 >= scrollWidth 如果直接设 scrollWidth,后面的width只会越来越大,不会变小.
+
+最后 附加内容:
+	如何隐藏 滑动条 又可以滑动:
+	css{  scrollbar-width:none; } 可以实现
+	此外: scrollbar-width:thin; 滚动条变细
+
+position 和 zindex: 层遮罩问题: 层遮罩关系 与 index 和 元素所在的 父子关系有关
+	例子
+	<style>
+		.gg{width:40px; height:40px; padding:5px;}
+		.ww{width:40px; height:60px; padding:5px;}
+		.oo{position:relative; z-index:10;}
+		.pp{position:relative; z-index:11;}
+	</style>	
+	<body>
+	<div id='1' class='gg' style="background:red;">
+	  <div id='2' class='gg' style="background:green;">
+	    <div id='3' class='gg ' style="background:yellow;">
+	      <div id='4' class='gg ' style="background:gray;"></div>
+	    </div>
+	  </div>
+	</div>
+	<div id='5' class='gg' style="background:blue;">
+	  <div id='6' class='gg' style="background:pink;">
+	    <div id='7' class='gg' style="background:orange;"></div>
+	  </div>
+	</div>
+	<div id='8' class='gg' style="background:purple;"></div>
+	<div id='9' class='gg' style="background:brown;"></div>
+	</body>	
+	没有 设置zindex! 对应 层遮关系!!  先弟层遮兄层, 再子层遮父层,
+         ----------
+         |1 ----------
+         |  |2 ----------
+         |  |  |3 ----------
+         |  |  |  |4       |
+         |  |  |  |        |
+         ----------        |
+         |5 ----------     |
+         |  |6 ----------  |
+         |  |  |7       |---
+         |  |  |        |
+         |  |  |        |       
+         ----------     |
+         |8       |     |
+         |        |------
+         |        |      
+         |        |
+         |        |
+         ----------
+         |9       |
+         |        |
+         |        |      
+         |        |
+         |        |
+         ----------
+	如果 id:2 => class='gg oo'
+         ----------
+         |1 ----------
+         |  |2 ----------
+         |  |  |3 ----------
+         |  |  |  |4       |
+         |  |  |  |        |
+         ---|  |  |        |
+         |5 ---|  |        |
+         |  |6 ---|        |
+         |  |  |7 ----------
+         |  |  |        |
+         |  |  |        |       
+         ----------     |
+         |8       |     |
+         |        |------
+         |        |      
+         |        |
+         |        |
+         ----------
+         |9       |
+         |        |
+         |        |      
+         |        |
+         |        |
+         ----------
+		此时, 2层如果面积足够大,会发现其在 56789 层之上,即遮住了56789, 
+		而 34 在 2之上
+	如果 id:2,6 => class='gg oo'
+	或者: 如果 id:2,6,3,4 => class='gg oo'
+         ----------
+         |1 ----------
+         |  |2 ----------
+         |  |  |3 ----------
+         |  |  |  |4       |
+         |  |  |  |        |
+         ---|  |  |        |
+         |5 ----------     |
+         |  |6 ----------  |
+         |  |  |7       |---
+         |  |  |        |
+         |  |  |        |       
+         ---|  |        |
+         |8 ---|        |
+         |     ----------
+         |        |      
+         |        |
+         |        |
+         ----------
+         |9       |
+         |        |
+         |        |      
+         |        |
+         |        |
+         ----------	 
+		id:2,6 => class='gg oo' :
+			6 和 2 同一阶zindex:10, 但是<body> 中 6晚于2的位置, 所以 6 遮住 2,
+			注意: 6遮住了整个2, 即 6也遮住了34, 自然 7 也遮住了 34
+		id:2,6,3,4 => class='gg oo'
+			6 和 2 同一阶zindex:10, 但是<body> 中 6晚于2的位置, 所以 6 遮住 2,
+			3 是在 2 的基础上的二阶 zindex:10, 4 是在3 的基础上的三阶 zindex:10
+			即使这样, 34依然是 2 的范畴, 6 遮住整个2 即 6依然遮住了34,
+
+	如果 id:2,7 => class='gg oo'
+	或者:如果 id:2,7,3,4 => class='gg oo'   
+         ----------
+         |1 ----------
+         |  |2 ----------
+         |  |  |3 ----------
+         |  |  |  |4       |
+         |  |  |  |        |
+         ---|  |  |        |
+         |5 ---|  |        |
+         |  |6 ----------  |
+         |  |  |7       |---
+         |  |  |        |
+         |  |  |        |       
+         ----------     |
+         |8       |     |
+         |        |------
+         |        |      
+         |        |
+         |        |
+         ----------
+         |9       |
+         |        |
+         |        |      
+         |        |
+         |        |
+         ----------	
+		id:2,7 => class='gg oo'   	
+			注意: 此刻 7 和 2 也是同一阶 zindex:10, 因为他们是在 <body> 的基础上的,
+			7 晚于 2 出现
+			尽管 234 遮住了 6, 但是 7 还是遮住了234 
+		id:2,7,3,4 => class='gg oo'   
+			此刻 7 和 2 也是同一阶 zindex:10, 因为他们是在 <body> 的基础上的, 7 晚于 2 出现
+			3 是在 2 的基础上的二阶 zindex:10, 4 是在3 的基础上的三阶 zindex:10
+			但是 7 是遮住整个 2的
+			所以即使 234 遮住了 6, 但是 7 还是遮住了234 
+	如果 id:2 => class='gg pp' id:7 => class='gg oo'
+         ----------
+         |1 ----------
+         |  |2 ----------
+         |  |  |3 ----------
+         |  |  |  |4       |
+         |  |  |  |        |
+         ---|  |  |        |
+         |5 ---|  |        |
+         |  |6 ---|        |
+         |  |  |7 ----------
+         |  |  |        |
+         |  |  |        |       
+         ------|        |
+         |8    |        |
+         |     ----------
+         |        |      
+         |        |
+         |        |
+         ----------
+         |9       |
+         |        |
+         |        |      
+         |        |
+         |        |
+         ----------	
+		注意: 此刻 7 和 2 也是同一阶, 因为他们是在 <body> 的基础上的, 7:zindex10 2:zindex11
+		虽然同阶 zindex, 但是 2的zindex11 > 7的zindex10,
+		所以 2 遮住了 7 , 自然, 34 也遮住了 7
+
+	层遮关系与 position = fixed relative absolute 没有关系,而是与 zindex 和设置zindex的位置有关,
+	不过要设置 zindex, 就得指定一个 position 先
+	复杂的关系,如果难以观察,可以把上述代码放入在线编辑器做实验测试
+
+
+
+
+
+
+
+
+
+
+20190528
+瀑布流加载: 下拉滑动加载!!! 这个也是重点!!!
+网上的都不可用,还是自己处理一下,
+合并性能测试, 加载 36个块, 使用动态js加载!!!, 不直接写静态代码了!!
+36个同时 resize!!
+
+下一步,都扩张到一页含有 20000行数据 其中可编辑的3000行 !! 
+测试 30000 行 30个块 resize 超有压力,即使没有加上自己的设置,运行起来超有压力!!
+还要优化 按行跳转问题!! 输入一行号, 如何快速跳转到指定行!!
+一个人速读3万行 最快需要34分钟!!
+
+添加 tooltip 首先,不使用 react 的 tooltip!!!
+使用仅 css 的 tooltip, 但是 由于 position 和 overflow 显示冲突问题总是无法解决!!
+使用 js tooltip,看来层级解构超级麻烦, 程序员都推荐 popper 轻量级架构
+
+去你妹 popper 没有使用案例都不知到怎么使用:
+https://www.cnblogs.com/WhiteHorseIsNotHorse/p/7739267.html
+https://github.com/FezVrasta/popper.js
+https://popper.js.org/popper-documentation.html#Popper.enableEventListeners
+popper 这个插件相当的不友好!! 没有案例 根本不知道如何入手,只有一堆不知道怎么用的 api 说明问道
+所以以下是相当值得参考的常用经验:
+	主要到 由于复杂的 position 和 z-Index 造成 便签不一定嫩够显示在顶层, 所以 便签 一般要 写到最外层,
+	<body>
+	.... 
+	<div class="mypopper" onClick="hidd()" style="margin-left:20px; width:100px; height:100px; border-style: dotted; border-color: white;  border-width: medium; background:#444; display:block;" > helloworld </div>
+	....
+	</body>
+	当一个标签绑到一个锚点时候, 标签所在层不变,即所在的显示层不变,只是标签绑到与 锚点的相对位置上来.
+	然后是添加便签的猫点 reference 可以随便哪层,随便position和zindex都没有关系, 不会影响便签的顶层显示
+	然后写js
+	<script>
+	var ptu		//设置一个全局变量
+	(function tooltipinit(){	//初始化一个 popper ,通过局部函数来执行!! 并立即执行的
+
+		var refel = document.querySelector('.mytooltip')	//获得猫点
+		var popper = document.querySelector('.mypopper')	//获得 popper 标签块
+		ptu = new Popper(refel, popper,{			//新建一个popper obj 
+			placement: 'right',				//标签在锚点右侧
+			removeOnDestroy: true,   // 去掉popper 顺便把对应div也去掉了!!	//删除 这个obj时,是否把 标签块div.mypopper也删掉
+			offset: '30px',		 // 其实不知道是否这样用,貌似没有效果
+			modifiers: {
+	    			preventOverflow: { enabled: true},	//拖动的时候, 标签块不超出所在层边界!!
+				offset: {offset:0, enabled: true},	//如果placement是left,right,这里设置的是上下偏移
+				computeStyle: {enabled:true, }		//不会用,貌似没有效果
+	 		},
+		})
+		//console.log(uiy);
+	  	  //sleep(10000);
+		//ptu.destory()
+	})();
+			
+	function hidd (){
+		ptu.destroy()	//这个是一个按钮的事件函数 去除popper obj ,连绑定的popper标签块也去掉
+	}
+	</script>
+	关于 ptu.destroy() 应该说关于 popper.destory 的设定都很奇怪,如果ptu = new popper() 是在全局空间执行的初始化
+	那么,就不一定 后面那个地方要执行 ptu.destroy()会出现各种问题, 要么是 ptu undefinded, 要么是ptu.destroy not a function!!	
+tooltip的问题勉强算是解决了
+
+deepfake 训练: (ai_learn) ~/AI/deepfate/faceswap$ python faceswap.py train -A ../qiaobenhuannai/data -B ../xinyuanjieyi/data -m ../q2x -p
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190531
+接下来是 定位问题!!
+按某按键, scroll到某地方, 首先对 scrollWidth, clientWidth, offsetWidth的区别:
+-----------------------------------
+|                               |^|
+|                               |#|
+|abcdefghijklmnopqrstuvwxyz,1234|#|
+|                               |#|
+|                               |#|
+|                               | |
+|                               | |
+|                               | |
+|                               | |
+|-------------------------------| |
+|<    #########                >|v|
+-----------------------------------
+
+|        clientWidth            | |
+|                                 | 
+|            offsetWidth          |
+|                                 |                          
+|abcdefghijklmnopqrstuvwxyz,1234567890,一二三四五六七八九是十| 
+|                                                           |
+|                       scrollWidth                         |
+
+但是当内容 没有超出框外,水平滑动条没有生效, scrollWidth 等于 clientWidth 那样短
+同理 应用于 scrollHeight, clientHeight, offsetHeight,
+
+
+不过有新的解读!!!!! width height
+
+	---------------------------------------------------------      
+	|                  外边距 margin (空白透明)              |       
+	|      ------ 边框 border (线,点,透明)--------------     | ---------------------------------------------------------- 
+	|      |           内边距 padding (空白透明)       |     |                       
+	|      |      ----------宽 width -----------      |     |                                     scrollHeight：      可
+	|      |      |                            |      |     |                                   获取指定标签内容层     视
+	|      |      |                            高     |     |  clientHeigh     offsetHeith         的真实高度          化
+	|      |      |         element          height   |     |      =                =           （可视区域高度）       高
+	|      |      |                            |      |     |    height        clientHeigh       +被隐藏区域高度       度
+	|      |      |                            |      |     |      +                +
+	|      |      |                            |      |     |  U.D padding     上下boder厚度
+	|      |      ------------------------------      |     |
+	|      |                                          |     |
+	|      |                                          |     |
+	|      --------------------------------------------     | -----------------------------                -------------
+	|                                                       |                                                         被
+	|                                                       |                                                         隐
+        ---------------------------------------------------------                                                         藏
+               |                                          |                                                               区
+               |     clientWidth = width + L.R padding    |                                                               域
+               | offsetWidth = clientWidth + 左右boder厚度 |                                                               高             
+               |                                                                                                          度
+               |                                                                                -----------------------------
+               |                                           
+	       | scrollWidth：获取指定标签内容层的真实宽度, 可视区域宽度 + 被隐藏区域宽度 |
+               |          可视区域宽度                     |     被隐藏区域宽度          |
+clientXXXX 其实就是 border 内所有可视区域,如果有滑动条,并不算入滑动条!!!, (不要被padding 和 滑动条疑惑 的冲突所迷惑)
+注意到如果出现滑动条, width height padding 并没有改变,所以border也没有改变, 滑动条存在与可视区域的右方,下方,
+因为要扣除滑动条宽度!!,使得可视区域有所缩小,所以 clientXXXX 也变小!!!
+
+继续上图解释 clientLeft  offsetTop clientLeft clientTop
+
+              --------------父border----------------------      ----------
+              |                                          |        子div offsetTop = 子 div 上边框外边缘
+              |      父div                               |	     到 最近的已定位父级（offsetParent)
+              |                                          |           的上边框 内边缘的 距离
+              |        --------子border---------         |	---- -----
+              |        |                       |         |         |
+              |        |                       |         |         v
+              |        |                       |         |     clientTop = boder.top(上边框的宽度)
+              |        |                       |         |
+              |        |                       |         |
+              |        |                       |         |
+              |        -------------------------         |
+              |                                          |
+              |                                          |
+              |                                          |
+              --------------------------------------------
+
+                       |
+                       |
+                  (clientLeft = boder.left(左边框的宽度) )                                     
+              |        |
+              |        |
+            子div offsetLeft = 当前元素 左边框外边缘 到 最近的已定位父级（offsetParent）左边框 内边缘的 距离
+
+	特别注意: 实际上 子div offsetTop offsetLeft 是固定值!!! 实际上,是跟真实内容的位置有关
+	如果完全跟 父div border有关,那么  的 offsetTop offsetLeft 是一个变量, 因为滑动时, 父子div的border距离在变化 
+	再次强调 子div offsetTop offsetLeft 是固定值!! 上图是特例情况 !
+	如下图解析:
+
+
+             ------------------------------------------------------------------------------ --------
+             |                                                                            |
+             |     父div的真实内容 paddding + width + height                               |	   子div offsetTop =
+             |                                                                            |    已定位父级（offsetParent）的父div 
+             |                       ------------父div border------------------           |	   真实内容层顶部下边缘
+             |     这时被隐藏         |          父div的真实内容               |           |              到
+             |                       |            显示的区域                   |           |	子 div 上边框外边缘 的距离       
+             |                       |                                        |           |
+             |     未显示的区域       |         --------------------------     |           | ------->子div在父div真实内容具体Y位置
+             |                       |         |    子div 内容          |     |           |
+             |                       |         |                        |     |           |
+             |                       |         |                        |     |           |
+             |                       |         |                        |     |           |
+             |                       |         |                        |     |           |
+             |                       |         |                        |     |           |
+             |                       |         ------子div border--------     |           |
+             |                       |                                        |           |
+             |                       |                                        |           |
+             |                       |                                        |           |
+             |                       ------------------------------------------           |
+             |                                                                            |
+             |                                                                            |
+             |                                                                            |
+             ------------------------------------------------------------------------------
+             |                                 |
+	     |                                 |
+                    子div  offsetLeft =  
+             最近的已定位父级（offsetParent）真实内容层左部分 内边缘的 
+			   到
+		      子div 左边框外边缘
+			 的距离
+
+
+
+
+最后 还有 scrollTop   scrollleft
+
+
+              ------------------------------------------------  ------
+              |                                              |		内容层顶部 到 
+              |                                              |         可视区域顶部的距离。
+              |                                              |  
+              |                                              |
+              |                     -----------border---------  ------
+              |                     |                        |
+              |                     |                        |
+              |      真实内容       |                        |
+              |                     |                        |
+              |                     |                        |
+              |                     |                        |
+              |                     |                        |
+              |                     |                        |
+              |                     --------------------------
+              |                                              |
+              |                                              |
+              |                                              |
+              |                                              |
+              ------------------------------------------------
+              |                     |
+              |                     |
+	 scrollLeft:内容层左端 到 可视区域左端的距离.
+注意,内容层包括 psdding + 真实width,真实height
+可视区是 border内, 扣除滑动条宽度!!!!! 即clientWidth*clientHeight
+
+
+
+然后 滑动问题: 
+	scrollTo (x,y)	滑到指定位置, 没有滑动效果,主要是闪到
+	scrollTo ({top: 500,  behavior: "smooth" }) 滑到 y 指定位置,有滑动动画
+	scrollTo ({left: 100,  behavior: "smooth" }) 滑到 x 指定位置,有滑动动画
+
+https://blog.csdn.net/rickykay/article/details/51094745 直滚动条定位到子 Div 的位置 jquery,
+<html>
+    /* 头部代码 */
+    <body>
+        <div id="divBox">
+            <div id="test1"></div>
+            <div id="test2"></div>
+            <div id="test3"></div>
+            <div id="test4"></div>
+            <div id="test5"></div>
+            <div id="test6"></div>
+            <div id="test7"></div>
+        </div>
+    </body>
+</html>
+
+$('#divBox').scrollTop($('#test6').offset().top);
+
+根据上述知识,scrollTo 到指定位置不是什么难事: 
+		let vblk
+                let blk
+		vblk = document.getElementById('viewblock')	//获得 父div
+		//blk = document.getElementById('BrowseBlock-10')   
+		blk = document.getElementById('EditBlock')     //获得 子div
+		//console.log( blk.offsetParent)	//查看 子div 的 offsetParent 是不是 viewblock 父div
+		//blk.offsetParent = vblk		//一般直接在父div 下的子div,没有特变position设定 offsetParent默认是这个最近父div
+		let leth = blk.offsetTop
+		console.log (leth, vblk.scrollTop, e.offsetX, e.offsetY)
+		vblk.scrollTo ({top: leth, behavior: "smooth"})
+			//这时 子div的 offsetTop 是 A, 父div的scrollTop 为 A 的地方存在的就是子div
+			//所以父div scrollTo 到 A 就是 滑到了 子div
+
+点击 一个 div , 点击位置处于这个div 上,
+	相对于这个div左上角的 width:0 height:0 为原点 
+	的坐标为 event.offsetX  event.offsetY 可以直接读出,
+	并不需要额外 计算获取
+	注意坐标原点, 是div width:0 height:0 处,
+	不是padding上,不是padding左上角,
+	不是bodder上,不是border左上角!!!!
+
+发现 scrollTo 一样触发 onscroll!!, 这就比较讨厌了
+	如何兼容  上下拉都不过底,是重点问题!!
+	如果通过scrollTop来判断,当 browseblk 高度小于屏幕又如何处理,,,, 
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190608
+popper 的 protptype 的函数 问题
+destory 无法运行, 这个问题 需要重视并解决
+还有 react 的 jsx 传递event 到事件函数的方法!!
+jsx 传递 event参数:
+	<antd.Button type="primary" onClick={thu.bind(this)} >Primary</antd.Button>
+	注意这个 thu 不是 react 模块本身的函数 ,而是全局的函数
+	这样翻译成 html就变成:
+	<antd.Button type="primary" onClick="thu(event)" >Primary</antd.Button>
+至于popper 的 protptype 的函数 问题:
+	一开始以为缺少 popper.min.js.map, 结果补上了还是错
+	不知道为什么就是找不到 destory, 很肯定 这个 prototype 函数是 popper.js 里就有的
+	没有办法,用粗暴的手段: 不管 destory 方法了!!
+	对应的 popper 对象, delete ptu['bblktt'+ num]  直接删掉 字典对象
+	然后 document.getElementById('bblk-t-'+num).remove() 直接删掉对应的 html <div>块
+然后也做了验证 prototype 浏览器的确能用, 真的不知道 popper 的destory 为什么弄不了
+
+	function Person(name)
+	{
+		this.name = name;
+	}
+	
+	Person.prototype.say = function()
+	{
+		alert(this.name);
+	}	
+
+	var tom = new Person("tom");
+	tom.say();
+	var tmp = Person.prototype;
+	tmp.boss="dived";
+	alert(tom.boss);
+	tom.say();
+	tom.hasCar = "Andi";
+	tom.sayCar = function()
+	{
+		alert(this.name+this.hasCar);
+	};
+	tom.sayCar(); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190610
+重整 react 架构,及继续深入 react 学习:
+首先是 jxs render(算是虚拟DOM技术) 和 实体 DOM 混用的 较量!!!
+	不要同时 使用 实体DOM方法 和 虚拟DOM方法 混合修改 实体DOM同一属性
+	例子:
+	class Topsearch extends React.Component {
+	.....
+		closeS = () =>{
+			this.setState({ visible: false, });
+		};
+
+		const visibleStyle = {
+		width:'100%', 
+		display: this.state.visible ? 'block' : 'none',
+		};
+
+		const { dataSource } = this.state;
+		return (
+			<div id='topsch' style={visibleStyle}>
+				.....
+				<antd.Button  size="large" style={{width: 40, }} type="primary" icon="close" onClick={this.closeS}/>
+			.....
+			</div>
+	}
+	以上 是一个 react 虚拟DOM例子, onclick,通过 setstate, 影响 css 改变 display 的值!!!  
+	但当 某个js 实体DOM修改 这个对象的函数时, 
+		document.getElementById('topsch').style.display = 'none'
+	再次 使用 react 虚拟DOM 来修改,就不行了.
+	因为, 实体DOM 的修改污染了这个react渲染的模块,之后只能一直使用实体DOM 修改,而无法使用 虚拟DOM修改!!!
+虚拟DOM 实现 事件函数即参数的传递!!
+	function thu (e) {
+	......	
+	}
+
+	jxs:
+    	<antd.Button type="primary" onClick={thu.bind(this)} >Primary</antd.Button>
+	
+	事实上,通过 bind(this) 后 就可以传递 event 参数 
 
 
 

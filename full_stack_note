@@ -3616,8 +3616,8 @@ FormData补充:
 		如果要显示的自定义一个自增列，必须将给列设置为主键 primary_key=True。 models.AutoField(primary_key=True)
 	models.CharField　　字符串字段 
 		必须 max_length 参数 CharField(max_length=32)
-	models.BooleanField　　布尔类型=tinyint(1)
-　　		不能为空，Blank=True 
+	models.BooleanField　　布尔类型=tinyint(1)   models.BooleanField( default=True),
+　　		不能为空，Blank=True ??, default=True
 	models.ComaSeparatedIntegerField　　用逗号分割的数字=varchar
 		继承CharField，所以必须 max_lenght参数	例如"12,2,3,4,5"
 	models.DateField　　日期类型 date
@@ -5732,7 +5732,8 @@ mysql: 数据执行命令
 	#批量drop 表
 		select concat('drop table ',table_name,';') from information_schema.tables where table_name like 'web_cntex%';
 		结果集合粘出来
-
+	https://blog.csdn.net/sssssuuuuu666/article/details/79427479	//select 语句 
+	并列条件 使用 and or!!
 
 
 
@@ -10822,6 +10823,10 @@ mysql 常用操作指令
 	查看表大小:
 	use information_schema;
 	select concat(round(sum(DATA_LENGTH/1024/1024),2),'MB') as data  from TABLES where table_schema='db_selfweb_pyth3' and table_name='web_cntex9014' or table_name='web_linex9014';
+	精确查询指令:
+    	select id,cntenum,type,content from web_cntex9012 where cntenum in (263);
+	select * from web_linex9012 where linecnte_id in (9);
+
 
 数据库性能优化 参考: 
 	http://www.111cn.net/database/mysql/43315.htm
@@ -10847,12 +10852,12 @@ python file open 读写模式的类型有：
 	wb+    以二进制读写模式打开 (参见 w+ )
 	ab+    以二进制读写模式打开 (参见 a+ )
 
-python 	seek
+python 	seek(offset, whence )
     offset -- 开始的偏移量，也就是代表需要移动偏移的字节数
     whence：可选，默认值为 0,表示要从哪个位置开始偏移；
 	0代表从文件开头开始算起，
 	1代表从当前位置开始算起，
-	2代表从文件末尾算起。
+	2代表从文件末尾算起。 注意 这时 offset 必须是 负数!!!!
 
 python readlines 的参数问题:
 	hint参数 是字节的总大小，会读取到该文件内对应字节数的当前行。
@@ -11057,7 +11062,7 @@ except:
 	这个很好处理了 先获得光标位置的 element 元素!!
 	然后 获得 对应 的 offsetTop, offsetLeft, offsetParent, 然后转到 scrollTop, scrollLeft 坐标 AA BB
 	最后 body.scrollTop = AA body.scrollLeft = BB 成功跳转!
-	注意 offsetPrarent 与 offsetTop offsetLeft 的关系: https://blog.csdn.net/Inuyasha1121/article/details/49149725
+	注意 offsetParent 与 offsetTop offsetLeft 的关系: https://blog.csdn.net/Inuyasha1121/article/details/49149725
 	之所以,本身的视野无法跳转的问题,在于整体的maintag 设置了 contenteditable, 然后作为 main 的子元素就不能好好被
 	focus 了!!!
 最后就是 background 的问题, 
@@ -13667,7 +13672,7 @@ position 和 zindex
 	然后是 发现 行内元素, span, a 什么的, 
 		overflow: hidden 无效 	超出显示
 		verticalAlign: 'bottom',  无效  文字向下对齐
-		textOverflow: 'ellipsis',  无效  超出的文字 以... 显示
+		textOverflow: 'ellipsis',  无效  超出的文字 以... 显示  文本溢出,省略文本显示
 		这些无效的操作,都需要使用一个块元素封装并设置在块元素上,才生效!! 例如 <div><span></span></div>
 		
 ant-design 的一些坑, 
@@ -13730,6 +13735,7 @@ autocomplete 生成的 下拉栏在 body底部的位置, 独立出 autocomplete,
 		    );
 		  }
 		这里定义的 onClick={this.schrltdisplay} onClick={this.changewin} 都没有 bind(this),是因为使用箭头函数有同样效果!!
+		箭头函数永远指定了调用者,那就是实例化一个新对象时,的这个新对象,所以 不用bind(this)
 		特别注意 const Style1 设置 变量 (不是state变量),使用了 ? : 运算, 就是说,可以使用运算
 
 	接着就是 react 上 使用 js 的 const 变量 与 继承 的骚规则!!,特别是用在递归函数上...
@@ -13871,7 +13877,7 @@ javascript 语法:
 
 
 20190521
-react 的 优化:
+react 的 调用函数优化:
 	首先要认识到, 每一次 setstate, class 的render 都会执行一次, 最后生成实体内容填充/替代rom 相关内容!!!
 	注意,并不是生成的实体dom完全替换现有实体DOM全部,而是只替换当中的被涉及的部分,
 	但是 每次都得执行一次 render 的内容,所以 对react 的优化主要还是减少render 的运算!!
@@ -14492,7 +14498,7 @@ deepfake 训练: (ai_learn) ~/AI/deepfate/faceswap$ python faceswap.py train -A 
 	|      |           内边距 padding (空白透明)       |     |                       
 	|      |      ----------宽 width -----------      |     |                                     scrollHeight：      可
 	|      |      |                            |      |     |                                   获取指定标签内容层     视
-	|      |      |                            高     |     |  clientHeigh     offsetHeith         的真实高度          化
+	|      |      |                            高     |     |  clientHeigh     offsetHeigh         的真实高度          化
 	|      |      |         element          height   |     |      =                =           （可视区域高度）       高
 	|      |      |                            |      |     |    height        clientHeigh       +被隐藏区域高度       度
 	|      |      |                            |      |     |      +                +
@@ -14594,7 +14600,7 @@ clientXXXX 其实就是 border 内所有可视区域,如果有滑动条,并不�
               |                     -----------border---------  ------
               |                     |                        |
               |                     |                        |
-              |      真实内容       |                        |
+              |      真实内容       |           可视区        |
               |                     |                        |
               |                     |                        |
               |                     |                        |
@@ -14766,6 +14772,454 @@ jsx 传递 event参数:
     	<antd.Button type="primary" onClick={thu.bind(this)} >Primary</antd.Button>
 	
 	事实上,通过 bind(this) 后 就可以传递 event 参数 
+重新,系统学习 react 通讯!
+https://blog.csdn.net/weixin_34191845/article/details/89596546
+https://blog.csdn.net/waijiaomi/article/details/81784808
+https://blog.csdn.net/lizhipeng123321/article/details/80018003
+
+首先是 父子兄弟关系的 参数 传统传递操作!!
+	最典型例子!!!
+                                          host
+                                    /       |        \
+                                   Rd       TS       FT
+                               /    |       |          \
+                            sch    ft       bt3        bt4
+                             /      |
+                           bt1     bt2
+	以上是父子关系图 !!  
+	我们要实现的逻辑是, bt1 显示 TS , bt3 关闭显示 TS,  bt2 显示 FT, bt4 关闭显示 FT
+	直接涉及多层 父子, 以及多层兄弟间的交互
+	实现的思路就是, host 总父节点,弄出一堆全局参数,让子节点访问并修改.从而让 跨层级跨关系的子节点之间交互或者控制
+	class host extends React.Component {
+	  state = {
+	    pv: { tvis:false, fvis:false, }   //一般state可以使用字典,不可使用普通数组例如:不能使用 { aa,vv,ff, }, pv[1] 之类
+	  };
+	
+	  tnon (partvis) {		//host的 state只能host修改,所以需要修改函数
+	    this.setState({
+	      partvis,
+	    })
+	  }
+	
+	  render() {
+	    return (
+	      <div>		 // 把参数 和 参数修改函数 都 传递给 3个 子节点 !!
+		<div>		 //.bind(this),明确了 调用者是 host 自己, 就是说即使这个函数在其他地方执行,调用者还是host自己
+	          <Rd pv={this.state.pv}  tnon={ this.tnon.bind(this) }/>	
+	        </div>
+		<div>
+	          <TS pv={this.state.pv}  tnon={ this.tnon.bind(this) }/>
+	        </div>
+	        <div>
+	          <FT pv={this.state.pv}  tnon={ this.tnon.bind(this) }/>
+	        </div>
+	      </div>
+	    );
+	  }
+	}
+
+	class Rd extends React.Component {
+	  render() {
+	    return (
+	      <div>	//父节点传来的 参数,继续传到 2个 下一级子节点
+	        {this.props.pv.tvis ? <div>123/div> : <div><sch  pv={this.props.pv} tnon={this.props.tnon } /></div>  }
+	        <div><ft pv={this.props.pv} tnon={this.props.tnon } /></div>
+	      </div>
+	    );
+	  }
+	}
+		注意到:这里 有一个很特别的做法 this.props.pv.tvis ? : 
+		当 host.pv.tvis 是true时候, 并不会生成显示 <sch>,也就不会继续把 host.pv.tvis 传递到 sch 上
+		当 host.pv.tvis 是false时候, 生成 <sch> 并cha传递参数到 sch 上:
+		现在是,初始时 host.pv.tvis:false, 所以有 <sch>, 而 <sch> 的 bt1 会修改 host.pv.tvis:true,
+		然后 <sch> 就不显示, 当再次host.pv.tvis:false 时, <sch> 重新出现, 
+		但是注意,并没有新建一个新的 <sch>, 而是旧的 <sch> 重新显示 !!!!
+		这与我们传统认识的 ?: 运算有所不一样, 因为传统做法应该是 新建一个 <sch>
+
+	class sch extends React.Component {
+	  ch = ()=>{	
+	    let vd = this.props.pv
+	    vd.tvis = true
+	    this.props.tnon(vd) 	
+	  };
+	  render() {
+	    return (
+	      <div>
+                <bt1 onClick={this.ch} />	// 点击时候,直接就调用 host.tnon来修改 host.state.pv了
+	      </div>			// 这里 特别注意,虽然 tnon 传递了多次,但是它被 传递之前就被 .bind 锁定的调用者
+	    );				// 所以 不管最后 在哪执行了 tnon, 实际上都是 之前新建的,同一个host对象作为调用者调用 tnon
+	  }
+	}
+
+	class ft extends React.Component {
+	  fv () {
+	    let vd = this.props.pv
+	    vd.fvis = true
+	    this.props.tnon(vd)
+	  } 
+	  render() {
+	    return (
+		  <div>
+	            <bt2 onClick={this.fv.bind(this)} />}    // 点击时候,直接就调用 host.tnon来修改 host.state.pv了
+		  </div>
+	    );
+	  }
+	}
+
+	class TS extends React.Component {
+
+	  closeS = () =>{
+		let vd = this.props.pv
+		vd.tvis = false
+		this.props.turnon(vd)
+	  };
+	
+	  render() {
+	    const visibleStyle = {
+		width:'100%', 
+		display: this.props.pv.tvis ? 'block' : 'none',	 //host.state.pv 直接影响着 TS 显示 ,pv改变时, host节点会 render 一次
+	    };							 //轮询 并改变,和这个量有关的 子节点状态
+	    return (
+	      <div style={visibleStyle}>
+	        <bt3 onClick={this.closeS}/>	//也可以 修改 host.state.pv 改变 TS 的 显示
+	      </div>
+	    );
+	  }
+	}
+
+	class FT extends React.Component {
+	
+	  ct = () => {
+	    let vd = this.props.pv
+	    vd.fvis = false
+	    this.props.tnon(vd)
+	  };
+	
+	  render() {    
+	    const hidstyle ={
+	    	display: this.props.pv.fvis?'block':'none',
+	    }
+	    return (
+		<div style={hidstyle}>
+	        <bt4 onClick={this.ct}/>
+	        </div>
+	    );
+	  }
+	}
+
+	以上这个例子非常典型和清晰 理解 参数 是 如何交互传递的, 多子层级的传递与单父子级一样直接传,并没有什么特殊的操作!!!
+	这里展示了 跨层跨父子关系的交互的核心是,统一到一个共同父级,然后在这个父级建立全局的状态量,
+	例如这里的 !!
+	
+还有 redux 实现更加简单的跨层通讯, 略
+
+关于 ant-design  drawer 的 补全空白办法!!!!
+	垃圾 ant-design  drawer 余下的空白无法自动补全背景色
+        <antd.Drawer
+          placement="right"
+          closable={false}
+          visible={this.state.visible}
+	  mask={false}
+	  width={500}
+	  zIndex={1000}
+	  Style={{background: '#8fc'}}	//不知道style对应的drawer那个部分
+	  bodyStyle={{
+	    background: '#8fc',
+	    width: '500px',
+	    display: 'auto',
+	  }}
+        > 
+	  <div style={{  height:'860px' }}> //这个是主内容 主内容是按 px排布的, 不管resize, height是固定的!!
+	  ............			//比如内容排布后 只有 860px ,不管resize都是 820px
+					//但是 resize 后 drawer height 是变化的, 除了主内容 820px 的 background:'#8fc'外,
+					//其他地方还是 background:'#fff'
+					//我们要解决其他地方还是 background:'#8fc' 的问题
+	  </div>
+          <div style={{width:'100px' , height:'calc(100vh - 910px)' }} > //所以我们添加一个补白内容,
+          </div>		//不管resize, 其他地方的高度 是 100vh -910px, 
+        </antd.Drawer>		//如果 100vh - 860px 可能得到一个空白区还长补白块,出现滑动条, 所以,需要微调 !! 
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190611
+设计收藏系统前, 先设计 10个用户, 巩固文本处理!!!
+文本处理, shell 和 python !!! ()  其实只使用 python 做了些简单的 分行 分 header 和 edit 而已
+具体见设计文档!! 
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190627
+关于 react 继续学习:
+	onclick函数可以写在 render里 也可以写 render外:
+	render外:
+		class Favtree extends React.Component {
+		  state = {
+		    mainfavtreevisual: true,
+		  };
+		  editfav = (data) => {
+		    this.setState({
+		      mainfavtreevisual: false
+		    })
+		    console.log (data) //显示传递的 mfvtsl
+		  };
+
+
+		  funa (e) {
+		    console.log (e.target) //显示传递的 mfvtsl
+		  };
+                  funcA = this.funa.bind(this)
+
+		  render() {
+		    const mfvtsl = { display: (this.state.mainfavtreevisual ? 'block': 'none'), position:'fixed', top:'15%', left:'15%', width:'70%', height:'70%', overflow:"hidden" }
+		  }
+		    return (
+			<div style={hidstyle}>
+		          <antd.Button type="primary" icon="folder" onClick={this.editfav.bind(this, mfvtsl)} style={mfbfsl} >修改收藏</antd.Button>
+		          <antd.Button type="primary" icon="folder" onClick={this.funcA} style={mfbfsl} >修改</antd.Button>
+		        </div>
+		    );
+		  }
+		}
+			注意: mfvtsl 是变化的量,不能放到,render外. 因为render里的代码,在 setstate 后会重新简加载一次, display的内容可能有变
+			如果 mfvtsl 放到 render 外, mfvtsl 就不会重新渲染 !!!
+			必须 bind(this, mfvtsl) 才能实现, 点击并传递第三方参数 mfvtsl!!
+                        另外 funcA  这种定义方式,  对于render 处理来说,是最好的,降低render时间!!
+		这样是错误的:
+		class Favtree extends React.Component {
+		  state = {
+		    mainfavtreevisual: true,
+		  };
+		  mfvtsl = { display: (this.state.mainfavtreevisual ? 'block': 'none'), position:'fixed', top:'15%', left:'15%', width:'70%', height:'70%', overflow:"hidden" }
+		  editfav = (data) => {
+		    this.setState({
+		      mainfavtreevisual: false
+		    })
+		    console.log (data)
+		  };
+		  render() {
+		  }
+		    return (
+			<div style={hidstyle}>
+		          <antd.Button type="primary" icon="folder" onClick={this.editfav.bind(this, this.mfvtsl)} style={mfbfsl} >修改收藏</antd.Button>
+		        </div>
+		    );
+		  }
+		}
+			从react规则来看,没有问题, 但是 mfvtsl 在 render外, 所以点击按钮,mfvtsl是不会变化的!!
+	render里:
+		class Favtree extends React.Component {
+		  state = {
+		    mainfavtreevisual: true,
+		  };
+
+		  render() {
+		    const mfvtsl = { display: (this.state.mainfavtreevisual ? 'block': 'none'), position:'fixed', top:'15%', left:'15%', width:'70%', height:'70%', overflow:"hidden" }
+		  }
+		  const editfav = (data) => {
+		      this.setState({
+		        mainfavtreevisual: false
+		      })
+		      console.log (data) //显示传递的 mfvtsl ,
+		    };
+		    return (
+			<div style={hidstyle}>
+		          <antd.Button type="primary" icon="folder" onClick={editfav.bind(this, mfvtsl)} style={mfbfsl} >修改收藏</antd.Button>
+		        </div>
+		    );
+		  }
+		}
+			render里的onclick函数,也可是实现功能,但是 渲染时候会重性渲染这个函数,降低效率
+			注意 console.log (data)是可以实现的,因为 setstate 是异步操作,渲染还没有来得及做,就先cosole.log了
+所以结论是,没有什么必要的,静态的 参数 和 函数 都设置在 render外 !!!
+
+此外为了提高渲染效率,更有高效处理jsx 的方法
+如果是一段静态内容,没有过多变量的jsx 可以在 render 外,设置一个 jsx对象:例如
+		class Favtree extends React.Component {
+		  ta = <div> hellower </div>
+		  tb = (<div>
+		          <div>okljiu
+		          </div>
+		        </div>)
+		  render() {
+		    return (
+			<div style={hidstyle}>
+			  {this.ta}
+			  {this.tb}
+		        </div>
+		    );
+		  }
+		}	
+			jsx本来就可以作为一个 js 的变量被定义!!
+如果不是一段静态内容,可以这样,
+		class Favtree extends React.Component {
+		  state = {
+		    mainfavtreevisual: true,
+		  };
+		  render() {
+		  }
+		  const editfav = (data) => {
+		      this.setState({
+		        mainfavtreevisual: false
+		      })
+		      console.log (data) //显示传递的 mfvtsl
+		    };
+		    return (
+			<div style={hidstyle}>
+			  { this.state.mainfavtreevisual ? (<antd.Button type="primary" icon="folder" onClick={editfav.bind(this, mfvtsl)} style={mfbfsl} >修改收藏</antd.Button>) : ' '}
+		        </div>
+		    );
+		  }
+		}
+	这样也可以选择性加载 一段 jsx, 因为如果不需要显示就不加载了,不然还得浪费资源加载又不显示!!!
+
+
+
+
+
+
+
+
+
+
+
+
+20190702
+关于ajax!! 
+使用react,避免臃肿不首先使用 jquery,所以选择了 fetch, 
+fetch 是 标准的 js 套件,所以浏览器一般自带,不需要另外添加
+使用:
+      fetch('/react_getdata/',{
+          method: 'post',
+          body: j,
+      }).then(response => console.log(response)).then(
+      data => {.....})
+      AAA();
+	fetch 的第一个参数是 url, 第二个参数是字典数据
+	method 请求方式, GET POST
+	body: 请求的内容,传递递交给服务器的内容!!, 一般只有POST才可以填写body
+	然后, .then就是定义的就是 callback 函数了,
+	注意整个过程是一个异步的过程!! .then不是执行,而是定义了注册了要执行的函数!!
+	就是说,fetch后,并还在等待信息执行 callback 函数 的过程中, 就接着执行 AAA()函数了   
+获得文件文本内容的办法:
+	xxx(data){ console.log(data) }
+	fetch().then(function(res){ 
+	    res.text().then( data => XXX(data) ) 
+	})
+关于 react 里使用 fetch 也特别讲究: 
+class Favtree extends React.Component {
+  ....
+  lacatetree(){,,,,
+  }
+
+  fixtree (d) {....
+    let lc = this.lacatetree()
+  }
+
+  svcledtreeA (e) {....
+    fetch('/react_fixtree/',{
+      method: 'post',
+      body: fd
+    }).then(function(response) { return response.text()    //注意,第一个then得到从.text()的数据,传递第二then
+    }).then(data => { this.fixtree( data )   // 注意,只能 xxx =>{} 可以调用 this.AAAA, 不能 function(xxx){} 调用 this.AAAA
+                                             // 另外 这个 then 得到的 参数是上一.text()的得到的数据
+                                             // 此外 then 得到的参数数据 命名不一定规定为 data,response 可以自定义!!
+    }).catch(function(err) { console.log('Fetch Error : %S', err); })
+  }
+  svcledtree = this.svcledtreeA.bind(this)
+
+另外, 如果是render里调用 class内 定义的函数时, 需要 bind(this)
+      如果是 class内 定义的函数, 调用 class内 定义的函数, 就不必要 使用 bind(this)了,当然用了也可以,不过浪费内存
+
+
+js  / 符号原来不取整数 https://www.cnblogs.com/ooo0/p/6290201.html
+js  从头插入数组元素: list.unshift()  https://www.cnblogs.com/fangsmile/p/7686632.html
+pyhon 数组操作:
+	a.pop(3)  即把 a[3] 取出, 数组后面内容补上
+	a,insert(4,99) 即 a[4] 的位置插入 99, 本来 a[4]及后面的内容向后移动
+	a.append(3)  即把 a[3] 取出, 数组后面内容补上  
+        特别注意, 这些操作都是 传递指针, 有可能出现 数据被无意修改的冲突,
+        对于 重要数据 先 a = copy.deepcopy(xx) 再 append(a)
+
+
+
+
+
+
+
+
+
+
+
+
+20190809
+接着 探究  redis mongDB  搜索, 排行, 和推荐 的 操作
+redis: https://www.jianshu.com/p/56999f2b8e3b
+首先, redis之前安装了, 现在是些简单操作和概念汇总
+	redis 和 mysql 有些许区别, redis 结构简单的多!! 没有分用户, 但是可以设置登录密码!!
+	redis 是 存在内存上的 数据库
+        redis 启动时,默认启用一个库并映射到 6379 的端口, redis每个端口对应一个独立的库.
+	比如 端口6379 指向默认的库, 端口6599是我们新建的一个库, 在6379 set 的内容,不存在与6599,在6599上不可见,相反亦然
+	就是说, 建立一个redis库,相当于分配一部分内存,和一个映射的端口
+        关闭这个端口, 相当于关掉这个 redis库, 库里的内容全部丢失,因为这个库的内存全部释放
+	命令
+	redis-server --port 6599  // 分配启动一个redis库, 并映射到 6599 端口
+	redis-cli -p 6599   //登录到这个redis库, 然后可以开始读写数据到库上
+        get aa              //获得 key 为 aa 的 字符串数据
+        set rt rtyu         //新建一条 key 为 rt , value 为 rtyu 的字符串数据
+        del rt              //删除 key 维 rt 的数据
+        hmset yui 23 'love' 99 'destory'    // 新建一条哈希表, 有两个 哈希键值对
+        hmset yui 4i7 'hate'    // yui哈希表里, 继续添加一个键值对
+        hget yui 4i7      // 获得 yui 哈希表里 key 为 4i7 的数据(hate)
+        lpush k  tom           // 给列表 k 添加 成员tom
+        lpush k  kate lily     // 给列表 k 添加 先后添加  kate 和 lily
+        lrange k 0 2     //获得列表 k 数据, 不过注意获得顺序是 k[0]:lily  k[1] kate  k[2] tom
+        sadd u open      //给集合 u 添加一个成员数据 open
+	sadd u open close new fix cut   //给集合 u 添加多个成员数据,由于 open 已存在,所以就不会重复添加
+	smembers u      //获得 集合 u 的 数据, 不分先后,不分顺序
+        zadd ui 5 open  //给 有序集合 ui 添加一个成员 open, 分配分数是 5
+        zadd ui 12 open 12 close 21 new 12 fix 1 cut  // 给 有序集合 ui 添加多个成员并分配分数, 并修改 open 的分数是 12
+        zrangebyscore ui 0 100    //根据分数 0到100, 排序获得 集合数据
+        redis 数据类型:
+        	字符串,   方法 get set 
+		哈希表(每个队列可以存2^32个键值对数据),      方法 hmset  hget
+		列表(每个列表有 2^32 - 1 个数据)       方法 lpush  lrange
+                集合(英文称为set,每个列表有 2^32 - 1 个数据, 和还是列表有明显区别,例如数据的唯一性,例如无序的特性)
+                有序集合(zset, 根据分数从小到大排序集合成员,成员可同分,同分排序不分先后,成员依然唯一)   方法 zadd  zrangebyscore
+	python使用redis:
+	(首先,不知道什么时候, 反正python 的 redis模块安装了)
+	import redis
+	c = redis.Redis()    //默认接入默认的 6379 端口的 数据库 !!
+	c.set('kate','age16')
+	c.get('kate')
+mongDB 不是存储在内存,而是在硬盘, json 格式	
+
+
+
+
+
+
+
+
 
 
 

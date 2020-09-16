@@ -139,7 +139,7 @@ sudo sam-ba -p serial:ttyACM1:115200 -b sama5d4-xplained -a nandflash -c erase -
 	drivers/i2c/Makefile:有 ccflags-$(CONFIG_I2C_DEBUG_CORE) := -DDEBUG
 	drivers/i2c/busses/Makefile:有 ccflags-$(CONFIG_I2C_DEBUG_CORE) := -DDEBUG
 	表示支持 debug
-	(注意:ccflags-y  := -DDEBUG	//相当于给mfd目录下的所有文件都加上了 (#define DEBUG))
+	(注意:ccflags-y  := -DDEBUG	//相当于给mfd目录下的所有文件都加上了 (#define DEBUG)), 同时也是打开 dev_printk 的开关
 2,打开.config观察:
 	# CONFIG_I2C_DEBUG_BUS is not set
 	# CONFIG_I2C_DEBUG_BUS is not set
@@ -4335,7 +4335,7 @@ Permission denied, please try again.
 	PermitRootLogin no 改为 PermitRootLogin yes 
 此外, -X 表示窗口界面,不是命令行终端,但没有成功使用窗口登陆!!
 
-拷贝文件操作!!
+ssh 拷贝文件操作!!
 kingders@kingders-ThinkPad-T420:~$ scp ./安川电机/report infortech-ubuntu-1404@200.200.200.102:./桌面
 //把 本机的/home/kingders/安川电机/report 文件   拷贝到   ip为200.200.200.102的pc机的/home/infortech-ubuntu-1404/桌面 文件夹 去
 kingders@kingders-ThinkPad-T420:~$ scp infortech-ubuntu-1404@200.200.200.102:./桌面/temp_20170117 ./Desktop
@@ -18536,6 +18536,7 @@ sudo ddrescue -D --force ubuntu-mate-18.04.2-beta1-desktop-armhf+raspi-ext4.img 
 通用烧写命令:
 sudo dd bs=4M if=2018-10-09-raspbian-stretch.img of=/dev/sdb
 
+如果是原始镜像 烧写后 必须 根据文件 配置屏幕.不然无法显示,就无法显示!!!
 
 关于安装镜像和 hdmi lcd 驱动的问题!!!!!
 ubuntu18(x64) 可成功 安装hdmilcd驱动, (只是配置而已,不是真正意义上的安装)
@@ -18594,7 +18595,12 @@ kali设置 蓝牙键盘!!
 		由于 pair 成功的设备 又加入了 trust 名单
 		所以外部设备在非配对广播期间 要 连接到 kali ,kali 允许
 		例如, 板子上电后,不一会 蓝牙键盘就自动可用了!!!!!
-	
+
+发现 sd 分区 mmc0 mmc1  mmc0 是启动文件区, 最后会挂载到 /boot 文件夹, 所以 mmc1/boot 空的,因为是被挂载的目录
+但是用到 ubuntu18x64 比较奇葩, mmc0 有文件, mmc1/boot 也有自己的文件!!! 先不管!!!
+
+
+
 备份已有的 sd 卡镜像!!! (备份ubuntu18mate为例子)
 不是 传统的 dd 操作,而是巧妙地把有效数据拉出来 备份!!
 https://blog.csdn.net/zhufu86/article/details/78821056  通过 pc 来备份 sd卡
@@ -18767,30 +18773,6 @@ LABEL=rootfs  /               ext4    defaults,noatime  0       1
 ubuntn 使用自带的运程桌面软件即可 注意是 rdp 协议!!
 
 
-
-
-
-git断点续存(没有用貌似):
-git clone获取比较大的源码时, 不能断点续传, 比较恼火.
-可以使用 git fetch 解决:
-
-     mkdir common
-
-     cd common
-
-     git init
-
-     git fetch http://android.git.kernel.org/common.git
-
-     传完后,
-
-     git branch -a
-
-     git checkout remotes/....
-
-如果中间断掉了, 可以直接进入common目录, 继续git fetch就可以续传了.
-git clone --depth 1 http......		//表示取得最新分支的代码 !!!!
-
 直接修改 kernel 内核驱动 似乎相当困难,
 需要 知道 树莓派提供的 gpio接口 并认识 驱动使用的方法,寻找修改驱动的机会
 树莓派不提供 硬件资料,所以看起来无法二次开发驱动
@@ -18818,6 +18800,183 @@ https://www.raspberrypi.org/documentation/linux/kernel/building.md
 https://github.com/pluhuxc/pluhuxc.github.io/blob/master/_posts/2018-12-18-make-a-raspberrypi64system.md
 
 
+
+
+深入 树莓派的 内核流程 和 内核编译测试
+使用官方原来镜像,不是备份的那个,因为备份的那个,各种问题!!
+烧录镜像前 需要格式化
+	sudo fdisk -l     (例如看到 sdb)
+	sudo umount /dev/sdbxx
+	sudo mkfs.vfat -I -F 32 /dev/sdb    // 整个 sdb  格式化 fat3
+	sudo mkfs.ext4 /dev/sdb   
+烧录: sudo dd bs=4M if=2018-11-13-raspbian-stretch-full.img of=/dev/sdb
+系统引出 串口 做 console ,但我们没有usb转串口和杜邦线,所以就需要屏幕!!
+需要 config.txt 添加 屏幕配置
+	max_usb_current=1
+	hdmi_force_hotplug=1
+	config_hdmi_boost=7
+	hdmi_group=2
+	hdmi_mode=1
+	hdmi_mode=87
+	hdmi_drive=1
+	hdmi_cvt 800 480 60 6 0 0 0 
+第一次开机接键鼠操作, 配置wifi (蓝牙键盘 连接超栏,所以宁愿使用 ssh)
+开机无法使用 ssh 需要添加开机启动服务
+	rc.local 最后执行的 开机启动脚本!!
+	添加命令或脚本 到 /etc/rc.local
+	或者 raspi-config 设备 ssh
+首先 默认文本编辑器 nano   vi有bug  vim 安装不了, 路径被墙了 
+很明显 树莓派使用定制格式的 uboot 和 内核镜像 和配置文本 启动的, 和一般的启动方式有区别!!
+ssh 登录登出
+	ssh -X pi@10.0.0.14
+	logout
+scp免密码拷贝和ssh免密码登录
+	pc 建立一套 ras 钥匙对!! (很久前已经建立),这步跳过
+		ssh-keygen -t rsa -P ""
+	拷贝公钥 到 树莓派
+		scp ~/.ssh/id_rsa.pub pi@10.0.0.14:/home/pi
+	树莓派设置公钥
+		cat /home/pi/id_rsa.pub >> /home/pi/.ssh/authorized_keys
+		reboot
+	这样 后 scp 互传方向都可以免密, 但是 ssh 登录好像还不行
+	pc添加免密登录 id
+		sudo ssh-copy-id -i /home/william/.ssh/id_rsa.pub pi@10.0.0.14
+	然后ssh 登陆就可以免密了
+使用 ssh 传输文件:  方向  sorc  ->  dist
+	scp /var/www/test.php root@192.168.0.101:/var/www/ 
+	scp root@192.168.0.101:/var/www/test.txt /var/www/local_dir（本地目录）
+	-r  传输整个目录!!
+	scp -r root@192.168.0.101:/var/www/test /var/www/
+	scp -r test root@192.168.0.101:/var/www/
+接下来 内核编译:
+	https://blog.csdn.net/chhjnavy/article/details/94381354
+	https://www.linuxidc.com/Linux/2019-05/158461.htm   speedup gitclone
+	https://blog.51cto.com/11887934/2051323	 speedup gitclone  (无用)
+
+	https://www.raspberrypi.org/documentation/linux/kernel/building.md
+	下载 linux 和 tools
+	官网 下载 arm-linux-gnueabihf,  raspberry的tools太慢!!
+	https://releases.linaro.org/components/toolchain/binaries/7.4-2019.02/arm-linux-gnueabihf/
+	注意我使用了 x86_64 版本, 不是i686版本, 不知道区别, 但是都下载下来了!!	
+	编译安装参考:
+	https://www.raspberrypi.org/documentation/linux/kernel/building.md
+	测试可用
+串口问题:
+	但是 芯片 含有 serial0 serial1 两线 一条是硬件串口, 一条是软件串口
+	硬件串口 跟 蓝牙 复用 
+	gpio readall 得到针表:
+ +-----+-----+---------+------+---+---Pi 3+--+---+------+---------+-----+-----+
+ | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |
+ +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+
+ |     |     |    3.3v |      |   |  1 || 2  |   |      | 5v      |     |     |
+ |   2 |   8 |   SDA.1 |   IN | 1 |  3 || 4  |   |      | 5v      |     |     |
+ |   3 |   9 |   SCL.1 |   IN | 1 |  5 || 6  |   |      | 0v      |     |     |
+ |   4 |   7 | GPIO. 7 |   IN | 1 |  7 || 8  | 1 | ALT0 | TxD     | 15  | 14  |
+ |     |     |      0v |      |   |  9 || 10 | 1 | ALT0 | RxD     | 16  | 15  |
+ |  17 |   0 | GPIO. 0 |   IN | 0 | 11 || 12 | 0 | IN   | GPIO. 1 | 1   | 18  |
+ |  27 |   2 | GPIO. 2 |   IN | 0 | 13 || 14 |   |      | 0v      |     |     |
+ |  22 |   3 | GPIO. 3 |   IN | 0 | 15 || 16 | 0 | IN   | GPIO. 4 | 4   | 23  |
+ |     |     |    3.3v |      |   | 17 || 18 | 0 | IN   | GPIO. 5 | 5   | 24  |
+ |  10 |  12 |    MOSI |   IN | 0 | 19 || 20 |   |      | 0v      |     |     |
+ |   9 |  13 |    MISO |   IN | 0 | 21 || 22 | 0 | IN   | GPIO. 6 | 6   | 25  |
+ |  11 |  14 |    SCLK |   IN | 0 | 23 || 24 | 1 | IN   | CE0     | 10  | 8   |
+ |     |     |      0v |      |   | 25 || 26 | 1 | IN   | CE1     | 11  | 7   |
+ |   0 |  30 |   SDA.0 |   IN | 1 | 27 || 28 | 1 | IN   | SCL.0   | 31  | 1   |
+ |   5 |  21 | GPIO.21 |   IN | 1 | 29 || 30 |   |      | 0v      |     |     |
+ |   6 |  22 | GPIO.22 |   IN | 1 | 31 || 32 | 0 | IN   | GPIO.26 | 26  | 12  |
+ |  13 |  23 | GPIO.23 |   IN | 0 | 33 || 34 |   |      | 0v      |     |     |
+ |  19 |  24 | GPIO.24 |   IN | 0 | 35 || 36 | 0 | IN   | GPIO.27 | 27  | 16  |
+ |  26 |  25 | GPIO.25 |   IN | 0 | 37 || 38 | 0 | IN   | GPIO.28 | 28  | 20  |
+ |     |     |      0v |      |   | 39 || 40 | 0 | IN   | GPIO.29 | 29  | 21  |
+ +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+
+ | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |
+ +-----+-----+---------+------+---+---Pi 3+--+---+------+---------+-----+-----+
+	串口映射
+	可以这样映射 serial0->ttyS0  serial1->ttyAMA0
+	也可以这样映射 serial0->ttyAMA0 serial1->ttyS0
+	cmdline 看到 console 使用 /dev/ttyS0
+	不管怎么映射 针8,针10 依然是 ttyS0  的 tx rx
+	所以不管怎么映射 针8,针10 都作为 调试串口console的 tx rx
+打开 kgdb
+	https://blog.csdn.net/dongzefeng199233/article/details/53526271
+	失败,不纠结了
+分析启动
+	发现 使用了奇怪的 uboot 通过 config,txt 选择 dtb 和 kernel 启动的!!
+	dmesg 查看相关信息:
+		[    0.000000] Kernel command line: coherent_pool=1M 8250.nr_uarts=0 bcm2708_fb.fbwidth=800 bcm2708_fb.fbheight=480 bcm2708_fb.fbswap=1 vc_mem.mem_base=0x3ec00000 vc_mem.mem_size=0x40000000  dwc_otg.lpm_enable=0 console=ttyS0,115200 console=tty1 root=PARTUUID=7c8ad6cc-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet splash plymouth.ignore-serial-consoles
+	应该是 raspi-config 配置 了 serial后 估计是刷写了 bootloader 配置什么的, 所以不管怎么改, console 差针还是没变
+	还有的是树莓派使用 bcm2710-rpi-3-b-plus.dtb
+分析 bluetooth的 启动和使用!!
+	经过分析, bluetooth 的初始化过程相当复杂, 首先 蓝牙模块使用串口实现, 然后蓝牙作为模块被编译的, 
+	实际上 蓝牙设备的初始化 是很多部分组成的,但主要都是是围绕 bluez 框架展开的内容. 其中包括:
+		驱动层面的, 其实 由于是串口蓝牙,通过串口初始化蓝牙射频芯片,然后建立 专门的 hci 通讯协议
+			驱动层面上,驱动是作为模块被编译的,并没有加入到内核,通过后期加载实现驱动初始化
+		软件层面的, bluetoothhd 其中包含一系列工具: bluetoothctl hcitool hciattach hcidump 等
+			都是用户态层面的程序!!
+			用户程序 和 驱动 是各自分开的,所以离开驱动,用户程序还是可以启动的
+	bluetooth 的初始化 从 systemd 设置开始
+	hciuart.service 设置了启动 usr/bin/btuart , 启动了 hciattach, 开始加载和初始化 蓝牙的驱动模块,
+	  hciattach  跑到 init_uart
+	    先是 set_speed 设置了速率
+	    然后 u->init(fd, u, &ti) -> bcm43xx_init()
+	......
+	    然后 ioctl(fd, HCIUARTSETFLAGS, flags) 最终传递到 hci_uart_tty_ioctl()
+	      case HCIUARTSETFLAGS:
+	        err = hci_uart_set_flags(hu, arg); -> hu->hdev_flags = flags
+	    然后 ioctl(fd, HCIUARTSETPROTO, u->proto) 最终 hci_uart_tty_ioctl()
+	      case HCIUARTSETPROTO:
+	        err = hci_uart_set_proto(hu, arg); -> err = hci_uart_register_dev(hu); hci_ldisc.c
+	          hdev = hci_alloc_dev();
+	发现初始化越来越混乱..不知道怎么整理
+	但是 btuart 和 bluetoothhd 是 结合在 一起 初始化,但是 什么时候执行了 modprobe 了 bluetooth.ko模块
+	什么时候执行 modprobe 了 hci_uart.ko 模块,实在找不到位置
+	bluetooth.ko 是 bluez 的协议栈主模块 
+	hci_uart.ko 是 bluez 和 蓝牙芯片的 建立的 串口通讯
+	这些先后关系无法 弄清的情况下,很难继续挖下去
+	接着 需要 处理 systemd 的 工作机制
+	....	
+	bluetooth 是以内核模块的形式挂入, 初步判断是 uart 蓝牙, 但是 dts 未有蓝牙模块的信息
+	默认加载的 hciuart proto h4 threewires bcm
+	果然,实际上是使用 通用的 h4 , 并不是使用我一直以为的 bcm
+	后来 处理 init.d 初始化服务时候,发现 即使 去掉rc5.d的bluetooth , 蓝牙依然初始化成功
+	后来发现是 hciuart.service 的 btuart 作祟
+	是 /usr/bin/btuart 初始化了 蓝牙设备和蓝牙软件的一系列内容
+	btuart 是一个脚本,		
+		最后调用 hciattach 来初始化, 但是实际上只是 注册了 一些事件,让其异步执行,然后自己就先结束了
+
+	hciattach 是 blueZ 框架的,用户程序部分,不是kernel 部分, 
+	而 真正的初始化 是 bcm43xx_init , bluez 的一个用户程序,
+	就是它加载了 模块化的 hci_uaart 内核驱动,和一系列蓝牙模块
+	我们的蓝牙芯片是 BCM4345C0 
+
+	hciuart.service
+
+
+
+
+
+
+
+git断点续存(没有用貌似):
+git clone获取比较大的源码时, 不能断点续传, 比较恼火.
+可以使用 git fetch 解决:
+
+     mkdir common
+
+     cd common
+
+     git init
+
+     git fetch http://android.git.kernel.org/common.git
+
+     传完后,
+
+     git branch -a
+
+     git checkout remotes/....
+
+如果中间断掉了, 可以直接进入common目录, 继续git fetch就可以续传了.
+git clone --depth 1 http......		//表示取得最新分支的代码 !!!!
 
 
 扩容 sd 分区!!!
@@ -18889,14 +19048,1129 @@ harmony !! 问题
 
 
 
-??????????????????
 
 
 
+20190617
+使用远程桌面 teamviewer 
+https://blog.csdn.net/tap880507/article/details/85601337
+https://blog.csdn.net/jdbc/article/details/71484286     :ubuntu14 只能装旧版??
+新旧版不能通用
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190918 
+内核 与 wifi 驱动 !!
+内核 与 wifi
+配置 一个 usb wifi 模块 参考: https://blog.csdn.net/yunlong654/article/details/88635398
+
+二、IEEE 802.11协议
+	IEEE802协议有点大，IEEE802家族是由一系列局域网络(Local Area Network,LAN)技术规格所组成,下面只介绍其中一些概念：
+	Ethenet和Wifi采用的协议都属于IEEE 802协议集。
+		其中，Ethenet以802.3协议做为其网络层以下的协议；
+		而Wifi以802.11做为其网络层以下的协议。无论是有线网络，还是无线网络，其网络层以上的部分，基本一样。
+	WI-FI使用了802.11的媒体访问控制层（MAC）和物理层（PHY）
+	PHY:
+		802.11 (1/2Mbps), 
+		802.11b (5.5/11Mbps), 
+			802.11g (54Mbps), 
+		802.11a (54Mbps), 
+		802.11n (300Mbps),
+	MAC:
+		802.11/11a/11b/11g/MAC
+			802.11e - Qos
+			802.11h - 动态调整
+			802.11i - 安全增强
+			802.11f - 漫游与切换
+			802.11s - mesh
+	802.11 基本规格涵盖了802.11 MAC 以及两种物理层(physical layer）：
+		一是跳频展频（frequency-hopping spread-spectrum，简称FHSS）物理层，
+		另一是直接序列展频（direct-sequence spread-spectrum，简称DSSS）物理层。
+	802.11a 所规范的物理层，
+		主要是以正交分频多工(orthogonal frequency division multiplexing，简称OFDM）技术为基础.
+	802.11 将PHY进一步划分为两个组成元件：
+		一是物理层收敛程序（Physical Layer ConvergenceProcedure，简称PLCP）,负责将MAC帧对映到传输介质；
+		另一是实际搭配介质Physical Medium Dependent，简称PMD），负责传送这些帧
+	IEEE802.11b  是无线局域网的一个标准。其载波的频率为2.4GHz，传送速度为11Mbit/s。
+		IEEE802.11b是所有无线局域网标准中最著名，也是普及最广的标准。
+		它有时也被错误地标为Wi-Fi。实际上Wi-Fi是无线局域网联盟（WLANA）的一个商标，
+			该商标仅保障使用该商标的商品互相之间可以合作，与标准本身实际上没有关系。
+		在2.4-GHz-ISM频段共有14个频宽为22MHz的频道可供使用。
+		IEEE802.11b的后继标准是IEEE802.11g，其传送速度为54Mbit/s
+	802.11 实现需要的实体设备:
+		a -- 工作站(Station)
+		      具有无线网络接入功能的电子设备（笔记本，手持设备等）.
+		b -- 基站(Access Point)
+		      802.11网络所使用的帧必须经过转换才能被传到其它不同类型的网络，
+		      具有无线至有线桥接功能的设备称为基站(Access Point,AP).此外基站还有其它功能.
+		c -- 无线介质(Wireless Medium)
+		      802.11标准以无线介质（Wireless medium）在工作站之间传递帧.其所定义的物理层不只一种.
+		d -- 传输系统(Distribution System)
+		      传输系统是基站间转送帧的骨干网络，通常就称为骨干网络（backbone network）
+		      当几部基站串连以覆盖较大区域时，彼此之间必须相互通信，才能够掌握移动式工作站的行踪。
+		      而传输系统(distribution system )属于802.11的逻辑元件，负责将帧（frame）转送至目的地。
+		      大多数商用产品，是以桥接引擎（bridging engine）和传输系统介质（distribution system medium）共同组成传输系统.
+	802.11 的数据链路层由两个之层构成: 逻辑链路层LLC(Logic Link Control)和媒体控制层MAC(Media Access Control)
+		802.11使用和802.2完全相同的LLC之层和802协议中的48位MAC地址，这使得无线和有线之间的桥接非常方便。
+		但是MAC地址只对无线局域网唯一。  
+	一般数据流 实现模型
+		设备(手机..)       802.11 PHY( 802.11MAC( LLC( IP( TCP( 应用数据 ) ) ) ) )    
+		                      |
+                                      v
+		AP设备 (路由器 )   802.11 PHY( 802.11MAC( LLC( ... ) ) )
+		                      |
+		                      v
+		有线网络	  802.2 PHY( 802.2MAC( LLC( ... ) ) )
+		....
+
+	802.11 的MAC 和 802.3 协议的MAC非常相似，都是在一个共享媒体之上支持多个用户共享资源，
+		由发送者在发送数据前先进行网络的可用性。在802.3协议中，
+		是由一种称为CSMA/CD(Carrier Sense Multiple Access with Collision Detection)的协议来完成调节，
+		这个协议解决了在Ethernet上的各个工作站如何在线缆上进行传输的问题，
+		利用它检测和避免当两个或两个以上的网络设备需要进行数据传送时网络上的冲突。
+		在802.11无线局域网协议中，冲突的检测存在一定的问题，这个问题称为"Near/Far"现象，
+		这是由于要检测冲突，设备必须能够一边接受数据信号一边传送数据信号，而这在无线系统中是无法办到的。
+	802.11b/g 信道
+		1）IEEE 802.11b/g标准工作在2.4G频段，频率范围为2.400—2.4835GHz，共83.5M带宽
+		2）划分为14个子信道
+		3）每个子信道宽度为22MHz
+		4）相邻信道的中心频点间隔5MHz 
+		5）相邻的多个信道存在频率重叠(如1信道与2、3、4、5信道有频率重叠)
+		6）整个频段内只有3个（1、6、11）互不干扰信道
+	SSID BSSID
+		1）基本服务集（BSS）
+			基本服务集是802.11 LAN的基本组成模块。能互相进行无线通信的STA(工作站)可以组成一个BSS（Basic Service Set） 。
+			如果一个站移出BSS的覆盖范围，它将不能再与BSS的其它成员通信。
+			一个 AP 与多个 设备相连, 可以互相访问
+			或者直接 一个路由 与多个 设备相连, 可以互相访问
+		2）扩展服务集（ESS）
+			多个BSS可以构成一个扩展网络，称为扩展服务集（ESS）网络，一个ESS网络内部的STA可以互相通信，
+			是采用相同的SSID的多个BSS形成的更大规模的虚拟BSS。连接BSS的组件称为分布式系统（Distribution System，DS）。
+			一个 AP 与多个 设备相连, 可以互相访问  组成一个BSS
+			多个BSS 相连, 相当于 每个BSS 的 AP 都 连到同一个 路由 组成一个 ESS
+		3）SSID
+			服务集的标识，在同一SS内的所有STA和AP必须具有相同的SSID，否则无法进行通信
+			SSID是一个ESS的网络标识  (如:TP_Link_1201)，
+			BSSID是一个BSS的标识， BSSID实际上就是AP的MAC地址，用来标识AP管理的BSS，
+			在同一个AP内BSSID和SSID一一映射。在一个ESS内SSID是相同的，
+			但对于 ESS 内的每个AP与之对应的BSSID是不相同的。
+			如果一个AP可以同时支持多个SSID的话，则AP会分配不同的BSSID来对应这些SSID。
+			例如:
+			               路由A  ESS SSID: TP_LINK_112
+			                 /                       \
+			  AP1 BSS BSSID: 12:22:98..     AP2 BSS BSSID: 14:25:96..
+				(同一 ESS 的 AP1,AP2 的BSSID 不能一样)
+			               路由A  ESS SSID: TP_LINK_112            路由B  ESS SSID: TP_LINK_113
+			                 /                       \               /                    \
+			  AP1 BSS BSSID: 12:22:98..     AP2 BSS BSSID: 14:25:96..,14:25:86..       AP3 BSS BSSID: 12:22:98..
+				(AP2 接两个不同的ESS, 必须分别不同的 BSSID)
+				(也意味着AP2 接入两群不同BSSID的设备, 所以这两群设备不能互通)
+				(AP1 AP3 服务于不同 ESS 所以 BSSID 可以相同,并影响)
+	无线接入三个阶段:
+		sta 通过 scanning 选择 AP 监听 Beacon帧,或者 发 probe 帧
+		sta 与 AP 认证阶段 (Authentication)
+		sta 与 AP 关联（Association）
+		然后 sta 和 AP 之间就可以传输数据
+wifi模块:
+	串口 wifi 模块, 自带 802.11 协议栈的芯片, 软硬件集成度高，
+		整个嵌入式WIFI模块集成了射频收发器、MAC、WIFI驱动、所有WIFI协议、无线安全协议、一键连接等
+		最终只把 应用数据通过 串口输出给 单片机处理,不需要用户处理 wifi 的连接等问题
+		接口一般 : UART、SPI、I2C、SDIO
+		产品 TI的CC3200系列、MXCHIP系列、ASIX系列、Atheros的HF-LPA系列等
+	普通 wifi 模块 :
+		注意 作为模块,那就说 都是自带协议栈的,不用2次移植
+		需要自处理协议栈驱动等, 适用于高速设备,复杂设备:
+		接口: USB SDIO
+		产品  瑞昱RTL81xx系列、威盛VT系列、雷凌RT系列、博通BCM、Marvell、高通Atheros等
+		需要在主机添加WIFI驱动、同时需要依赖主机的网络协议栈等软件平台资源，
+		从整体软件层面上看，属于网络设备，使用时需要遵循网络相关的协议
+
+	Wifi 模块 包括两种类型的拓扑形式：基础网（Infra）和自组网（Adhoc）
+		设备 都接入AP 通过AP 实现通讯 是 Infra
+		设备自身是一个 站点, 直接跟其他设备连接通讯是 Adhoc
+
+	3、安全机制
+		本模块支持多种无线网络加密方式，能充分保证用户数据的安全传输，
+		包括：WEP64/WEP128/ TKIP/CCMP(AES) WEP/WPA-PSK/WPA2-PSK。
+	4、快速联网
+	        本模块支持通过指定信道号的方式来进行快速联网。
+		在通常的无线联网过程中，会首先对当前的所有信道自动进行一次扫描，来搜索准备连接的目的AP创建的（或Adhoc）网络。
+		本模块提供了设置工作信道的参数，在已知目的网络所在信道的条件下，可以直接指定模块的工作信道，从而达到加快联网速度的目的。
+	5、地址绑定
+	        本模块支持在联网过程中绑定目的网络BSSID地址的功能。\
+		根据802.11协议规定，不同的无线网络可以具有相同的网络名称（也就是SSID/ESSID），但是必须对应一个唯一的BSSID 地址。
+		非法入侵者可以通过建立具有相同的SSID/ESSID的无线网络的方法，使得网络中的STA联接到非法的AP上，从而造成网络的泄密。
+		通过BSSID地址绑定的方式，可以防止STA 接入到非法的网络，从而提高无线网络的安全性。
+	6、无线漫游
+	        本模块支持基于802.11协议的无线漫游功能。无线漫游指的是为了扩大一个无线网络的覆盖范围，
+		由多个AP共同创建一个具有相同的SSID/ESSID的无线网络，每个AP用来覆盖不同的区域，
+		接入到网络的STA可以根据所处位置的选择信号最强的AP接入，而且随着STA的移动自动在不同的AP之间切换。
+	四、工作方式
+		1、主动型串口设备联网
+			主动型串口设备联网指的是由设备主动发起连接，并与后台服务器进行数据交互（上传或下载）的方式。
+			典型的主动型设备，如无线POS机，在每次刷卡交易完成后即开始连接后台服务器，并上传交易数据。
+			PUSH型串口设备联网的拓扑结构如右图所示。
+			其中，后台服务器作为TCP Server端，设备通过无线AP/路由器接入到网络中，并作为TCP Client端。
+		2、被动型串口设备联网
+			被动型串口设备联网指的是，在系统中所有设备一直处于被动的等待连接状态，仅由后台服务器主动发起与设备的连接，
+			并进行请求或下传数据的方式。典型的应用，如某些无线传感器网络，每个传感器终端始终实时的在采集数据，
+			但是采集到的数据并没有马上上传，而是暂时保存在设备中。
+		        而后台服务器则周期性的每隔一段时间主动连接设备，并请求上传或下载数据。
+			此时，后台服务器实际上作为TCP Client端，而设备则是作为TCP Server端
+SDIO-Wifi模块:  https://blog.csdn.net/zqixiao_09/article/details/51105877
+	基于SDIO接口的符合wifi无线网络标准的嵌入式模块，内置无线网络协议IEEE802.11协议栈以及TCP/IP协议栈，
+	能够实现用户主平台数据通过SDIO口到无线网络之间的转换。
+	SDIO具有传输数据快，兼容SD、MMC接口等特点。
+	对于SDIO接口的wifi，首先，它是一个sdio的卡的设备，然后具备了wifi的功能，
+	所以，注册的时候还是先以sdio的卡的设备去注册的。然后检测到卡之后就要驱动他的wifi功能了，
+	显然，他是用sdio的协议，通过发命令和数据来控制的。
+	简单回顾一下SDIO的相关知识：
+		SDio就是 SD卡的接口,这个速度快, 有协会维护完备的SDIO stack 驱动程序,所以易开发,
+		所以越来越多 SDIO 外围模块被开发用于 手机等手持设备,常见 SDIO 外围设备:
+		· Wi-Fi card（无线网络卡） 
+		· CMOS sensor card（照相模块） 
+		· GPS card 
+		· GSM/GPRS modem card 
+		· Bluetooth card 
+	SDIO总线 和 USB总线 类似，SDIO也有两端，其中一端是HOST端，另一端是device端。
+		所有的通信都是由HOST端 发送 命令 开始的，Device端只要能解析命令，就可以相互通信。
+		CLK信号:HOST给DEVICE的 时钟信号，每个时钟周期传输一个命令。
+		CMD信号：双向 的信号，用于传送 命令 和 反应。
+		DAT0-DAT3 信号:四条用于传送的数据线。
+		VDD信号:电源信号。
+		VSS1，VSS2:电源地信号。
+	SDIO热插拔原理
+		方法：设置一个 定时器检查 或 插拔中断检测
+		硬件：假如GPG10（EINT18）用于SD卡检测
+		GPG10 为高电平 即没有插入SD卡
+		GPG10为低电平  即插入了SD卡
+	SDIO命令
+		SDIO总线上都是HOST端发起请求，然后DEVICE端回应请求。sdio命令由6个字节组成。
+		Command:用于开始传输的命令，是由HOST端发往DEVICE端的。其中命令是通过CMD信号线传送的。
+		Response:回应是DEVICE返回的HOST的命令，作为Command的回应。也是通过CMD线传送的。
+		Data:数据是双向的传送的。可以设置为1线模式，也可以设置为4线模式。数据是通过DAT0-DAT3信号线传输的。
+		SDIO的每次操作都是由HOST在CMD线上发起一个CMD，对于有的CMD，DEVICE需要返回Response，有的则不需要。
+		对于读命令，
+			首先HOST会向DEVICE发送命令，
+			紧接着DEVICE会返回一个握手信号，
+			此时，当HOST收到回应的握手信号后，会将数据放在4位的数据线上，在传送数据的同时会跟随着CRC校验码。
+			当整个读传送完毕后，HOST会再次发送一个命令，通知DEVICE操作完毕，DEVICE同时会返回一个响应。
+		对于写命令，
+			首先HOST会向DEVICE发送命令，
+			紧接着DEVICE会返回一个握手信号，
+			此时，当HOST收到回应的握手信号后，会将数据放在4位的数据线上，在传送数据的同时会跟随着CRC校验码。
+			当整个写传送完毕后，HOST会再次发送一个命令，通知DEVICE操作完毕，DEVICE同时会返回一个响应。
+	驱动思路:
+		先设计 SDIO 读写驱动, 然后拉出api 给 wifi 指令驱动. 
+		应用访问 wifi指令驱动, wifi指令驱动 访问 SDIO 读写驱动  
+
+		层级关系 :  运用  -> wifi层 -> mmc核心接口层 -> SDio接口层 -> SDio硬件接口 
+
+	SDIO 几个重要结构体: (MMC层) ???
+		[ /include/linux/mmc/host.h ]
+		struct mmc_host     用来描述卡控制器
+		struct mmc_card     用来描述卡
+		struct mmc_driver  用来描述 mmc 卡驱动
+		struct sdio_func      用来描述 功能设备
+		struct mmc_host_ops   用来描述卡控制器操作接口函数功能，
+				用于从 主机控制器层向 core 层注册操作函数，从而将core 层与具体的主机控制器隔离。
+				也就是说 core 要操作主机控制器，就用这个 ops 当中给的函数指针操作，
+				不能直接调用具体主控制器的函数。
+		HOST层驱动分析在 前面的系列文章中 Linux SD卡驱动开发(二) —— SD 卡驱动分析HOST篇 有详细阐述 :
+		https://blog.csdn.net/zqixiao_09/article/details/51039595
+
+
+	wifi 驱动部分解析  (SDIO 层) ???
+		其中wifi固件部分的主要工作是：因为天线接受和发送回来的都是802.11帧的帧，
+		但是linux主机接受和传送出来的数据都必须是802.3的帧，所以必须由firmware来负责802.3的帧和802.11帧之间的转换
+		当天线收到数据，并被firmware处理好后会放在一个buffer里，并产生一个中断，主机在收到中断后就去读这个buffer。
+			SDIO设备的驱动由 sdio_driver 结构体定义，sdio_driver其实是driver的封装。
+		通过sdio_register_driver函数将SDIO设备驱动加载进内核，其实就是挂载到sdio_bus_type总线上去。	
+
+USB-Wifi模块 : https://blog.csdn.net/zqixiao_09/article/details/51114818
 	
 
-	
 
+
+
+
+
+
+
+
+linux 和 网络协议栈开发
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+高并发:
+	其他:
+		性能优化 http://www.shangyouw.cn/wenjian/arc45618.html
+	数据库:
+		池化技术:  减少数据库连接性能损耗
+		数据库: 主从分离, 分库分表,
+		发号器: 分表后 ID 全局唯一性
+			ID 发号器: Vesta, snowflake
+		高并发下,数据库 和 Nosql 互补
+	缓存:
+		读写策略:
+			Cache Aside 更新模式
+			Read/Write Through 更新模式
+			Write Behind Caching 更新模式
+			通俗一点来讲就是，同时更新缓存和数据库（Cache Aside 更新模式）；
+			先更新缓存，缓存负责同步更新数据库（Read/Write Through 更新模式）；
+			先更新缓存，缓存定时异步更新数据库（Write Behind Caching 更新模式）
+		高可用:
+			一般指的是 redis高可用 一主多从, 
+		缓存穿透:
+			指查询一个一定不存在的数据，由于缓存是不命中时需要从数据库查询，查不到数据则不写入缓存，
+			这将导致这个不存在的数据每次请求都要到数据库去查询，造成缓存穿透。在流量大时，可能DB就挂掉了，
+			要是有人利用不存在的key频繁攻击我们的应用，这就是漏洞。
+			解决方案：
+			1）有很多种方法可以有效地解决缓存穿透问题，最常见的则是采用布隆过滤器，将所有可能存在的数据哈希到一个足够大的bitmap中，
+			一个一定不存在的数据会被这个bitmap拦截掉，从而避免了对底层数据库的查询压力。
+			2）另外也有一个更为简单粗暴的方法，如果一个查询返回的数据为空（不管是数据不存在，还是系统故障），
+			仍然把这个空结果进行缓存，但它的过期时间会很短，最长不超过五分钟。
+		缓存雪崩
+			指在设置缓存时采用了相同的过期时间，导致缓存在某一时刻同时失效，导致所有的查询都落在数据库上，造成了缓存雪崩。
+			解决方案：
+			1）在缓存失效后，通过加锁或者队列来控制读数据库写缓存的线程数量。
+			   比如对某个key只允许一个线程查询数据和写缓存，其他线程等待。
+			2）可以通过缓存reload机制，预先去更新缓存，在即将发生大并发访问前手动触发加载缓存。
+			3）不同的key，设置不同的过期时间，让缓存失效的时间点尽量均匀。
+			4）做二级缓存，或者双缓存策略。A1为原始缓存，A2为拷贝缓存，A1失效时，可以访问A2，
+			   A1缓存失效时间设置为短期，A2设置为长期。
+		缓存击穿
+			对于一些设置了过期时间的key，如果这些key可能会在某些时间点被超高并发地访问，是一种非常“热点”的数据。
+			这个时候，需要考虑一个问题：缓存被“击穿”的问题，这个和缓存雪崩的区别在于这里针对某一key缓存，前者则是很多key。 
+			缓存在某个时间点过期的时候，恰好在这个时间点对这个Key有大量的并发请求过来，
+			这些请求发现缓存过期一般都会从后端DB加载数据并回设到缓存，这个时候大并发的请求可能会瞬间把后端DB压垮。
+			解决方案：
+			1）后台刷新
+			后台定义一个job(定时任务)专门主动更新缓存数据.比如,一个缓存中的数据过期时间是30分钟,
+			那么job每隔29分钟定时刷新数据(将从数据库中查到的数据更新到缓存中).	
+			注：这种方案比较容易理解，但会增加系统复杂度。比较适合那些 key 相对固定,cache 粒度较大的业务，
+			key 比较分散的则不太适合，实现起来也比较复杂。
+			2）检查更新
+			将缓存key的过期时间(绝对时间)一起保存到缓存中(可以拼接,可以添加新字段,可以采用单独的key保存..
+			不管用什么方式,只要两者建立好关联关系就行).
+			在每次执行get操作后,都将get出来的缓存过期时间与当前系统时间做一个对比,如果缓存过期时间-
+			当前系统时间<=1分钟(自定义的一个值),则主动更新缓存.
+			这样就能保证缓存中的数据始终是最新的(和方案一一样,让数据不过期.)
+			注：这种方案在特殊情况下也会有问题。假设缓存过期时间是12:00，而 11:59 到 12:00这 1 分钟时间里恰好没有 get 请求过来，
+			又恰好请求都在 11:30 分的时 候高并发过来，那就悲剧了。这种情况比较极端，但并不是没有可能。
+			因为“高 并发”也可能是阶段性在某个时间点爆发。
+			3）分级缓存
+			采用 L1 (一级缓存)和 L2(二级缓存) 缓存方式，L1 缓存失效时间短，L2 缓存失效时间长。 
+			请求优先从 L1 缓存获取数据，如果 L1缓存未命中则加锁，只有 1 个线程获取到锁,
+			这个线程再从数据库中读取数据并将数据再更新到到 L1 缓存和 L2 缓存中，而其他线程依旧从 L2 缓存获取数据并返回。
+			注：这种方式，主要是通过避免缓存同时失效并结合锁机制实现。所以，当数据更 新时，只能淘汰 L1 缓存，
+			不能同时将 L1 和 L2 中的缓存同时淘汰。L2 缓存中 可能会存在脏数据，需要业务能够容忍这种短时间的不一致。
+			而且，这种方案 可能会造成额外的缓存空间浪费。
+			4）加锁
+			https://www.cnblogs.com/dream-to-pku/p/9153999.html
+		亿级静态资源请求 使用 CDN 加速:
+			......
+	消息队列:
+		主要使用的 框架有 ActiveMQ，RabbitMQ，Kafka，RocketMQ
+		连续发送1kb大小的消息，测试各个中间件产品的TPS（Transaction Per Second，每秒事务处理量）。
+			测试结果
+			ZeroMQ：10万TPS
+			Kafka：4万TPS
+			RabbitMQ：1万TPS
+			ActiveMQ：6000TPS 
+		对比:
+		吞吐量 	万级的 ActiveMQ 和 RabbitMQ 的吞吐量（ActiveMQ 的性能最差）要比 十万级甚至是百万级的 RocketMQ 和 Kafka 低一个数量级。
+		可用性 	都可以实现高可用。ActiveMQ 和 RabbitMQ 都是基于主从架构实现高可用性。
+			RocketMQ 基于分布式架构。 kafka 也是分布式的，一个数据多个副本，少数机器宕机，不会丢失数据，不会导致不可用
+		时效性 	RabbitMQ 基于erlang开发，所以并发能力很强，性能极其好，延时很低，达到微秒级。其他三个都是 ms 级。
+		功能支持 除了 Kafka，其他三个功能都较为完备。 Kafka 功能较为简单，主要支持简单的MQ功能，
+			在大数据领域的实时计算以及日志采集被大规模使用，是事实上的标准
+		消息丢失 ActiveMQ 和 RabbitMQ 丢失的可能性非常低， RocketMQ 和 Kafka 理论上不会丢失。
+		ActiveMQ 的社区算是比较成熟，但是较目前来说，ActiveMQ 的性能比较差，而且版本迭代很慢，不推荐使用。
+		RabbitMQ 在吞吐量方面虽然稍逊于 Kafka 和 RocketMQ ，但是由于它基于 erlang 开发，所以并发能力很强，性能极其好，
+			 延时很低，达到微秒级。但是也因为 RabbitMQ 基于 erlang 开发，
+			 所以国内很少有公司有实力做erlang源码级别的研究和定制。如果业务场景对并发量要求不是太高（十万级、百万级），
+			 那这四种消息队列中，RabbitMQ 一定是你的首选。
+			 如果是大数据领域的实时计算、日志采集等场景，用 Kafka 是业内标准的，绝对没问题，社区活跃度很高，绝对不会黄，
+			 何况几乎是全世界这个领域的事实性规范。
+		RocketMQ 阿里出品，Java 系开源项目，源代码我们可以直接阅读，然后可以定制自己公司的MQ，
+			 并且 RocketMQ 有阿里巴巴的实际业务场景的实战考验。RocketMQ 社区活跃度相对较为一般，
+			 不过也还可以，文档相对来说简单一些，然后接口这块不是按照标准 JMS 规范走的有些系统要迁移需要修改大量代码。
+			 还有就是阿里出台的技术，你得做好这个技术万一被抛弃，社区黄掉的风险，那如果你们公司有技术实力我觉得用RocketMQ 挺好的
+		kafka    的特点其实很明显，就是仅仅提供较少的核心功能，但是提供超高的吞吐量，ms 级的延迟，极高的可用性以及可靠性，
+			 而且分布式可以任意扩展。同时 kafka 最好是支撑较少的 topic 数量即可，保证其超高吞吐量。
+			 kafka 唯一的一点劣势是有可能消息重复消费，那么对数据准确性会造成极其轻微的影响，
+			 在大数据领域中以及日志采集中，这点轻微影响可以忽略这个特性天然适合大数据实时计算以及日志收集。
+		电商秒杀 消息队列应用:
+			用户的请求，服务器接收后，首先写入消息队列。假如消息队列长度超过最大数量，则直接抛弃用户请求或跳转到错误页面；
+			秒杀业务根据消息队列中的请求信息，再做后续处理。
+			用户下订单，不能保证成功，只有库存系统检查并分配商品，调整库存之后，才是成功的订单。只有成功的订单，才能付款，
+			所以队列取出的请求会 访问库存系统,最后反馈信息,并进入下一个页面
+			那些因为高峰而被 队列丢弃的请求,直接超时错误!!
+		设计消息仅被消费一次:
+			由于队列的成员是 集中清理的,不是逐条清理的,很难保证每条请求只消费一次
+			比如 kefka 的 offset 功能,只是有效应对请求不重复执行,但是无法保证只消费一次
+			保证幂等性原则, 一般这个就不是消息队列处理的了,而是后面的server判断这条请求的重复情况
+				结合业务处理:
+				（1）比如你拿个数据要写库，你先根据主键查一下，如果这数据都有了，你就别插入了，update一下好吧
+				（2）比如你是写redis，那没问题了，反正每次都是set，天然幂等性
+				（3）比如你不是上面两个场景，那做的稍微复杂一点，你需要让生产者发送每条数据的时候，
+				     里面加一个全局唯一的id，类似订单id之类的东西，然后你这里消费到了之后，
+				     先根据这个id去比如redis里查一下，之前消费过吗？如果没有消费过，你就处理，然后这个id写redis。
+				     如果消费过了，那你就别处理了，保证别重复处理相同的消息即可。
+			还有比如基于数据库的唯一键来保证重复数据不会重复插入多条，例如线上系统就有这个问题，就是拿到数据的时候，
+			每次重启可能会有重复，因为kafka消费者还没来得及提交offset，重复数据拿到了以后我们插入的时候，
+			因为有唯一键约束了，所以重复数据只会插入报错，不会导致数据库中出现脏数据
+		消息队列性能提升优化:
+			......
+	分布式服务, 整体微服务化 :
+		MVC , SOA, 微服务架构 区别:
+ 			soa 是 基于服务机构
+			MVC 实际 model view control 
+			soa 与  微服务架构 区别:
+				SOA 服务化涉及的范围更广 一 些,强调不同的异构服务之间的协作和契约 ,并强调有效集成、
+				    业务流程编排、历史应用集成等,典型代表为 Web Service 和 ESB 。
+				微服务使用 一 系列的微小服务来实现整体的业务流程,目的是有效地拆分应用,实现敏捷开发和部署,
+				    在每个微小服务的团队里,减少了跨团队的沟通,让专业的 人做专业的事,
+				    缩小变更和法代影响的范围,并达到单一微服务更容易水平扩展的目的。
+				微服务将完整的应用拆分成多个细小的服务,通常使用敏捷扩容、缩容的 Docker 技术来实现自动化的容器管理, 
+				    每个微服务运行在单 一 的进程内,微服务中的部署互相独立 、互不影响。
+				SOA 服务化通常将多个业务服务通过组件化模块方式打包在 一个 War 包里,然后统一部署在一个应用服务器上。
+				微服务倡导将服务拆分成更细的粒度,通过多个服务组合来实现业务流程的处理,
+				    拆分到职责单一 , 甚至小到 不能再进行拆分。
+				SOA 对粒度没有要求 , 在实践中服务通常是粗粒度的,强调接口契约的规范化,内部实现可以更粗粒度。
+		设计微服务架构时,
+			一定不要共享缓存和数据库等资源,也不要使用总线模式,服务之间的通信和交互只能依赖定义良好的接口,
+			通常使用阻 RESTful 样式的 API 或者透 明的RPC 调用框架 。
+		SOA 服务常用框架:
+			dubbo: 旧 开源 有很多问题, 仅 java 不推荐
+			Thrift: 开源 多语言, rpc数据是传输数据时采用二进制序列化格式,相对于 JDK 本身的序列化、 XML 和 JSON 等
+		微服务框架:
+			spring boot :
+			netflix :
+			Spring Cloud Netflix :
+		Spring Cloud 微服务
+			潮流
+		RPC框架: Remote Procedure Call，即远程过程调用, 一般指 应用服务分布在不同主机,通过内部网络调用使用
+			https://www.jianshu.com/p/78f72ccf0377
+			https://my.oschina.net/huangyong/blog/361751   一个 RPC 的实战
+			Hessian 及 Burlap 都是 Caucho 公司提供的开源的远程调用协议,基于 HTTP 传输, 
+				防火墙通常会设置在某个端口上以允许特定的 Hπp 通信
+		RESTful 风格的 API 形式来通信, 		
+			REST也l 风格的 API 通常是在 HTTP 或者 HTTPS 通道上传输 JSON 格式的数据来实现的, 
+			HTTP 协议有跨语言、跨异构系统的优点,
+		分布式注册中心
+			RPC 框架下,每个服务的独立不影响,要使用服务就先得 启动和注册服务
+			在服务注册与发现中，有一个注册中心，当服务器启动的时候，会把当前自己服务器的信息 
+			比如 服务地址通讯地址等以别名方式注册到注册中心上。
+			另一方（消费者|服务提供者），以该别名的方式去注册中心上获取到实际的服务通讯地址，然后在实现本地rpc调用远程。
+			常用管理软件Consul, Eureka, Zookeeper
+			Consul 是一套开源的分布式服务发现和配置管理系统，由 HashiCorp 公司用 Go 语言开发。
+			它具有很多优点。包括： 基于 raft 协议，比较简洁； 支持健康检查, 同时支持 HTTP 和 DNS 协议 
+			支持跨数据中心的 WAN 集群，提供图形界面 跨平台，支持 Linux、Mac、Windows。
+			Zookeeper是一个分布式协调工具，可以实现服务注册与发现、注册中心、消息中间件、分布式配置中心等。
+			CPA理论:
+				CAP：一个分布式系统不可能同时满足C(一致性)、A(可用性)和P(分区容错性)。
+				由于分区容错性在是分布式系统中必须要保证的，因此我们只能在A和C之间进行权衡。
+				在此Zookeeper保证的是CP, 而Eureka则是AP。
+					Consistency(一致性), 数据一致更新，所有数据变动都是同步的
+					Availability(可用性), 好的响应性能
+					Partition tolerance(分区容忍性) 可靠性
+				1、“C”是指一致性，即当一个Process（过程）修改了某个数据后，
+				   其他Process读取这是数据是，得到的是更新后的数据，但并不是所有系统都 可以做到这一点。
+				   例如，在一些并非严格要求一致性的系统中，后来的Process得到的数据可能还是修改之前的数据，
+				   或者需要等待一定时间后才能得到修改 之后的数据，这被成为“弱一致性”，
+				   最经典的应用就是DNS系统。当用户修改了DNS配置后，往往不会马上在全网更新，必定会有一个延迟，
+				   这个延迟被称为 “不一致窗口”，它的长度取决于系统的负载、冗余的个数等因素。但对于某些系统而言，
+				   一旦写入，后面读取的一定是修改后的数据，如银行账户信息，这被称为 “强一致性”。
+				2、“A”是指可用性。即系统总是能够为用户提供连续的服务能力。
+				   当用户发出请求是，系统能给出响应（成功或者失败），而且是立即给出响应，
+				   而不是等待其他事情完成才响应。如果需要等待某件事情完成才响应，那么“可用性”就不存在了。
+				3、“P”是指容错性。任何一个分布式计算系统都是由多个节点组成的。在正常情况下，节点与节点之间的通信是正常的。
+				   但是在某些情况下，节点之间的通信会 断开，这种断开成为“Partition”。
+				   在分布式计算的实现中，Partition是很常见的，因为节点不可能永远不出故障，
+				   尤其是对于跨物理地区的 海量存储系统而言，而容错性则可以保证如果只是系统中的部分节点不可用，
+				   那么相关的操作仍旧能够正常完成。
+		Zookeeper与Eureka区别
+		Zookeeper是保证CP
+			当向注册中心查询服务列表时，我们可以容忍注册中心返回的是几分钟以前的注册信息，但不能接受服务直接down掉不可用。
+			也就是说，服务注册功能对可用性的要求要高于一致性。但是zk会出现这样一种情况，
+			当master节点因为网络故障与其他节点失去联系时，剩余节点会重新进行leader选举。
+			问题在于，选举leader的时间太长，30 ~ 120s, 且选举期间整个zk集群都是不可用的，这就导致在选举期间注册服务瘫痪。
+			在云部署的环境下，因网络问题使得zk集群失去master节点是较大概率会发生的事，
+			虽然服务能够最终恢复，但是漫长的选举时间导致的注册长期不可用是不能容忍的。
+		Eureka是保证AP
+			Eureka看明白了这一点，因此在设计时就优先保证可用性。Eureka各个节点都是平等的，几个节点挂掉不会影响正常节点的工作，
+			剩余的节点依然可以提供注册和查询服务。而Eureka的客户端在向某个Eureka注册或时如果发现连接失败，
+			则会自动切换至其它节点，只要有一台Eureka还在，就能保证注册服务可用(保证可用性)，
+			只不过查到的信息可能不是最新的(不保证强一致性)。
+			除此之外，Eureka还有一种自我保护机制，如果在15分钟内超过85%的节点都没有正常的心跳，
+			那么Eureka就认为客户端与注册中心出现了网络故障，此时会出现以下几种情况： 
+				1. Eureka不再从注册列表中移除因为长时间没收到心跳而应该过期的服务 
+				2. Eureka仍然能够接受新服务的注册和查询请求，但是不会被同步到其它节点上(即保证当前节点依然可用) 
+				3. 当网络稳定时，当前实例新的注册信息会被同步到其它节点中
+			因此， Eureka可以很好的应对因网络故障导致部分节点失去联系的情况，而不会像zookeeper那样使整个注册服务瘫痪。
+		分布式trace
+			电商平台由数以百计的分布式服务构成，每一个请求路由过来后，会经过多个业务系统并留下足迹，并产生对各种Cache或DB的访问，
+			但是这些分散的数据对于问题排查，或是流程优化都帮助有限。对于这么一个跨进程/跨线程的场景，
+			汇总收集并分析海量日志就显得尤为重要。
+			要能做到追踪每个请求的完整调用链路，收集调用链路上每个服务的性能数据，计算性能数据和比对性能指标（SLA），
+			甚至在更远的未来能够再反馈到服务治理中，那么这就是分布式跟踪的目标了。
+			在业界，twitter 的 zipkin 和淘宝的鹰眼就是类似的系统，它们都起源于 Google Dapper 论文，
+			就像历史上 Hadoop 发源于 Google Map/Reduce 论文，HBase 源自 Google BigTable 论文一样。
+			基于tracing数据分析和统计，我们就能绘制性能曲线图，从中可以发现哪些时间点哪些层有性能问题，
+			然后一路点进去，直到找到到底是哪一个调用链里的哪一个环节慢。
+			https://www.jianshu.com/p/599aa49ac79a
+		负载均衡:
+			都学过,
+			重点了可能在 如何动态添加新节点或者服务器, 实现横向扩张
+			https://segmentfault.com/a/1190000020310192?utm_source=tag-newest
+		API网关
+			API网关是一个服务器，是系统的唯一入口。从面向对象设计的角度看，它与外观模式类似。
+			API网关封装了系统内部架构，为每个客户端提供一个定制的API。
+			它可能还具有其它职责，如身份验证、监控、负载均衡、缓存、请求分片与管理、静态响应处理。
+			API网关方式的核心要点是，所有的客户端和消费端都通过统一的网关接入微服务，在网关层处理所有的非业务功能。
+			通常，网关也是提供REST/HTTP的访问API。服务端通过API-GW注册和管理服务。
+			就是,把所有对外开放的服务的 API 都通过一个网关管理起来
+			微服务先注册 到 RPC框架, 然后才可以暴露 api 到 api网关, 
+			客户请求时,会先通过 负载均衡到其中一个并行API网关,然后才进一步访问到 微服务的API
+			https://www.cnblogs.com/kaleidoscope/p/9648004.html
+			https://blog.csdn.net/gangsijay888/article/details/81517301
+		多数据中心:
+			跨地域分布式系统.....
+		service mesh
+			http://www.sohu.com/a/281556383_684445    service mesh 是什么!!
+			新一代微服务分布式框架??? 目前很新,大厂都在探索,,
+	运维:
+		分布式服务端监控
+			https://blog.csdn.net/mergerly/article/details/78553728
+			.....
+		应用性能管理
+			https://blog.csdn.net/chenqiuge1984/article/details/80129298
+			....
+		压力测试
+			https://www.cnblogs.com/gaoj87/p/3431437.html	
+			.....
+		配置管理:
+			https://www.sohu.com/a/124993711_466839
+			......	
+		降级:
+			https://www.cnblogs.com/Zachary-Fan/p/degradation.html
+		
+			.....
+		限流:
+			https://www.cnblogs.com/Zachary-Fan/p/currentlimiting.html
+		
+	问题 (主要是 一致性问题):
+		微服务之间的 网络超时问题  (异步处理,或者添加消息队列)
+		程序错误导致的数据不同步问题 (一致性问题)
+		如果在为交易的相关系统做技术选型,则交易的存储应该只考虑关系型数据库,对于核心系统,
+		如果需要较好的性能,则可以考虑使用更强悍的硬件,这种向上扩展 (升级 硬件 )虽然成本较高,却是最简单 有效的。
+		另外, No SQL 完全不适合交易场景,主要用来做数据分析、ETL 、报表、数据挖掘、推荐、日志处理、调用链跟踪等非核心交易场景。
+		拆分理念, 服务和数据边都需要好好拆分
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20190928 
+内核回炉
+	实用命令:
+		pstree  显示 运行的进程树
+		ps fax  显示 运行中的内核线程
+		cat /proc/self/limits  查看每个用户进程的资源限制
+		
+	线程/进程:
+		fork 从当前进程无性分裂出来,用户态的数据都 copy 一份,获得一个相同,但独立的进程
+		exec 在当前进程 加载另外的一个应用程序数据代替当前的. 相当于,但钱进程跑一个新程序, 而不是另生成一个新进程
+		clone 从当前进程无性分裂出来线程, 只是用户态数据 只有 部分换成新线程数据, 其他用户态数据共享
+	内存: 
+		物理内存 和 虚拟内存不一样,
+		物理内存 就是 实际的硬件内存
+		虚拟内存是 每个独立用户进程被分配的内存 32位系统是4GB, 64位系统是16EB左右(超级大了,几乎认为是不限内存)
+		32位系统为例
+		每个独立用户进程都认为自己有 4GB内存, 一般 1GB 内核内存, 3GB用户内存, (可调节)
+		但是 进程间3GB的用户内存是不共享的, 而 1GB内核内存实际指向的是同一个
+		内核内存, 用户内存 区分进程此刻运行在用户态,还是内核态
+		用户态的程序片段 和 内核态的程序片段 通过 系统调用来交互信息, 严禁直接访问 内核态内容和函数
+		除了用户进程, 还有内核进程(线程), 内核进程使用的 内存 依然是 上述所说的同一个1GB内核内存
+		注意,用户进程中还有一个 进程栈 的内容, 进程栈放在用户态空间上,里面分成 内核栈,用户栈,thread_info
+			用户进程 执行系统调用 在进入核心态时 用户空间进程的寄存器内容会保存到内核栈上
+
+		内存结点(节点/node): 一个整体划分的内存区域: UMA 是 多个cpu 同一个结点, NUMA 是每个cpu 分配一个节点
+
+	内存影射:
+		使用页表影射 物理内存 和 虚拟内存 
+		MMU 硬件模块 , 通过硬件算法 加速 分页 和 内存页影射 , 注意每个用户进程都有自己的 都有自己独立的页目录分表
+			每个进程的页目录分表关于用户态部分物理内存指向是不同的,但是内核态的物理内存指向却是相同!!
+		TLB 地址缓存硬件模块, 缓存那些 频繁出现的 物理/虚拟地址影射, 加速快速切换 
+		32位系统, 如果 cup 支持 PAE 功能 '物理内存' 可以进一步扩展, 而不止4GB
+		一般的 32位 cpu 内存映射关系:
+			虚拟内存 1-3GB 用户空间, 3-4GB 内核空间
+			而对应的 物理内存是 0-896MB 是内核空间的直接映射地址, 其中 0-16MB 是使用mmu 复杂映射的高端内存地址
+	理解一个进程运行的例子:
+		cpu 运行的同时, mmu也在运行, mmu把页表里最终影射的物理地址的指令搬到 pc 指针处 让cpu执行,
+		如果 mmu页表根据虚拟地址影射发现没有影射到那个物李地址,就会发生缺页异常, 
+		这是异常中断会分配新的物理地址给这个程序, 并更新影射页表的内容,回到正常, 
+		mmu就会继续成功得到新加入的物理地址的内容 给 pc指针执行  
+		一个进程的 虚拟空间布局! 其实是 用户态的虚拟空间布局(就是所谓3GB的地方) 一个进程是 task
+			保留段  栈  保留段  MMAP(用户数据分配内存的地方,跟内核态数据影射交互的地方)  堆  进程代码段text 保留段
+			保留段是 预防 数据越界的地方 		
+			
+	伙伴系统:
+		进程能分配连续物理内存页 作为可用的虚拟内存 的经典算法
+		物理内存中被 划分的 DMA, 常规, VMALLOC,高端内存域 都通过 伙伴系统管理
+		用户空间申请内存 malloc() 由于按需要调页的原则,实际上并未申请到物理内存, 当第一次写操作时候才开始分配内存和写入数据
+		当未执行第一次写操作前进行读操作,实际上虚操作,什么都没做,因为实际物理内存都还没有分到
+		内核空间 内存分配 kmalloc() __get_free_pages(), vmalloc()
+		kmalloc() __get_free_pages(), 申请到 DMA,常规内存域 物理上连续的内存, 映射简单,一般只有固定偏移
+		vmalloc()得到是 虚拟上连续的内存,申请的是 VMALLOC内存域的内存, 一般用于需要大块内存的申请
+	slab缓存:
+		内核线程在 伙伴系统 分配出的一个多页内存块 进行更小级别的内存划分, 供内核其他线程 或者 内核态程序片段使用
+		kmalloc 和 kfree 获得/释放分配 slab缓存的内存
+		kmalloc 用到了 slab 机制, 但是实际上 slab 的原装接口却是:
+			kmem_cache_create ()  新建一个 slab 池
+			kmem_cache_alloc () 为数据XX 分配一个 slab空间
+			kmem_cache_free () 释放数据xX
+			kmem_cache_destory() 释放 slab 池子
+		slab机制 在一些大型机上 开销太大(操作浪费太多时间),所以也有另外的 机制取代, 跟slab对外提供的接口一致,所以灵活
+		一般用来存储 各种数据结构体数据
+	一般性内核对象:
+		如果某个变量的类型是 typedef 而来的,则不能直接访问,而需要通过辅助函数
+		kobject : 一般内核对象 提供了在内核使用面向对象技术的可能性,而无需C++的所有额外机制
+		kset: 一般内核对象的集合
+		kref: 引用计数  在计数器到达0时,就不需要该对象了,可以从内存中删除
+		per-cpu变量 ; 关于多核
+	调度:
+		用户态时,可以发生调度, 内核态过程中一般是不发生调度(除非内核编译添加内核抢占), 但是不管什么态都可以被中断
+		task_struct 进程表示: include/linux/sched.h
+		resource.h 设置了linux的 每个进程的资源限制资源限制
+		PID 进程id
+		TGID 线程组id
+		PGID 进程组id task_struct->signal->__pgrp
+		SID 多个进程组 合成会话 有一个会话id
+		调度器的实现基于两个函数:周期性调度器函数和主调度器函数
+		完全公平调度,不是基于时间片老方式,而是基于进程的级别和等待时间
+		一些细节:
+			上下文切换:
+				switch_mm 更换通过 task_struct->mm 描述的内存管理上下文。该工作的细节取决于处理器,
+				    主要包括加载页表、刷出地址转换后备缓冲器(部分或全部)、向内存管理单元(MMU)提供新的信息。
+				    些操作深入到CPU的细节中
+				switch_to 切换处理器寄存器内容和内核栈(虚拟地址空间的用户部分在第一步已经变更,
+				    其中也包括了用户状态下的栈,因此用户栈就不需要显式变更了)。此项工作在不同的体系结构下可
+				    能差别很大,代码通常都使用汇编语言编写。
+				用户空间进程的寄存器内容在进入核心态时保存在内核栈上
+		重点 文件 sched.h/.c
+
+	在 Linux 内核 2.6 的早期采用了 O(1) 算法,之后转移到 CFS(Completely Fair Scheduler,完全公平调度)算法。
+	在 Linux3.14 中,也增加了一个新的调度类:SCHED_DEADLINE,它实现了 EDF(Earliest Deadline First,最早截止期限优先)调度算法。
+	在 Linux 2.6 以后版本的 Linux 内核中,一个内核任务可以被抢占,从而提高系统的实时性。
+		这样做最主要的优势在于,可以极大地增强系统的用户交互性,用户将会觉得鼠标单击和击键的事件得到了更快速的响应。
+
+
+	命名空间:
+		轻量级虚拟机化, 也叫容器化,每一个命名空间都有管理着自己的进程, 意味着每个命名空间都有自己的 PID==0 的 init 首进程 
+		struct nsproxy 每个进程 task_struct 都有这个指向 归属命名空间 的数据
+		典型的命名空间:
+			UTS命名空间 , 用户命名空间
+	执行文件二进制格式:
+		linux 可执行程序 包括多种二进制格式文件 elf等, 最终要解析成 linux_binfmt 以下数据结构再执行
+	块设备:
+		分区问题
+		bio 概念
+	内核模块:
+		modprobe 和 insmod 
+		MODULE_ALIAS(alias)   备选名称, 加载模块的时候也可以通过备选名称来加载, 避免不同开发者的命名不一样的习惯
+		license
+		symbol 引用
+		kernel/kmod.c request_module  依赖模块自动加载
+	虚拟文件系统 VFS :
+		Ext2/3、Reiserfs、FAT和iso9660  这些都是 硬盘里的文件系统
+		虚拟文件系统 VFS
+		网络文件系统 NFS
+		文件描述符
+		编程接口 例如 open().. 这个是用户进程与 内核VFS 的一个编程接口
+		所谓 万物皆文件 就是所有东西都抽象到 VFS 去 ,通过 VFS 提供的 接口操作访问  
+		VFS由两个部分组成:文件和文件系统,这些都需要管理和抽象
+		文件通过 inode 表示
+		文件系统是通过 一个内核结构 (超级块?) 来管理文件
+		每个装载的文件系统都对应于一个 vfsmount 结构的实例
+		例如 file_operations, 就是 VFS 的一个抽象接口 
+		dentry 结构
+		共享装载  :  同一个位置,可以有多个路径到达, 比如 sdo这个目录, /usr/sdo, /usr/voo/sdo 到达的是同一个位置 
+		物理文件系统 被 vfs 所抽象的 底层文件系统:		
+			ext2/3 文件系统 很多概念和 VFS 相同,但是 VFS 是 ext2 的上层, ext2/3 数据必须被抽象到 VFS 才能被处理
+			ext2/3 关于小文件 使用 间接块(indirection)保存的概念
+		其他特殊的 被 vfs 所抽象的 底层文件系统
+			proc 系统的状态和配置有关的即时信息 的文件系统
+				struct proc_dir_entry   proc文件系统的 具体内荣
+			sysfs Sysfs按照惯例总是装载在 /sys 目录, 从内核向用户层导出非常结构化的信息
+			libfs
+			debugfs
+		顺序文件:seq_file
+			小的文件系统中的文件,通常用户层是从头到尾顺序读取的,其内容可能是遍历一些数据项创建的
+		扩展属性: xattr  
+			VFS层并不关注 security 或 system 命名空间中的属性
+			这是 物理文件系统的扩充 , 跟 VFS 不是同一层
+		访问控制表  ACL
+			这是 物理文件系统的扩充 , 跟 VFS 不是同一层
+		应用程序 和 VFS 间接口 是 系统调用, VFS 和 实际文件系统,和设备文件的 接口是 file_operations 成员函数,
+		p126 linux设备驱动开发详解: 基于最新linux 4.0
+	网络:
+		套接字 也是一个可以被 VFS 抽象 的 '文件系统'
+		sk_buff  套接字缓冲区
+		struct net_device  (挖掘一下,最终挂载到哪里)
+		netfilter
+		NAPI
+	系统调用:
+		strace  跟踪工具
+		接下来使用 strace 命令将 shead (上述的例子程序)发出的所有系统调用的列表写到 log.txt 中: 1
+		wolfgang@meitner> strace -o log.txt ./shead
+		C标准库是动态映射到进程内存区的。其他调用,如 old_mmap 和 unmap ,负责管理应用程序使用的动态内存区域。
+		系统调用 open 、 read 和 close ,都转换为对相应的内核函数的调用。
+		malloc 是用于在进程堆区域分配内存的标准函数 malloc 在内部执行了 brk 系统调用
+		printf 首先处理传递的参数,在这里是一个动态字符串,并用 write 系统调用显示结果
+		flock 锁定一个文件,防止这个文件被几个进程并行访问,以确保文件的一致性
+		truncate 调用,用于按指定的字节数截短一个文件
+		sysfs 收集内核已知的文件系统有关的信息
+		系统调用是 汇编进入软件中断!!
+		注意 系统调用 和 C库文件 概念是不一样的
+			open() 是 系统调用,  fopen() 是C库函数, 大家都是用在 用户空间程序,
+			大家都是 打开 文件的 操作, 但是 大家的工作机理不是一样的
+			c库 的 fopen 最终还是要 回到某个 系统调用 执行
+	中断:
+		硬件中断 
+			同步  cpu产生
+			异步  外部设备产生
+			实际上是一个 芯片的 中断控制器 接受 cpu 外部设备的 中断信号 后, 才实现触发中断!
+			如果CPU当前不处于核心态,则发起从用户态到核心态的切换
+			在内核中执行一个专门的例程,称为中断服务例程(interrupt service routine,简称ISR)
+			或中断处理程序(interrupt handler)。
+		中断处理程序划分为两个部分,性能关键的前一部分在禁用中断时执行,而不那么重要的后一部分延期执行,进行所有次要的操作。
+		进入和退出任务还负责确保处理器从用户态切换到核心态
+		IRQ 
+		ISR
+		 用于硬件IRQ处理的栈。
+		 用于软件IRQ处理的栈。 (这些中断栈好像是 异步中断处理时使用的)
+		常规的内核栈对每个进程都会分配,而这两个额外的栈是针对各CPU分别分配的	
+		当然 内核线程用到的内核栈 不是当前用户进程内核态的 内核栈
+		嵌套中断的 每一个中断都使用 同一个 专门的 中断内核栈, 而不是一个中断程序一个内核栈
+		tasklet 不知道是使用 中断的内核栈还是 用户进程的内核栈		
+		wait queue 等待队列
+	定时器
+		高低分辨率定时器
+		jiffie
+		hrtimer
+		动态时钟
+		每个进程可以有3个不同类型的定时器
+	页缓存 块缓存
+		硬盘设备数据 的 整页,整块地映射
+		基数树 (radix tree)
+		二叉数
+		基于块的I/O的标准数据结构,现在已经不再是缓冲区,而是第6章讨论的 struct bio
+		address_space
+		缓存页的总数保存在 nrpages 计数器变量中
+		785(768) 页 地址  797(780)
+		address_space_operations  地址空间操作
+		数据同步
+			pdflush
+		页回收交换区 swap  (交换区就是 win的 虚拟内存)
+		内核对LRU的实现基于两个链表,分别称为活动链表和惰性链表
+		LRU
+		交换令牌
+		用 kswapd 进行周期性内存回收
+		shrinker
+	内核内部审计  轻量级审计框架( lightweight auditing framework )
+		记录内核工作的统计情况,比如系统调用情况什么的
+		auditctl  审计命令
+		kernel/audit.c 提供了核心的审计机制。
+		kernel/auditsc.c 实现了系统调用审计。
+		kernel/auditfilter.c 包含了过滤审计事件的机制。
+		每当有一个新的请求通过netlink 套接字到达时,网络子系统都会调用 audit_receive
+		审计是一种低开销机制,可以在稳定的产品系统上使用,可以获得与系统运作相关的全面信息,而不会对系统性能有太大的影响。
+
+	音频体系:
+		高级 Linux 音频体系结构(Advanced Linux Sound Architecture,ALSA)取代了缺陷很多旧的 OSS(Open Sound System)。
+		ALSA 支持 USB 音频和 MIDI 设备,并支持全双工重放等功能
+	驱动:
+		在 Linux 2.6 以后的内核中,总线、设备、驱动三者之间因为一定的联系性而实现对设
+		备的控制。总线是三者联系起来的基础,通过一种总线类型,将设备和驱动联系起来。
+		总线类型中的 match() 函数用来匹配设备和驱动,当匹配操作完成之后就会执行驱动程序中的 probe() 函数。
+	字符设备:
+		register_chrdev() 注册一个字符设备
+		devfs_register() 申请一个 字符设备/dev操作文件
+		devfs_unregister() 撤销设备文件
+		unregister_chrdev() 注销设诶
+		以上是 devfs 的方式, 还有一种udev 的 方式
+		2.6 后的机制 udev
+		devfs 和 udev 和 netlink uevent
+
+		实际上 字符设备的注册 却是 
+			register_chrdev_region
+			或者 alloc_chrdev_region
+			cdev_init
+			cdev_add
+			注意,只是注册了设备,但是没有申请 /dev 操作文件, 需要根据主从设备号和 mknod 一个 操作设备文件才可以
+		撤销:
+			cdev_del
+			unregister_chrdev_region
+		一次多个 字符设备:
+			register_chrdev_region
+			for 
+				cdev_init
+				cdev_add
+		撤销
+			for
+				cdev_del
+			unregister_chrdev_region
+		
+		考虑并发问题,各种 锁
+			注意在设备驱动初始化时候要添加初始化的锁
+		AIO 异步io操作
+			C 库 aio:
+
+
+			libaio:
+			用户程序 通过 io_summit 提交异步读或者写请求,内核一段时间后会执行请求	
+			然后 io_summit 会 调用 用户定义的 aio_resd aio_write 等 来完成操作
+			最后 通过 io_getevents 获得异步io操作后的结果
+			aio 一般用于块设备, 很少用于 字符设备
+	工具链
+		arm-linux-gnueabihf-gcc
+			编译了 硬件 fpu 浮点运算
+		arm-linux-gnueabi-gcc
+			编译了 不使用  硬件 fpu 浮点运算, 而是 软件 fpu 运算, 降低了运算速度
+	模块:
+		注意,模块不是设备驱动, 模块只是纯粹范畴的 linux 模块, 通过模块 可以灵活给linux 添加各种各样功能,
+		包括各种各样设备驱动, 又可以很轻松地去除功能
+		p108 linux设备驱动开发详解: 基于最新linux 4.0
+		别名表示可以通过 别名找到模块
+	文件目录:
+		/bin 普通命令
+		/sbin  系统命令 例如 insmod modprobe
+		/dev 设备操作文件
+		/etc 系统配置 
+		/lib 系统库
+		/mnt 一般是磁盘挂载所在地
+		/opt 可选区的意思, 一些会 软件 装到这
+		/proc 系统即时信息的 所在挂载地
+		/tmp 软件运行产生的 临时文件
+		/usr 安装 用户程序软件 的 地方 , 放用户命令,用户库 等 
+		/var 变化区的意思,  会放一些系统日志之类的 东西
+		/sys sysfs 映射到这, 设备,驱动,总线,什么的会在 sysfs 建立节点什么的
+	编译乱序
+		解决 编译乱序
+		# define barrier()  _asm__volatile_{"": : :"memory"}	
+		.....
+		  barrier();
+		乱序执行, 就是 代码被 编译乱序了, 但是 xpu 执行还是 按程序来执行,
+			那就是按照 混乱的编译顺序来执行
+		DMB 数据内存屏障
+		DSB 数据同步屏障
+		ISB 指令同步屏障
+		atomic_t 是一个 原子变量的类型, 其实是一个普通类型的 typedef, 但是
+		标记这些类嗯的变量,规则上只能被 atomic_xxxx() 一类的原子操作函数执行!!!
+	
+	i/o 端口
+		跟 i/o 缓存 有区别 !!	
+	i/o 内存
+		芯片上, 各个硬件模块的控制寄存器(12c,spi,usb...) 会通过 ioremap() 映射到 内存上来!!
+		操作这些内存, 就相当与操作控制器 所以 这些内存叫做 io内存 这片做映射色区域再 是 物理内存上的 vmalloc 区域里
+		而操作这些 内存用到的 一些函数 就是 io端口 例如 readb() readw().....
+		流程 (都是内核空间里的操作范畴):
+		request_mem_region() 申请一块 io内存
+		ioremap io内存映射到实际物理寄存器
+		readb readl,,,writel...  操作函数
+		iounmap	解除映射
+		release_mem_region 释放内存
+	VMA	
+		而 从用户空间 访问 设备寄存器的方式 却是这样
+		使用 mmap(), 从用户空间的内存 划分一个 VMA(vm_area_struct),映射 设备的物理地址,寄存器等
+		那么操作 用VMA内存 => 操作设备物理地址 
+		一般 这个功能 用到视频设备上, 用户空间的内存 直接映射到显卡的显存
+	map_desc:
+		内核态上 通过设备物理地址,寄存器 和 虚拟内存 固定 映射, 不是动态虚拟地址映射
+		即 虚拟地址是固定的, 
+	misc 
+		是杂项设备
+	块设备:
+		gendisk 通用磁盘结构体
+		bio  块i/o 请求
+		I/O 调度器算法
+		MMC 子系统
+		块设备 通过 bio 请求队列 对 磁盘操作
+	网络设备:
+	i2c:
+		408 页
+	usb:
+		作为主机设备 bus  就是 作为主机的控制机器
+			相当于 usb 总线
+			其他usb 插入到 主机时候,初始化成各种usb设备
+			一般来说, usb设备 插入后, 除了 usb本身,设备 还涉及到其他子系统, frambuffer input 等 
+		作为从机设备 gadget
+			重点 UDC 结构
+			作为被使用的 设备
+		otg
+			usbBus 和 usbgadget 上再封装一个 otg 来判断
+	电源驱动问题:
+		cpufreg  改变cpu频率来 控制功耗的驱动
+		cpufreq-bench 工具 可以获得 cup 在不同频率下的功耗
+		regulator 子系统
+	时钟:
+		clocksource clock_event
+	中断:
+		
+	多核启动: (SMP 多核共内存)
+		芯片启动时,自身的 固件会允许 cpu0继续工作并执行 bootlaoder 等等, 而 cpu1/2/3.. 则置身与 wfi wfe 等待!!!
+		linux 再 cpu0 初始化后  linux发中断给 其他cpu, 会唤醒他们,并分配部分进程 给他们执行!!
+		唤醒 操作 是 smp_operations -> smp_init_cpus() -> 特定板级代码
+					   -> smp_prepare_cpus() 设置启动地址
+					   -> smp_boot_secondary() 最终唤醒
+		注意每个cpu 都有自己独立的 mmu
+		569页 图!!
+	linux移植mpu芯片 一般需要处理的 底层固件驱动,这些一般都不是 平台系统上挂载的 的驱动,而是基本底层驱动
+	定时器
+	中断
+	gpio子系统 pinctrl 子系统  pinmux
+	时钟子系统 clk 592页
+	dmaengine
+
+
+
+
+
+
+
+
+
+
+
+20200106
+测试蓝牙应用程序, 深入 bluez 框架 
+没有 bluetooth.h 头文件
+解决方案
+您需要安装libbluetooth-dev软件包编译您的code   命令和apt-get安装libbluetooth-dev的
+深入学习初始化 init.d 内容
+内核启动后, 进入默认运行级,并执行对应的 运行级别初始化任务
+运行级别:
+	0 - 停机（千万不要把initdefault设置为0 ）
+	1 - 单用户模式(单用户模式，只允许root用户对系统进行维护。)
+	2 - 多用户，但是没有NFS
+	3 - 完全多用户模式(字符界面)
+	4 - 基本不用
+	5 - X11(图形界面)
+	6 - 重新启动（千万不要把initdefault设置为6 ）
+runlevel 命令 查看当前运行级别
+	runlevel
+	N 5   // 表示当前运行级别为 5
+设置默认的运行级别, 早期系统通过修改 /etc/inittab 实现, 后面系统通过 systemd 的框架来实现
+	sudo systemctl set-default multi-user.target
+	Created symlink /etc/systemd/system/default.target → /lib/systemd/system/multi-user.target.
+	这样就 把默认级别 设置到了 3
+临时修改运行级别:
+	sudo telinit 3
+	这时 runlevel
+	5 3   //表示运行级别 从 5 到 3 	
+再分析运行级别的初始化问题, 假如现在是级别 5 ,
+	系统先做 /etc/rcS.d/ 的初始化
+	然后做 /etc/rc5.d/ 的初始化
+	我们查看 rcXXX.d 会发现:例如 rc5.d
+pi@raspberrypi:/etc $ ls -l rcS.d/
+total 0
+lrwxrwxrwx 1 root root 20 Nov 13  2018 K01hwclock.sh -> ../init.d/hwclock.sh
+lrwxrwxrwx 1 root root 20 Nov 13  2018 K01nfs-common -> ../init.d/nfs-common
+lrwxrwxrwx 1 root root 17 Nov 13  2018 K01rpcbind -> ../init.d/rpcbind
+lrwxrwxrwx 1 root root 20 Nov 13  2018 S01alsa-utils -> ../init.d/alsa-utils
+lrwxrwxrwx 1 root root 22 Nov 13  2018 S01fake-hwclock -> ../init.d/fake-hwclock
+lrwxrwxrwx 1 root root 27 Nov 13  2018 S01keyboard-setup.sh -> ../init.d/keyboard-setup.sh
+lrwxrwxrwx 1 root root 14 Nov 13  2018 S01kmod -> ../init.d/kmod
+lrwxrwxrwx 1 root root 20 Nov 13  2018 S01networking -> ../init.d/networking
+lrwxrwxrwx 1 root root 22 Nov 13  2018 S01plymouth-log -> ../init.d/plymouth-log
+lrwxrwxrwx 1 root root 16 Nov 13  2018 S01procps -> ../init.d/procps
+lrwxrwxrwx 1 root root 22 Nov 13  2018 S01raspi-config -> ../init.d/raspi-config
+lrwxrwxrwx 1 root root 14 Nov 13  2018 S01udev -> ../init.d/udev
+lrwxrwxrwx 1 root root 20 Nov 13  2018 S01x11-common -> ../init.d/x11-common
+	其实都是链接 到 init.d 的 内容, 可以说 init.d 存放 所有各种各样的初始服务内容
+	而指定的 rcXXX.d 执行对应部分的 初始服务内容
+	而 rcXXX.d 的文件名字也有深意, S 表示开启服务, K 表示关闭服务, 数字范围 00-99 表示执行阶级,数字越大,越后执行
+新建一个 初始化任务 和 开机启动: 
+	建立一个 规范的脚本放进 init.d, 例如:
+	#!/bin/sh
+	### BEGIN INIT INFO
+	# Provides:  william
+	# Required-Start:    $local_fs $syslog $remote_fs dbus
+	# Required-Stop:     $local_fs $syslog $remote_fs
+	# Default-Start:     2 3 4 5
+	# Default-Stop:      0 1 6
+	# Short-Description: test init.d Update-rc.d
+	### END INIT INFO
+	
+	 
+	case $1 in 
+	  start)
+	    echo "william writelog start"
+	    ;;
+	  stop)
+	    echo "william writelog stop"
+	    ;;
+	*)
+	  echo "Usage: $0 start|stop"
+	  exit 3
+	  ;;
+	
+	
+	esac
+
+	脚本必须有 规范的注释头内容,然后重启生效
+	先测试 服务的 运行
+		sudo service william_writelog  //使服务注册可用
+		sudo service william_writelog start //启动服务
+		sudo service william_writelog stop  //关闭服务
+	如果服务的 开启关闭 没有问题,  就可以设置 开机启动 
+		sudo sudo update-rc.d william_writelog defaults 
+		//服务会被生成链接文件 根据 服务脚本的 头注释 放入指定的运行级别,和设置对应运行级别的 初始化执行行为
+		//运行阶级都默认为 01
+	取消 开机启动
+		sudo update-rc.d -f william_writelog remove
+		//清除 所有运行级别下 指定的 初始化服务脚本
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20200306
+查看执行文件的链接库
+ldd <可执行文件名>       查看可执行文件链接了哪些  系统动态链接库
+nm <可执行文件名>       查看可执行文件里面有哪些符号
+strip <可执行文件名>      去除符号表可以给可执行文件瘦身
+如果我们想从可执行程序里面提取出来一点什么文本信息的话，还可以用strings命令
+strings <可执行文件名>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+20200307
+以下是 过去的 内核部分零散笔记: 集中一起, (仅能做部分参考,可能有大量错误)
 
 
 待处理
@@ -18909,9 +20183,6 @@ ucos3 需要知道 中断处理和调度的关系!!
 
 
 
-
-
-
  VBLANK: 显示器扫描线完成最后一行后,需要重返左上角,这个过程叫做: vblank,也叫VBI(vertical blank interval) ,因为扫描线变得blank,以防止看到一个斜线显示在屏幕上.?????
 开机没有出现小企鹅问题!!
 开发板的中断号与linux中断号的兑换表!!		 
@@ -18919,58 +20190,6 @@ ucos3 需要知道 中断处理和调度的关系!!
 使用 bitbake 工具链???
 	另外,如何 更改内核配置!!! 而bitbake 又可以通过!!!
 	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -18992,8 +20211,6 @@ devm_regmap_init(struct device *dev, struct regmap_bus *bus, void *bus_content, 
 当调用regmap_read或者regmap_write的时候，这两个函数会取出struct regmap中的content即i2c，并调用之前注册的regmap_bus中的read和write函数来实现读和写。
 regmap_update_bit内部调用了regmap_read和regmap_write
 我觉得以上的原理挺重要的，我们可以自己实现类似的接口：提供注册的机制，能够将对象以及对象的方法注册进去；当需要调用的时候，取出对应的对象和方法。
-
-
 
 
 
@@ -19217,12 +20434,6 @@ pinctrl_usdhc3: usdhc3grp {
 
 
 
-
-
-
-
-
-
 ////////////////////////////// sama5d4 mmap 结构
 
 /*
@@ -19358,12 +20569,9 @@ adc touchscreen page1537
 
 
 
-
 arch/arm/kernel/head.s: _INIT
 
 init/main.c:  asmlinkage __visible void __init start_kernel(void)
-
-
 
 
 
@@ -19387,18 +20595,8 @@ kset 与 kobject 的关系就像 文件夹 和 文件,但文件夹本身是一�
 
 
 
-
-
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 owner = ACCESS_ONCE(lock->owner); //ACCESS_ONCE表示一定要从实际内存地址访问这个变量lock->owner,不要被优化,不要从cpu_cache缓存里读出而不访问内存
-
-
-
-
-
-
-
-
 
 
 
@@ -19437,15 +20635,6 @@ pinctrl-state.h 	pin control state状态定义
 pinmux.h 	pin mux function接口 
 
 
-
-
-
-
-
-
-
-
-
 device tree 与gpio 设置:
     device-node-name { 
             定义该device自己的属性  
@@ -19475,15 +20664,6 @@ serial@50000000 {
     };
 
 这个数据结构主要被用来进行Device node和driver模块进行匹配用的。从该数据结构的定义可以看出，在匹配过程中，device name、device type和DT compatible string都是考虑的因素。更细节的内容请参考__of_device_is_compatible函数。 
-
-
-
-
-
-
-
-
-
 
 
 
@@ -19731,21 +20911,6 @@ softirq context并没有那么的直接，一般人会认为当sofirq handler正
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 http://www.wowotech.net/device_model/bus.html
 bus设备:
  subsys、devices_kset、drivers_kset是三个kset，由"Linux设备模型(2)_Kobject”中对kset的描述可知，kset是一个特殊的kobject，用来集合相似的kobject，它在sysfs中也会以目录的形式体现。其中subsys，代表了本bus（如/sys/bus/spi），它下面可以包含其它的kset或者其它的kobject；devices_kset和drivers_kset则是bus下面的两个kset（如/sys/bus/spi/devices和/sys/bus/spi/drivers），分别包括本bus下所有的device和device_driver。
@@ -19784,11 +20949,6 @@ interface是一个list head，用于保存该bus下所有的interface。有关in
 
 trace处理	有一个debug linux用户程序的手段
 Linux的内核提供了ptrace这样的系统调用，通过它，一个进程（我们称之 tracer，例如strace、gdb）可以观测和控制另外一个进程（被trace的进程，我们称之tracee）的执行。一旦Tracer和 tracee建立了跟踪关系，那么所有发送给tracee的信号(除SIGKILL)都会汇报给Tracer，以便Tracer可以控制或者观测 tracee的执行。例如断点的操作。Tracer程序一般会提供界面，以便用户可以设定一个断点（当tracee运行到断点时，会停下来）。当用户设定 了断点后，tracer就会保存该位置的指令，然后向该位置写入SWI __ARM_NR_breakpoint（这种断点是soft break point，可以设定无限多个，对于hard break point是和CPU体系结构相关，一般支持2个）。当执行到断点位置的时候，发生软中断，内核会给tracee进程发出SIGTRAP信号，当然这个信号也会被tracer捕获。对于tracee，当收到信号的时候，无论是什么信号，甚至是ignor的信号，tracee进程都会停止运行。Tracer进程可以对tracee进行各种操作，例如观察tracer的寄存器，观察变量等等。 
-
-
-
-
-
 
 
 
@@ -19842,11 +21002,6 @@ struct class是class的抽象，它的定义如下：
 
 
 
-
-
-
-
-
 电源管理有关的Source code分别位于：
 
     kernel/power/ *
@@ -19868,6 +21023,7 @@ struct class是class的抽象，它的定义如下：
     Documentation/power/*.txt
 
 
+(USB IN Endpoint 1,video streaming interface 1)       ?????
 
 
 
@@ -19896,7 +21052,13 @@ struct class是class的抽象，它的定义如下：
 
 
 
+20200915
+此前 系统深入内核学习的 全部内容 在 建立的 pj_eatkernel 项目 内核全分析 文件里
+以后这个 记录文文件 继续做 平时工作的零碎的知识记录工作, 更系统的内核模块分析会整理后放入 内核全分析里
+为了方便整理, 每个章节都独立建立了很多 单独章节文件, 例如 clock load_balance, 20200722 等,
+建立这些零散的文件不要急着删除,以防万一
 
+接下来的规划, 做 示波器 上位机!!!
 
 
 
@@ -19913,6 +21075,7 @@ struct class是class的抽象，它的定义如下：
 
 
 
+???????????????????????????????????????????????????????????????
 
 
 
@@ -19928,73 +21091,3 @@ struct class是class的抽象，它的定义如下：
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-(USB IN Endpoint 1,video streaming interface 1)
